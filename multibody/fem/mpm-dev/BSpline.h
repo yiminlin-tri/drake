@@ -17,15 +17,18 @@ class BSpline {
 
     // Evaluation of Bspline basis on a particular position
     double EvalBasis(const Vector3<double>& x);
+    double EvalGradientBasis(const Vector3<double>& x);
 
     // Helper function
     double get_h() const;
     Vector3<double> get_position() const;
 
  private:
-    // Helper function. Evaluate 1D quadratic Bspline on the reference 1D domain
-    // r, note that the basis has compact support in [-1.5, 1.5]
+    // Helper function. Evaluate the values and the gradients of 1D quadratic
+    // Bspline on the reference 1D domain r, note that the basis has compact
+    // support in [-1.5, 1.5]
     double Eval1DBasis(double r);
+    double EvalGradient1DBasis(double r);
 
     double h_{};                        // The scaling of the reference domain.
                                         // Since the class is for the usage of

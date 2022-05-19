@@ -12,7 +12,7 @@ namespace {
 
 constexpr double kEps = 4.0 * std::numeric_limits<double>::epsilon();
 
-GTEST_TEST(BSplineClassTest, RoundTrip) {
+GTEST_TEST(BSplineTest, BSplineClassTest) {
     BSpline bs1;
     Vector3<double> tmpvec = Vector3<double>{1.0, 2.0, 3.0};
     Vector3<double> bspos;
@@ -35,7 +35,7 @@ GTEST_TEST(BSplineClassTest, RoundTrip) {
                 std::numeric_limits<double>::epsilon()));
 }
 
-GTEST_TEST(BSplineTestBasisSupport, RoundTrip) {
+GTEST_TEST(BSplineTest, BSplineTestBasisSupport) {
     Vector3<double> center = { 0.5,  1.0, -0.5};
     // Construct a reference 3D test basis, and test the InSupport
     BSpline bs1 = BSpline();
@@ -95,7 +95,7 @@ GTEST_TEST(BSplineTestBasisSupport, RoundTrip) {
     ASSERT_TRUE(!bs3.InSupport(pos12));
 }
 
-GTEST_TEST(BSplineTestBasisPOU, RoundTrip) {
+GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
     // TODO(yiminlin.tri): It may be helpful to refactor part of this code when
     // Class Particle and Class GridPt are constructed.
     // First, Consider h = 1
@@ -219,6 +219,10 @@ GTEST_TEST(BSplineTestBasisPOU, RoundTrip) {
     }
     }
     }
+}
+
+GTEST_TEST(BSplineTest, BSplineTestGrad) {
+
 }
 
 }  // namespace

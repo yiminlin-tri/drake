@@ -40,10 +40,8 @@ Vector3<double> BSpline::get_position() const {
     return position_;
 }
 
-// TODO(yiminlin.tri): Potential speedup in the arithmetic, is std::pow
-// efficient in this case?
 double BSpline::Eval1DBasis(double r) {
-    double r_abs    = std::abs(r);
+    double r_abs = std::abs(r);
     if (r_abs >= 1.5) {
         return 0.0;
     } else if (r_abs < 1.5 && r_abs >= 0.5) {
@@ -53,6 +51,17 @@ double BSpline::Eval1DBasis(double r) {
     }
 }
 
+double BSpline::EvalGradient1DBasis(double r) {
+    if (r <= 0.5 && r >= 0.5) {
+        return -2.0*r;
+    } else if (r >= 0.5 && r < 1.5) {
+        return -1.5 + r;
+    } else if (r <= -0.5 && r > -1.5) {
+        return 1.5 + r;
+    } else {
+        return 0.0;
+    }   
+}
 
 }  // namespace mpm
 }  // namespace multibody
