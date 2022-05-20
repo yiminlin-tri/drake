@@ -32,6 +32,26 @@ double BSpline::EvalBasis(const Vector3<double>& x) {
     }
 }
 
+Vector3<double> BSpline::EvalGradientBasis(const Vector3<double>& x) {
+    if (!InSupport(x)) {
+        return Vector3<double>(0.0, 0.0, 0.0);
+    } else {
+        double scale = 1.0/h_;
+        return Vector3<double>(scale
+                             *(EvalGradient1DBasis(scale*(x(0)-position_(0))))
+                             *(Eval1DBasis(scale*(x(1)-position_(1))))
+                             *(Eval1DBasis(scale*(x(2)-position_(2)))),
+                              scale
+                             *(EvalGradient1DBasis(scale*(x(1)-position_(1))))
+                             *(Eval1DBasis(scale*(x(0)-position_(0))))
+                             *(Eval1DBasis(scale*(x(2)-position_(2)))),
+                              scale
+                             *(EvalGradient1DBasis(scale*(x(2)-position_(2))))
+                             *(Eval1DBasis(scale*(x(0)-position_(0))))
+                             *(Eval1DBasis(scale*(x(1)-position_(1)))));
+    }
+}
+
 double BSpline::get_h() const {
     return h_;
 }
@@ -52,7 +72,7 @@ double BSpline::Eval1DBasis(double r) {
 }
 
 double BSpline::EvalGradient1DBasis(double r) {
-    if (r <= 0.5 && r >= 0.5) {
+    if (r <= 0.5 && r >= -0.5) {
         return -2.0*r;
     } else if (r >= 0.5 && r < 1.5) {
         return -1.5 + r;
@@ -60,7 +80,7 @@ double BSpline::EvalGradient1DBasis(double r) {
         return 1.5 + r;
     } else {
         return 0.0;
-    }   
+    }
 }
 
 }  // namespace mpm

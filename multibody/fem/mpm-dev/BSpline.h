@@ -17,7 +17,8 @@ class BSpline {
 
     // Evaluation of Bspline basis on a particular position
     double EvalBasis(const Vector3<double>& x);
-    double EvalGradientBasis(const Vector3<double>& x);
+    // TODO(yiminlin.tri): Pass in pointer to avoid allocations
+    Vector3<double> EvalGradientBasis(const Vector3<double>& x);
 
     // Helper function
     double get_h() const;
