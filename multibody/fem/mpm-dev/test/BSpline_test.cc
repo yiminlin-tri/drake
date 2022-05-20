@@ -232,9 +232,6 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
     }
 }
 
-GTEST_TEST(BSplineTest, BSplineTestGrad) {
-}
-
 }  // namespace
 }  // namespace internal
 }  // namespace mpm
