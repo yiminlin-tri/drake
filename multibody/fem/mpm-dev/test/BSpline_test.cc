@@ -124,8 +124,8 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
     const int NUM_GRID_PT_1D = 5;    // number of grid points in each direction
     int i, j, k;
     double xi, yi, zi;
-    double sum_sample, sample_interval;
-    Vector3<double> sum_gradient_sample;
+    double sum_sample, sum_sample2, sample_interval, sample_val;
+    Vector3<double> sum_gradient_sample, sum_gradient_sample2, sample_gradient;
     double h = 1.0;
     Vector3<double> sample_point;
     std::vector<BSpline> bs_arr(NUM_GRID_PT);
@@ -144,14 +144,17 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
 
     // Iterate through all sampled points over [-1, 1]^3. Then all basis
     // evaluated at sampled points shall be 1.0 by the partition of unity
-    // property of B-spline basis
+    // property of B-spline basis. The gradient of the sum of bases should
+    // then be 0.
     sample_interval = 0.3;
     for (zi = -1.5; zi <= 1.5; zi += sample_interval) {
     for (yi = -1.5; yi <= 1.5; yi += sample_interval) {
     for (xi = -1.5; xi <= 1.5; xi += sample_interval) {
         // Iterate through all Bsplines, and accumulate values
-        sum_sample = 0.0;
-        sum_gradient_sample = {0.0, 0.0, 0.0};
+        sum_sample  = 0.0;
+        sum_sample2 = 0.0;
+        sum_gradient_sample  = {0.0, 0.0, 0.0};
+        sum_gradient_sample2 = {0.0, 0.0, 0.0};
         sample_point = {xi, yi, zi};
         for (int idx = 0; idx < NUM_GRID_PT; ++idx) {
             i = idx % NUM_GRID_PT_1D;
@@ -159,10 +162,18 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
             k = idx / NUM_GRID_PT_2D;
             sum_sample += bs_arr[idx].EvalBasis(sample_point);
             sum_gradient_sample += bs_arr[idx].EvalGradientBasis(sample_point);
+            std::tie(sample_val, sample_gradient) =
+                bs_arr[idx].EvalBasisAndGradient(sample_point);
+            sum_sample2 += sample_val;
+            sum_gradient_sample2 += sample_gradient;
         }
 
         EXPECT_NEAR(sum_sample, 1.0, kEps);
         EXPECT_TRUE(CompareMatrices(sum_gradient_sample,
+                                    Vector3<double>{0.0, 0.0, 0.0},
+                                    kEps));
+        EXPECT_NEAR(sum_sample2, 1.0, kEps);
+        EXPECT_TRUE(CompareMatrices(sum_gradient_sample2,
                                     Vector3<double>{0.0, 0.0, 0.0},
                                     kEps));
     }
@@ -206,14 +217,17 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
 
     // Iterate through all sampled points over [0.25, 1.75]^3. Then all basis
     // evaluated at sampled points shall be 1.0 by the partition of unity
-    // property of B-spline basis
+    // property of B-spline basis. The gradient of the sum of bases should
+    // then be 0.
     sample_interval = 0.3;
     for (zi = 0.25; zi <= 1.75; zi += sample_interval) {
     for (yi = 0.25; yi <= 1.75; yi += sample_interval) {
     for (xi = 0.25; xi <= 1.75; xi += sample_interval) {
         // Iterate through all Bsplines, and accumulate values
-        sum_sample = 0.0;
-        sum_gradient_sample = {0.0, 0.0, 0.0};
+        sum_sample  = 0.0;
+        sum_sample2 = 0.0;
+        sum_gradient_sample  = {0.0, 0.0, 0.0};
+        sum_gradient_sample2 = {0.0, 0.0, 0.0};
         sample_point = {xi, yi, zi};
         for (int idx = 0; idx < NUM_GRID_PT; ++idx) {
             i = idx % NUM_GRID_PT_1D;
@@ -221,10 +235,18 @@ GTEST_TEST(BSplineTest, BSplineTestBasisPOU) {
             k = idx / NUM_GRID_PT_2D;
             sum_sample += bs_arr[idx].EvalBasis(sample_point);
             sum_gradient_sample += bs_arr[idx].EvalGradientBasis(sample_point);
+            std::tie(sample_val, sample_gradient) =
+                bs_arr[idx].EvalBasisAndGradient(sample_point);
+            sum_sample2 += sample_val;
+            sum_gradient_sample2 += sample_gradient;
         }
 
         EXPECT_NEAR(sum_sample, 1.0, kEps);
         EXPECT_TRUE(CompareMatrices(sum_gradient_sample,
+                                    Vector3<double>{0.0, 0.0, 0.0},
+                                    kEps));
+        EXPECT_NEAR(sum_sample2, 1.0, kEps);
+        EXPECT_TRUE(CompareMatrices(sum_gradient_sample2,
                                     Vector3<double>{0.0, 0.0, 0.0},
                                     kEps));
     }

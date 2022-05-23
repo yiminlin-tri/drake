@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "drake/common/eigen_types.h"
 
 namespace drake {
@@ -19,6 +21,8 @@ class BSpline {
     double EvalBasis(const Vector3<double>& x);
     // TODO(yiminlin.tri): Pass in pointer to avoid allocations
     Vector3<double> EvalGradientBasis(const Vector3<double>& x);
+    std::pair<double, Vector3<double>>
+      EvalBasisAndGradient(const Vector3<double> & x);
 
     // Helper function
     double get_h() const;
