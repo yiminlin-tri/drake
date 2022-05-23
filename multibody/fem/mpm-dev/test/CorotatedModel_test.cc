@@ -43,21 +43,39 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
             -84,  18764, -44,
              40, -44,  18680).finished();
     const Matrix3<double> F = R * S;
+    Matrix3<double> F2;
     Matrix3<double> P, tau;
-    CorotatedModel corotated_model = CorotatedModel();
 
-    // First test on the default constructor, E = 2.0, nu = 0.0
+    // First test on E = 2.0, nu = 0.0
+    CorotatedModel corotated_model = CorotatedModel(2.0, 0.0);
     corotated_model.CalcFirstPiolaKirchhoffStress(F, &P);
     corotated_model.CalcKirchhoffStress(F, &tau);
     EXPECT_TRUE(CompareMatrices(P, P_exact1, TOLERANCE));
     EXPECT_TRUE(CompareMatrices(tau, tau_exact1, TOLERANCE));
 
-    // Next test on the actual constructor, E = 5.0, nu = 0.25
+    // Next test on E = 5.0, nu = 0.25
     corotated_model = CorotatedModel(5.0, 0.25);
     corotated_model.CalcFirstPiolaKirchhoffStress(F, &P);
     corotated_model.CalcKirchhoffStress(F, &tau);
     EXPECT_TRUE(CompareMatrices(P, P_exact2, TOLERANCE));
     EXPECT_TRUE(CompareMatrices(tau, tau_exact2, TOLERANCE));
+
+    // Sanity check: If F is a rotation matrix, then stresses are zero
+    corotated_model = CorotatedModel(5.0, 0.25);
+    F2 = math::RotationMatrix<double>
+                (math::RollPitchYaw<double>(1.0, 2.0, 3.0)).matrix();
+    corotated_model.CalcFirstPiolaKirchhoffStress(F2, &P);
+    corotated_model.CalcKirchhoffStress(F2, &tau);
+    EXPECT_TRUE(CompareMatrices(P, Matrix3<double>::Zero(), TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
+
+    corotated_model = CorotatedModel(23.4, 0.41);
+    F2 = math::RotationMatrix<double>
+                (math::RollPitchYaw<double>(0.1, -2.4, 13.3)).matrix();
+    corotated_model.CalcFirstPiolaKirchhoffStress(F2, &P);
+    corotated_model.CalcKirchhoffStress(F2, &tau);
+    EXPECT_TRUE(CompareMatrices(P, Matrix3<double>::Zero(), TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
 }
 
 }  // namespace

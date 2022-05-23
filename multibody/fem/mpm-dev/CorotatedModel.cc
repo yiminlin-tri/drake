@@ -4,12 +4,10 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-CorotatedModel::CorotatedModel(): mu_(1.0), lambda_(0.0) {}
-
-CorotatedModel::CorotatedModel(const double E, const double nu):
+CorotatedModel::CorotatedModel(double E, double nu):
     mu_(E/(2*(1+nu))), lambda_(E*nu/(1+nu)/(1-2*nu)) {
         DRAKE_ASSERT(E >= 0);
-        DRAKE_ASSERT(nu >= 0.0 && nu <= 0.5);
+        DRAKE_ASSERT(nu > 0.0 && nu < 0.5);
     }
 
 void CorotatedModel::CalcFirstPiolaKirchhoffStress(
