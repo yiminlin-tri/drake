@@ -16,12 +16,24 @@ Particles::Particles(int num_particles): num_particles_(num_particles),
     DRAKE_ASSERT(num_particles >= 0);
 }
 
-int Particles::get_num_particles() {
+int Particles::get_num_particles() const {
     return num_particles_;
 }
 
 const Vector3<double>& Particles::get_position(int index) const {
     return positions_[index];
+}
+
+double Particles::get_position_x(int index) const {
+    return positions_[index](0);
+}
+
+double Particles::get_position_y(int index) const {
+    return positions_[index](1);
+}
+
+double Particles::get_position_z(int index) const {
+    return positions_[index](2);
 }
 
 const Vector3<double>& Particles::get_velocity(int index) const {
@@ -42,6 +54,30 @@ const Matrix3<double>& Particles::get_deformation_gradient(int index) const {
 
 const Matrix3<double>& Particles::get_kirchhoff_stress(int index) const {
     return kirchhoff_stresses_[index];
+}
+
+const std::vector<Vector3<double>>& Particles::get_positions() const {
+    return positions_;
+}
+
+const std::vector<Vector3<double>>& Particles::get_velocities() const {
+    return velocities_;
+}
+
+const std::vector<double>& Particles::get_masses() const {
+    return masses_;
+}
+
+const std::vector<double>& Particles::get_reference_volumes() const {
+    return reference_volumes_;
+}
+
+const std::vector<Matrix3<double>>& Particles::get_deformation_gradients()
+                                                                        const {
+    return deformation_gradients_;
+}
+const std::vector<Matrix3<double>>& Particles::get_kirchhoff_stresses() const {
+    return kirchhoff_stresses_;
 }
 
 void Particles::set_position(int index, const Vector3<double>& position) {
@@ -70,6 +106,33 @@ void Particles::set_deformation_gradient(int index,
 void Particles::set_kirchhoff_stress(int index,
                                      const Matrix3<double>& kirchhoff_stress) {
     kirchhoff_stresses_[index] = kirchhoff_stress;
+}
+
+void Particles::set_positions(const std::vector<Vector3<double>>& positions) {
+    positions_ = positions;
+}
+
+void Particles::set_velocities(const std::vector<Vector3<double>>& velocities) {
+    velocities_ = velocities;
+}
+
+void Particles::set_masses(const std::vector<double>& masses) {
+    masses_ = masses;
+}
+
+void Particles::set_reference_volumes(const std::vector<double>&
+                                        reference_volumes) {
+    reference_volumes_ = reference_volumes;
+}
+
+void Particles::set_deformation_gradients(const std::vector<Matrix3<double>>&
+                                deformation_gradients) {
+    deformation_gradients_ = deformation_gradients;
+}
+
+void Particles::set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
+                            kirchhoff_stresses) {
+    kirchhoff_stresses_ = kirchhoff_stresses;
 }
 
 void Particles::AddParticle(const Vector3<double>& position,
