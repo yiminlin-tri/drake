@@ -13,9 +13,9 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
     // A temporary array storing the particle index permutation after sorting
     std::vector<size_t> sorted_indices(num_particles);
     // A temporary array storing the batch index correspond to each particle
-    std::vector<int> batch_indices(num_particles); 
-    batch_sizes_.resize(grid.get_num_gridpt()); // Initialize batch_size to be
-                                                // 0 for every batch
+    std::vector<int> batch_indices(num_particles);
+    batch_sizes_.resize(grid.get_num_gridpt());  // Initialize batch_size to be
+                                                 // 0 for every batch
 
     // Preallocate the indices of batches
     for (int p = 0; p < num_particles; ++p) {
