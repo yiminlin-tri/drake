@@ -57,6 +57,8 @@ class Particles {
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
 
+    void Reorder(const std::vector<size_t>& new_order);
+
     void AddParticle(const Vector3<double>& position,
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,

@@ -28,7 +28,7 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // order are in a reversed lexiographical ordering.
     Vector3<int> num_grid_pt_1D, bottom_corner;
     double h;
-    int num_grid_pt, pc;
+    int num_grid_pt, num_particles, pc;
     Grid grid;
     Particles particles;
 
@@ -37,9 +37,10 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     bottom_corner = Vector3<int>(-1, -1, -1);
 
     grid = Grid(num_grid_pt_1D, h, bottom_corner);
-    particles = Particles(27);
-    EXPECT_EQ(particles.get_num_particles(), 27);
-    MPMTransfer mpm_transfer = MPMTransfer(grid, particles);
+    num_particles = 27;
+    particles = Particles(num_particles);
+    EXPECT_EQ(particles.get_num_particles(), num_particles);
+    MPMTransfer mpm_transfer = MPMTransfer();
     num_grid_pt = grid.get_num_gridpt();
 
     EXPECT_EQ(num_grid_pt, 27);
@@ -97,7 +98,8 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // Check batches have the correct starting indices
     for (int i = 0; i < num_grid_pt; ++i) {
         EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), i);
-        EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 1);
+        EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 1);
     }
 
     // Next, construct a new set of particles, which contains particles
@@ -109,8 +111,9 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // and the number of particles in the batch shall look like:
     // (0, 0, ..., 3, 0, 0, ...)
     // this mainly tests the functionality of start indices
-    particles = Particles(3);
-    mpm_transfer = MPMTransfer(grid, particles);
+    num_particles = 3;
+    particles = Particles(num_particles);
+    mpm_transfer = MPMTransfer();
     num_grid_pt = grid.get_num_gridpt();
     particles.set_position(0, Vector3<double>(-0.5, 0.5, -0.5));
     particles.set_position(1, Vector3<double>(0.5, 0.5, 0.5));
@@ -120,13 +123,16 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // Check batches have the correct starting indices
     for (int i = 0; i < num_grid_pt; ++i) {
         if (i == 13) {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 3);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 3);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), 0);
         } else if (i < 13) {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 0);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 0);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), 0);
         } else {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 0);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 0);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), 3);
         }
     }
@@ -138,8 +144,9 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // (0, 1, ..., 13, 17, 18, ...)
     // and the number of particles in the batch shall look like:
     // (1, 1, ..., 4, 1, 1, ...)
-    particles = Particles(30);
-    mpm_transfer = MPMTransfer(grid, particles);
+    num_particles = 30;
+    particles = Particles(num_particles);
+    mpm_transfer = MPMTransfer();
     num_grid_pt = grid.get_num_gridpt();
 
     particles.set_position(0, Vector3<double>(-0.5, 0.5, -0.5));
@@ -176,13 +183,16 @@ GTEST_TEST(MPMTransferTest, MPMTransferSortParticlesTest) {
     // Check batches have the correct starting indices
     for (int i = 0; i < num_grid_pt; ++i) {
         if (i == 13) {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 4);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 4);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), 13);
         } else if (i < 13) {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 1);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 1);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), i);
         } else {
-            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i), 1);
+            EXPECT_EQ(mpm_transfer.get_num_particles_in_batch(i, num_grid_pt,
+                                                             num_particles), 1);
             EXPECT_EQ(mpm_transfer.get_batch_starting_index(i), i+3);
         }
     }

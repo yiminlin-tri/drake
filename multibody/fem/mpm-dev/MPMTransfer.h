@@ -16,10 +16,9 @@ namespace mpm {
 // operations
 class MPMTransfer {
  public:
-    explicit MPMTransfer(const Grid& grid, const Particles& particles);
+    MPMTransfer() {}
 
-    // TODO(yiminlin.tri): Put it here until final refactor. Currently it is
-    // user's responsibility to call SortParticles before every iterations.
+    // TODO(yiminlin.tri): Make it private
     // Sort the particles according to the batch number, in increasing order.
     // As below shown, o denotes the grid points, $ denotes the batch centered
     // around the grid point. # of batch = # of grid points
@@ -52,14 +51,18 @@ class MPMTransfer {
     // points.
     void SortParticles(const Grid& grid, Particles* particles);
 
+    // TODO(yiminlin.tri): Make it private
     int get_batch_starting_index(int batch_number) const;
 
-    int get_num_particles_in_batch(int batch_number) const;
+    // TODO(yiminlin.tri): Make it private
+    int get_num_particles_in_batch(int batch_number, int num_batches,
+                                                     int num_particles) const;
 
  private:
-    int num_batches_;
-    int num_particles_;
-    std::vector<BSpline> bases_{};
+    // Given the position of a particle xp, calculate the index of the batch
+    // this particle is in.
+    const Vector3<int>& CalcBatchIndex(const Vector3<double>& xp, double h)
+                                                                        const;
     // The starting particle index of every batch. For example,
     // batch_starting_index_ = [0, 5, 6, 10] implies batches 0, 1, 2, 3
     // contains 5, 1, 4, #particles-10 particles.

@@ -135,6 +135,31 @@ void Particles::set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
     kirchhoff_stresses_ = kirchhoff_stresses;
 }
 
+void Particles::Reorder(const std::vector<size_t>& new_order) {
+    int p_new;
+    std::vector<Vector3<double>> positions_sorted(num_particles_);
+    std::vector<Vector3<double>> velocities_sorted(num_particles_);
+    std::vector<double> masses_sorted(num_particles_);
+    std::vector<double> reference_volumes_sorted(num_particles_);
+    std::vector<Matrix3<double>> deformation_gradients_sorted(num_particles_);
+    std::vector<Matrix3<double>> kirchhoff_stresses_sorted(num_particles_);
+    for (int p = 0; p < num_particles_; ++p) {
+        p_new = new_order[p];
+        positions_sorted[p]             = positions_[p_new];
+        velocities_sorted[p]            = velocities_[p_new];
+        masses_sorted[p]                = masses_[p_new];
+        reference_volumes_sorted[p]     = reference_volumes_[p_new];
+        deformation_gradients_sorted[p] = deformation_gradients_[p_new];
+        kirchhoff_stresses_sorted[p]    = kirchhoff_stresses_[p_new];
+    }
+    positions_             = positions_sorted;
+    velocities_            = velocities_sorted;
+    masses_                = masses_sorted;
+    reference_volumes_     = reference_volumes_sorted;
+    deformation_gradients_ = deformation_gradients_sorted;
+    kirchhoff_stresses_    = kirchhoff_stresses_sorted;
+}
+
 void Particles::AddParticle(const Vector3<double>& position,
                             const Vector3<double>& velocity,
                             double mass, double reference_volume,
