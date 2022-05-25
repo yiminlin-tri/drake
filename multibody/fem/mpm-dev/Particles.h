@@ -57,6 +57,7 @@ class Particles {
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
 
+    // TODO(yiminlin.tri): in place sorting
     void Reorder(const std::vector<size_t>& new_order);
 
     void AddParticle(const Vector3<double>& position,

@@ -152,12 +152,12 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
         deformation_gradients_sorted[p] = deformation_gradients_[p_new];
         kirchhoff_stresses_sorted[p]    = kirchhoff_stresses_[p_new];
     }
-    positions_             = positions_sorted;
-    velocities_            = velocities_sorted;
-    masses_                = masses_sorted;
-    reference_volumes_     = reference_volumes_sorted;
-    deformation_gradients_ = deformation_gradients_sorted;
-    kirchhoff_stresses_    = kirchhoff_stresses_sorted;
+    positions_.swap(positions_sorted);
+    velocities_.swap(velocities_sorted);
+    masses_.swap(masses_sorted);
+    reference_volumes_.swap(reference_volumes_sorted);
+    deformation_gradients_.swap(deformation_gradients_sorted);
+    kirchhoff_stresses_.swap(kirchhoff_stresses_sorted);
 }
 
 void Particles::AddParticle(const Vector3<double>& position,
