@@ -61,15 +61,15 @@ class Grid {
     void set_mass(int i, int j, int k, double mass);
     void set_force(int i, int j, int k, const Vector3<double>& force);
 
- private:
     // Reduce an 3D (i, j, k) index in the index space to a corresponding
     // linear lexiographical ordered index
     int Reduce3DIndex(int i, int j, int k) const;
 
     // DEBUG mode: check the passed in (i, j, k) lies within the index range of
     // this Grid
-    void check_3D_index(int i, int j, int k) const;
+    void in_index_range(int i, int j, int k) const;
 
+ private:
     int num_gridpt_;
     Vector3<int> num_gridpt_1D_;              // Number of grid points on the
                                               // grid along x, y, z directions

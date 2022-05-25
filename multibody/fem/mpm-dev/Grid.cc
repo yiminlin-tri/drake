@@ -51,59 +51,68 @@ const Vector3<int>& Grid::get_bottom_corner() const {
 }
 
 const Vector3<double>& Grid::get_position(int i, int j, int k) const {
-    check_3D_index(i, j, k);
-    return positions_[Reduce3DIndex(i, j, k)];
+    if (in_index_range(i, j, k)) {
+        return positions_[Reduce3DIndex(i, j, k)];
+    }
 }
 
 const Vector3<double>& Grid::get_velocity(int i, int j, int k) const {
-    check_3D_index(i, j, k);
-    return velocities_[Reduce3DIndex(i, j, k)];
+    if (in_index_range(i, j, k)) {
+        return velocities_[Reduce3DIndex(i, j, k)];
+    }
 }
 
 double Grid::get_mass(int i, int j, int k) const {
-    check_3D_index(i, j, k);
-    return masses_[Reduce3DIndex(i, j, k)];
+    if (in_index_range(i, j, k)) {
+        return masses_[Reduce3DIndex(i, j, k)];
+    }
 }
 
 const Vector3<double>& Grid::get_force(int i, int j, int k) const {
-    check_3D_index(i, j, k);
-    return forces_[Reduce3DIndex(i, j, k)];
+    if (in_index_range(i, j, k)) {
+        return forces_[Reduce3DIndex(i, j, k)];
+    }
 }
 
 void Grid::set_position(int i, int j, int k, const Vector3<double>& position) {
-    check_3D_index(i, j, k);
-    positions_[Reduce3DIndex(i, j, k)] = position;
+    if (in_index_range(i, j, k)) {
+        positions_[Reduce3DIndex(i, j, k)] = position;
+    }
 }
 
 void Grid::set_velocity(int i, int j, int k, const Vector3<double>& velocity) {
-    check_3D_index(i, j, k);
-    velocities_[Reduce3DIndex(i, j, k)] = velocity;
+    if (in_index_range(i, j, k)) {
+        velocities_[Reduce3DIndex(i, j, k)] = velocity;
+    }
 }
 
 void Grid::set_mass(int i, int j, int k, double mass) {
-    check_3D_index(i, j, k);
-    masses_[Reduce3DIndex(i, j, k)] = mass;
+    if (in_index_range(i, j, k)) {
+        masses_[Reduce3DIndex(i, j, k)] = mass;
+    }
 }
 
 void Grid::set_force(int i, int j, int k, const Vector3<double>& force) {
-    check_3D_index(i, j, k);
-    forces_[Reduce3DIndex(i, j, k)] = force;
+    if (in_index_range(i, j, k)) {
+        forces_[Reduce3DIndex(i, j, k)] = force;
+    }
 }
 
 int Grid::Reduce3DIndex(int i, int j, int k) const {
-    check_3D_index(i, j, k);
-    return (k-bottom_corner_(2))*(num_gridpt_1D_(0)*num_gridpt_1D_(1))
-         + (j-bottom_corner_(1))*num_gridpt_1D_(0)
-         + (i-bottom_corner_(0));
+    if (in_index_range(i, j, k)) {
+        return (k-bottom_corner_(2))*(num_gridpt_1D_(0)*num_gridpt_1D_(1))
+            + (j-bottom_corner_(1))*num_gridpt_1D_(0)
+            + (i-bottom_corner_(0));
+    }
 }
 
-void Grid::check_3D_index(int i, int j, int k) const {
-    DRAKE_ASSERT(i < bottom_corner_(0) + num_gridpt_1D_(0));
-    DRAKE_ASSERT(j < bottom_corner_(1) + num_gridpt_1D_(1));
-    DRAKE_ASSERT(k < bottom_corner_(2) + num_gridpt_1D_(2));
-    DRAKE_ASSERT(i >= bottom_corner_(0));
-    DRAKE_ASSERT(j >= bottom_corner_(1));
-    DRAKE_ASSERT(k >= bottom_corner_(2));
+bool Grid::in_index_range(int i, int j, int k) const {
+    return ((i < bottom_corner_(0) + num_gridpt_1D_(0)) &&
+            (j < bottom_corner_(1) + num_gridpt_1D_(1)) &&
+            (k < bottom_corner_(2) + num_gridpt_1D_(2)) &&
+            (i >= bottom_corner_(0)) &&
+            (j >= bottom_corner_(1)) &&
+            (k >= bottom_corner_(2)));
 }
 
 }  // namespace mpm
