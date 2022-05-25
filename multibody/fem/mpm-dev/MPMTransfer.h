@@ -54,6 +54,12 @@ class MPMTransfer {
     // Given the particles information, accumulate vectors bases_val_particles
     // and bases_grad_particles.
     void UpdateBasisAndGradientParticles(const Particles& particles);
+
+    // TODO(yiminlin.tri): temporary routine for testing, to be deleted in
+    // future PRs
+    const std::vector<std::array<double, 27>>> get_bases_val_particles() const;
+    const std::vector<std::array<Vector3<double>, 27>>>
+                                              get_bases_grad_particles() const;
  
  private:
     std::vector<BSpline> bases_;
