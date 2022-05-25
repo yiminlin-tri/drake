@@ -67,7 +67,7 @@ class Grid {
 
     // DEBUG mode: check the passed in (i, j, k) lies within the index range of
     // this Grid
-    void in_index_range(int i, int j, int k) const;
+    bool in_index_range(int i, int j, int k) const;
 
  private:
     int num_gridpt_;
