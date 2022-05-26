@@ -258,14 +258,14 @@ class MPMTransferTest : public ::testing::Test {
         MPMTransfer mpm_transfer = MPMTransfer();
 
         // Set particles' positions to be on grid points
-        pc = 0;
+        pc = num_particles;
         for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2);
                                                                         ++k) {
         for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1);
                                                                         ++j) {
         for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0);
                                                                         ++i) {
-            particles.set_position(pc++, grid.get_position(i, j, k));
+            particles.set_position(--pc, grid.get_position(i, j, k));
         }
         }
         }

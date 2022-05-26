@@ -41,11 +41,8 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
 
 void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
                                                   const Particles& particles) {
-    int num_gridpt, num_particles, p_start, p_end, count, idx_local, bi, bj, bk;
+    int num_gridpt, num_particles, p_start, p_end, count;
     double h;
-    Vector3<int> batch_index;
-    Vector3<double> xp;
-    BSpline basis;
     num_gridpt = grid.get_num_gridpt();
     Vector3<int> num_gridpt_1D = grid.get_num_gridpt_1D();
     Vector3<int> bottom_corner = grid.get_bottom_corner();
@@ -73,31 +70,39 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
 
     // For each batch of particles
     p_start = 0;
-    for (int b = 0; b < num_gridpt; ++b) {
-        batch_index = grid.Expand1DIndex(b);
-        bi = batch_index(0);
-        bj = batch_index(1);
-        bk = batch_index(2);
-        p_end = p_start + batch_sizes_[b];
-        // For each basis functions correspond to the current batch
-        for (int k = bk - 1; k <= bk + 1; ++k) {
-        for (int j = bj - 1; j <= bj + 1; ++j) {
-        for (int i = bi - 1; i <= bi + 1; ++i) {
-        if (grid.in_index_range(i, j, k)) {
-            idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
-            // For each particle in the batch (Assume particles are sorted with
-            // respect to the batch index), update basis evaluations
-            for (int p = p_start; p < p_end; ++p) {
-                std::tie(bases_val_particles_[p][idx_local],
-                         bases_grad_particles_[p][idx_local]) =
-                bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(
-                                                    particles.get_position(p));
-            }
-        }
-        }
-        }
+    for (const auto& [batch_index_flat, batch_index_3d] : grid.GetIndices()) {
+        p_end = p_start + batch_sizes_[batch_index_flat];
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), update basis evaluations
+        for (int p = p_start; p < p_end; ++p) {
+            const Vector3<double>& xp = particles.get_position(p);
+            EvalBasisOnBatch(p, xp, grid, batch_index_3d, bases);
         }
         p_start = p_end;
+    }
+}
+
+void MPMTransfer::EvalBasisOnBatch(int p, const Vector3<double>& xp,
+                                   const Grid& grid,
+                                   const Vector3<int>& batch_index_3d,
+                                   const std::vector<BSpline>& bases) {
+    int bi = batch_index_3d[0];
+    int bj = batch_index_3d[1];
+    int bk = batch_index_3d[2];
+    int idx_local;
+    for (int k = bk - 1; k <= bk + 1; ++k) {
+    for (int j = bj - 1; j <= bj + 1; ++j) {
+    for (int i = bi - 1; i <= bi + 1; ++i) {
+    if (grid.in_index_range(i, j, k)) {
+        idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), update basis evaluations
+        std::tie(bases_val_particles_[p][idx_local],
+                 bases_grad_particles_[p][idx_local]) =
+        bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(xp);
+    }
+    }
+    }
     }
 }
 

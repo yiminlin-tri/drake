@@ -96,7 +96,7 @@ GTEST_TEST(GridClassTest, TestSetGet) {
                                 Vector3<double>(0.0, 2.0, 0.0), kEps));
 }
 
-GTEST_TEST(GridClassTest, TestIndexUtil) {
+GTEST_TEST(GridClassTest, TestExpand1DIndex) {
     int count;
     Vector3<int> num_gridpt_1D = {6, 3, 4};
     double h = 1.0;
@@ -132,6 +132,21 @@ GTEST_TEST(GridClassTest, TestIndexUtil) {
     }
 }
 
+GTEST_TEST(GridClassTest, TestGetIndices) {
+    int count;
+    Vector3<int> num_gridpt_1D = {6, 3, 4};
+    double h = 1.0;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+
+    // Check expand 1D index
+    count = 0;
+    for (const auto& [index_flat, index_3d] : grid.GetIndices()) {
+        EXPECT_EQ(count++, index_flat);
+        EXPECT_TRUE(CompareMatrices(index_3d,
+                                    grid.Expand1DIndex(index_flat), kEps));
+    }
+}
 
 
 }  // namespace

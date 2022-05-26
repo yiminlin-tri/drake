@@ -104,6 +104,14 @@ Vector3<int> Grid::Expand1DIndex(int idx) const {
             bottom_corner_(2) + idx / (num_gridpt_1D_(0)*num_gridpt_1D_(1)));
 }
 
+std::vector<std::pair<int, Vector3<int>>> Grid::GetIndices() const {
+    std::vector<std::pair<int, Vector3<int>>> indices(num_gridpt_);
+    for (int i = 0; i < num_gridpt_; ++i) {
+        indices[i] = {i, Expand1DIndex(i)};
+    }
+    return indices;
+}
+
 bool Grid::in_index_range(int i, int j, int k) const {
     return ((i < bottom_corner_(0) + num_gridpt_1D_(0)) &&
             (j < bottom_corner_(1) + num_gridpt_1D_(1)) &&
