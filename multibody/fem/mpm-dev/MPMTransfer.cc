@@ -70,7 +70,7 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
 
     // For each batch of particles
     p_start = 0;
-    for (const auto& [batch_index_flat, batch_index_3d] : grid.GetIndices()) {
+    for (const auto& [batch_index_flat, batch_index_3d] : grid.get_indices()) {
         p_end = p_start + batch_sizes_[batch_index_flat];
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), update basis evaluations
@@ -100,6 +100,8 @@ void MPMTransfer::EvalBasisOnBatch(int p, const Vector3<double>& xp,
         std::tie(bases_val_particles_[p][idx_local],
                  bases_grad_particles_[p][idx_local]) =
         bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(xp);
+    } else {
+        throw std::logic_error("Particles out of bound");
     }
     }
     }

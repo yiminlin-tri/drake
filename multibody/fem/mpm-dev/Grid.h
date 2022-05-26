@@ -56,6 +56,7 @@ class Grid {
     const Vector3<double>& get_velocity(int i, int j, int k) const;
     double get_mass(int i, int j, int k) const;
     const Vector3<double>& get_force(int i, int j, int k) const;
+    const std::vector<std::pair<int, Vector3<int>>>& get_indices() const;
 
     void set_position(int i, int j, int k, const Vector3<double>& position);
     void set_velocity(int i, int j, int k, const Vector3<double>& velocity);
@@ -70,10 +71,6 @@ class Grid {
     // in the index space
     Vector3<int> Expand1DIndex(int idx) const;
 
-    // Get the vector of 1D and 3D indices of grid points, ordered
-    // lexiographically
-    const std::vector<std::pair<int, Vector3<int>>>& GetIndices() const;
-
     // Check the passed in (i, j, k) lies within the index range of this Grid
     bool in_index_range(int i, int j, int k) const;
 
@@ -84,6 +81,7 @@ class Grid {
     double h_;
     Vector3<int> bottom_corner_{};
 
+    // The vector of 1D and 3D indices of grid points, ordered lexiographically
     std::vector<std::pair<int, Vector3<int>>> indices_{};
     std::vector<Vector3<double>> positions_{};
     std::vector<Vector3<double>> velocities_{};

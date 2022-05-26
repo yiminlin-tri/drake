@@ -106,7 +106,7 @@ Vector3<int> Grid::Expand1DIndex(int idx) const {
             bottom_corner_(2) + idx / (num_gridpt_1D_(0)*num_gridpt_1D_(1)));
 }
 
-const std::vector<std::pair<int, Vector3<int>>>& Grid::GetIndices() const {
+const std::vector<std::pair<int, Vector3<int>>>& Grid::get_indices() const {
     return indices_;
 }
 

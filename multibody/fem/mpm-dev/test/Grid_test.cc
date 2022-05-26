@@ -141,7 +141,7 @@ GTEST_TEST(GridClassTest, TestGetIndices) {
 
     // Check expand 1D index
     count = 0;
-    for (const auto& [index_flat, index_3d] : grid.GetIndices()) {
+    for (const auto& [index_flat, index_3d] : grid.get_indices()) {
         EXPECT_EQ(count++, index_flat);
         EXPECT_TRUE(CompareMatrices(index_3d,
                                     grid.Expand1DIndex(index_flat), kEps));
