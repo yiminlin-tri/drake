@@ -22,9 +22,18 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
     // corresponding grid point, we call it the batch index
 
     // Pseudocode
+    int idx_current = 0;
     for (int b = 0; b < num_gridpt; ++b) {
         bi, bk, bk = batch_indices3D[b];
-        
+        for (int p = idx_current; p < idx_current + batch_sizes_[b]; ++p) {
+            for (int k = bk - 1; k <= bk + 1; ++k) {
+            for (int j = bj - 1; j <= bj + 1; ++j) {
+            for (int i = bi - 1; i <= bi + 1; ++i) {
+
+            }
+            }
+            }
+        }
     }
 
 
