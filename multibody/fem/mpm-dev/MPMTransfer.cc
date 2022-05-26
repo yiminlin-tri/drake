@@ -4,6 +4,11 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
+void MPMTransfer::SetUpTransfer(const Grid& grid, Particles* particles) {
+    SortParticles(grid, particles);
+    UpdateBasisAndGradientParticles(grid, *particles);
+}
+
 // TODO(yiminlin.tri): We assume particles all lies in the grid
 // Also may be a good idea to remove this routine's dependency on the grid,
 // this need future refactoring
@@ -36,7 +41,7 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
 
 void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
                                                   const Particles& particles) {
-    int num_gridpt, p_start, p_end, count, idx_local, bi, bj, bk;
+    int num_gridpt, num_particles, p_start, p_end, count, idx_local, bi, bj, bk;
     double h;
     Vector3<int> batch_index;
     Vector3<double> xp;
@@ -46,7 +51,11 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
     Vector3<int> bottom_corner = grid.get_bottom_corner();
     std::vector<BSpline> bases(num_gridpt);
     num_gridpt = grid.get_num_gridpt();
+    num_particles = particles.get_num_particles();
     h = grid.get_h();
+
+    bases_val_particles_.reserve(num_particles);
+    bases_grad_particles_.reserve(num_particles);
 
     // Define the bases vector, whose ith entry is the BSpline basis correspond
     // to ith BSpline basis.
@@ -57,14 +66,12 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
                                                                         ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0) + num_gridpt_1D(0);
                                                                         ++i) {
-        bases[count] = BSpline(h, grid.get_position(i, j, k));
-        ++count;
+        bases[count++] = BSpline(h, grid.get_position(i, j, k));
     }
     }
     }
 
-    // For each particle (Assume particles are sorted with respect to the batch
-    // index)
+    // For each batch of particles
     p_start = 0;
     for (int b = 0; b < num_gridpt; ++b) {
         batch_index = grid.Expand1DIndex(b);
@@ -72,22 +79,23 @@ void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
         bj = batch_index(1);
         bk = batch_index(2);
         p_end = p_start + batch_sizes_[b];
-        for (int p = p_start; p < p_start+batch_sizes_[b]; ++p) {
-            xp = particles.get_position(p);
-            // For each basis functions whose support contain the current
-            // particle
-            for (int k = bk - 1; k <= bk + 1; ++k) {
-            for (int j = bj - 1; j <= bj + 1; ++j) {
-            for (int i = bi - 1; i <= bi + 1; ++i) {
-            if (grid.in_index_range(i, j, k)) {
-                idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+        // For each basis functions correspond to the current batch
+        for (int k = bk - 1; k <= bk + 1; ++k) {
+        for (int j = bj - 1; j <= bj + 1; ++j) {
+        for (int i = bi - 1; i <= bi + 1; ++i) {
+        if (grid.in_index_range(i, j, k)) {
+            idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+            // For each particle in the batch (Assume particles are sorted with
+            // respect to the batch index), update basis evaluations
+            for (int p = p_start; p < p_end; ++p) {
                 std::tie(bases_val_particles_[p][idx_local],
                          bases_grad_particles_[p][idx_local]) =
-                bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(xp);
+                bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(
+                                                    particles.get_position(p));
             }
-            }
-            }
-            }
+        }
+        }
+        }
         }
         p_start = p_end;
     }

@@ -20,6 +20,8 @@ class MPMTransfer {
  public:
     MPMTransfer() {}
 
+    void SetUpTransfer(const Grid& grid, Particles* particles);
+
  private:
     friend class MPMTransferTest;
     // Sort the particles according to the batch number, in increasing order.

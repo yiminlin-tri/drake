@@ -245,6 +245,8 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |   |   |
         // o - o - o - o - o
         int pc;
+        double sum_val;
+        Vector3<double> xp, sum_gradient;
         std::vector<std::array<double, 27>> bases_val_particles;
         std::vector<std::array<Vector3<double>, 27>> bases_grad_particles;
         int h = 1.0;
@@ -268,13 +270,30 @@ class MPMTransferTest : public ::testing::Test {
         }
         }
 
-        // Sort the particles and set up the batches
-        mpm_transfer.SortParticles(grid, &particles);
+        // Sort the particles and set up the batches and preallocate basis
+        // evaluations
+        mpm_transfer.SetUpTransfer(grid, &particles);
 
-        // Preallocate basis evaluations
-        mpm_transfer.UpdateBasisAndGradientParticles(grid, particles);
-
-        for (int p = 0; p < num_particles; ++p) { }
+        // The particles are sorted, and for the particle located at the
+        // "center" of the grid (the middle 3x3x3 cube), all bases that cover
+        // the particle shall have evaluations sum to 1, and gradients sum to
+        // 0, by the partition of unity property.
+        for (int p = 0; p < num_particles; ++p) {
+            EXPECT_EQ(mpm_transfer.bases_val_particles_[p][13], 0.75*0.75*0.75);
+            xp = particles.get_position(p);
+            if (std::abs(xp(0)) <= 1.0 && std::abs(xp(1)) <= 1.0
+                                       && std::abs(xp(2)) <= 1.0) {
+                sum_val = 0.0;
+                sum_gradient = {0.0, 0.0, 0.0};
+                for (int i = 0; i < 27; ++i) {
+                    sum_val += mpm_transfer.bases_val_particles_[p][i];
+                    sum_gradient += mpm_transfer.bases_grad_particles_[p][i];
+                }
+                EXPECT_EQ(sum_val, 1.0);
+                EXPECT_TRUE(CompareMatrices(sum_gradient,
+                                            Vector3<double>::Zero(), kEps));
+            }
+        }
     }
 };
 
@@ -283,6 +302,7 @@ namespace {
 TEST_F(MPMTransferTest, SortParticlesTest) {
     CheckSort1();
     CheckSort2();
+    checkPreallocation();
 }
 
 }  // namespace
