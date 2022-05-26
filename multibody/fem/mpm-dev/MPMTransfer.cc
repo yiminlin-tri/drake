@@ -22,7 +22,7 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
         batch_idx_3D = CalcBatchIndex(particles->get_position(p), grid.get_h());
         batch_indices[p] = grid.Reduce3DIndex(batch_idx_3D(0), batch_idx_3D(1),
                                               batch_idx_3D(2));
-        batch_sizes_[batch_indices[p]] = batch_sizes_[batch_indices[p]] + 1;
+        ++batch_sizes_[batch_indices[p]];
     }
 
     std::iota(sorted_indices.begin(), sorted_indices.end(), 0);

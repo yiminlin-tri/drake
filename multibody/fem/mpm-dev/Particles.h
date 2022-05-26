@@ -18,9 +18,6 @@ class Particles {
     // Note that we didn't overload get_position: get_positions for getting
     // the whole vector
     const Vector3<double>& get_position(int index) const;
-    double get_position_x(int index) const;
-    double get_position_y(int index) const;
-    double get_position_z(int index) const;
     const Vector3<double>& get_velocity(int index) const;
     const double& get_mass(int index) const;
     const double& get_reference_volume(int index) const;
@@ -58,6 +55,10 @@ class Particles {
                                 kirchhoff_stresses);
 
     // TODO(yiminlin.tri): in place sorting
+    // Permute all states in the Particles with respect to the index set
+    // new_order. e.g. given new_order = [3; 1; 2], and the original
+    // particle states are denoted by [p1; p2; p3]. The new particles states
+    // after calling Reorder will be [p3; p1; p2]
     void Reorder(const std::vector<size_t>& new_order);
 
     void AddParticle(const Vector3<double>& position,

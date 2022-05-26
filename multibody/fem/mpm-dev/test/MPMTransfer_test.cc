@@ -15,7 +15,7 @@ class MPMTransferTest : public ::testing::Test {
     void SetUp() { }
 
     void CheckSort1() {
-        // First, construct a 2x2x2 grid centered at (0.0, 0.0, 0.0), with
+        // First, construct a 3x3x3 grid centered at (0.0, 0.0, 0.0), with
         // h = 2:
         //         o - o - o
         //         |   |   |
@@ -101,12 +101,9 @@ class MPMTransferTest : public ::testing::Test {
     }
 
     void CheckSort2() {
-        // A more comprehensive test, where we combine particles in above two
-        // cases together:
-        // The batch_starting_index_ shall look like:
-        //            i=13
-        // (0, 1, ..., 13, 17, 18, ...)
-        // and the number of particles in the batch shall look like:
+        // A more comprehensive test, where we add three particles in the batch
+        // centered at (0, 0, 0) to the particles constructed in CheckSort1:
+        // The number of particles in the batch shall look like:
         // (1, 1, ..., 4, 1, 1, ...)
         Vector3<int> num_grid_pt_1D, bottom_corner;
         double h;
@@ -175,6 +172,53 @@ class MPMTransferTest : public ::testing::Test {
                 EXPECT_EQ(mpm_transfer.batch_sizes_[i], 4);
             } else {
                 EXPECT_EQ(mpm_transfer.batch_sizes_[i], 1);
+            }
+        }
+    }
+
+    void CheckSort3() {
+        // A test with the same grid case 1 and 2, and we add a particle to
+        // batches centered at (0, 0, 0), (1, 1, 1), and (-1, -1, -1).
+        // The number of particles in the batch shall look like:
+        // i=0           i=13          i=26
+        // (1, 0, ..., 0, 1, 0, ..., 0, 1)
+        Vector3<int> num_grid_pt_1D, bottom_corner;
+        double h;
+        int num_grid_pt, num_particles;
+
+        num_grid_pt_1D = Vector3<int>(3, 3, 3);
+        h = 2.0;
+        bottom_corner = Vector3<int>(-1, -1, -1);
+
+        num_particles = 9;
+        Grid grid = Grid(num_grid_pt_1D, h, bottom_corner);
+        Particles particles = Particles(num_particles);
+        MPMTransfer mpm_transfer = MPMTransfer();
+        num_grid_pt = grid.get_num_gridpt();
+
+        particles.set_position(0, Vector3<double>(1.5, 1.5, 1.5));
+        particles.set_position(1, Vector3<double>(-1.5, -1.5, -1.5));
+        particles.set_position(2, Vector3<double>(-0.5, 0.5, -0.5));
+
+        // Sanity check
+        mpm_transfer.SortParticles(grid, &particles);
+
+        // Check sorting
+        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+                                    Vector3<double>(-1.5, -1.5, -1.5),
+                                    std::numeric_limits<double>::epsilon()));
+        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+                                    Vector3<double>(-0.5, 0.5, -0.5),
+                                    std::numeric_limits<double>::epsilon()));
+        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+                                    Vector3<double>(1.5, 1.5, 1.5),
+                                    std::numeric_limits<double>::epsilon()));
+
+        for (int i = 0; i < num_grid_pt; ++i) {
+            if (i == 0 || i == 13 || i == 26) {
+                EXPECT_EQ(mpm_transfer.batch_sizes_[i], 1);
+            } else {
+                EXPECT_EQ(mpm_transfer.batch_sizes_[i], 0);
             }
         }
     }
