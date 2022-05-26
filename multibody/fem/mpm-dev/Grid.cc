@@ -98,9 +98,10 @@ int Grid::Reduce3DIndex(int i, int j, int k) const {
 }
 
 Vector3<int> Grid::Expand1DIndex(int idx) const {
-    return Vector3<int>(idx % num_gridpt_1D_(0),
-                        (idx / num_gridpt_1D_(0)) % num_gridpt_1D_(1),
-                        idx % (num_gridpt_1D_(0)*num_gridpt_1D_(1)));
+    return Vector3<int>(
+            bottom_corner_(0) + idx % num_gridpt_1D_(0),
+            bottom_corner_(1) + (idx / num_gridpt_1D_(0)) % num_gridpt_1D_(1),
+            bottom_corner_(2) + idx / (num_gridpt_1D_(0)*num_gridpt_1D_(1)));
 }
 
 bool Grid::in_index_range(int i, int j, int k) const {
