@@ -72,7 +72,7 @@ class Grid {
 
     // Get the vector of 1D and 3D indices of grid points, ordered
     // lexiographically
-    std::vector<std::pair<int, Vector3<int>>> GetIndices() const;
+    const std::vector<std::pair<int, Vector3<int>>>& GetIndices() const;
 
     // Check the passed in (i, j, k) lies within the index range of this Grid
     bool in_index_range(int i, int j, int k) const;
@@ -84,6 +84,7 @@ class Grid {
     double h_;
     Vector3<int> bottom_corner_{};
 
+    std::vector<std::pair<int, Vector3<int>>> indices_{};
     std::vector<Vector3<double>> positions_{};
     std::vector<Vector3<double>> velocities_{};
     std::vector<double> masses_{};

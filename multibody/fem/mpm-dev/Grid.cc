@@ -15,6 +15,7 @@ Grid::Grid(const Vector3<int>& num_gridpt_1D, double h,
     DRAKE_ASSERT(num_gridpt_1D_(2) >= 0);
     DRAKE_ASSERT(h_ > 0.0);
 
+    indices_ = std::vector<std::pair<int, Vector3<int>>>(num_gridpt_);
     positions_ = std::vector<Vector3<double>>(num_gridpt_);
     velocities_ = std::vector<Vector3<double>>(num_gridpt_);
     masses_ = std::vector<double>(num_gridpt_);
@@ -28,6 +29,7 @@ Grid::Grid(const Vector3<int>& num_gridpt_1D, double h,
     for (int i = bottom_corner_(0);
              i < bottom_corner_(0) + num_gridpt_1D_(0); ++i) {
         idx = Reduce3DIndex(i, j, k);
+        indices_[idx] = std::pair<int, Vector3<int>>(idx, {i, j, k});
         positions_[idx] = Vector3<double>{h_*i, h_*j, h_*k};
     }
     }
@@ -104,12 +106,8 @@ Vector3<int> Grid::Expand1DIndex(int idx) const {
             bottom_corner_(2) + idx / (num_gridpt_1D_(0)*num_gridpt_1D_(1)));
 }
 
-std::vector<std::pair<int, Vector3<int>>> Grid::GetIndices() const {
-    std::vector<std::pair<int, Vector3<int>>> indices(num_gridpt_);
-    for (int i = 0; i < num_gridpt_; ++i) {
-        indices[i] = {i, Expand1DIndex(i)};
-    }
-    return indices;
+const std::vector<std::pair<int, Vector3<int>>>& Grid::GetIndices() const {
+    return indices_;
 }
 
 bool Grid::in_index_range(int i, int j, int k) const {
