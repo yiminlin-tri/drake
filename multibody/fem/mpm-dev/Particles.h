@@ -56,9 +56,10 @@ class Particles {
 
     // TODO(yiminlin.tri): in place sorting
     // Permute all states in the Particles with respect to the index set
-    // new_order. e.g. given new_order = [3; 1; 2], and the original
-    // particle states are denoted by [p1; p2; p3]. The new particles states
-    // after calling Reorder will be [p3; p1; p2]
+    // new_order. e.g. given new_order = [2; 0; 1], and the original
+    // particle states are denoted by [p0; p1; p2]. The new particles states
+    // after calling Reorder will be [p2; p0; p1]
+    // @pre new_order is a permutation of [0, ..., new_order.size()-1]
     void Reorder(const std::vector<size_t>& new_order);
 
     void AddParticle(const Vector3<double>& position,

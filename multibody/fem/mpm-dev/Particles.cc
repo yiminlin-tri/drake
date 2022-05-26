@@ -124,8 +124,7 @@ void Particles::set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
 }
 
 void Particles::Reorder(const std::vector<size_t>& new_order) {
-    size_t num_particles = num_particles_;
-    DRAKE_DEMAND(new_order.size() == num_particles);
+    DRAKE_DEMAND(static_cast<int>(new_order.size()) == num_particles_);
     int p_new;
     std::vector<Vector3<double>> positions_sorted(num_particles_);
     std::vector<Vector3<double>> velocities_sorted(num_particles_);
