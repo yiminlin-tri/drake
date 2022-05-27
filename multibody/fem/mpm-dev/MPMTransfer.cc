@@ -9,6 +9,39 @@ void MPMTransfer::SetUpTransfer(const Grid& grid, Particles* particles) {
     UpdateBasisAndGradientParticles(grid, *particles);
 }
 
+void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
+                                          Grid* grid) {
+    int p_start, p_end;
+    double mass_p, ref_volume_p;
+    Vector3<int> batch_index;
+    Vector3<double> momentum_p;
+    Matrix3<double> tau_p;
+
+    // Clear particles states
+    grid->ClearStates();
+
+    // For each batch of particles
+    p_start = 0;
+    for (const auto& [batch_index_flat, batch_index_3d] : grid->get_indices()) {
+        p_end = p_start + batch_sizes_[batch_index_flat];
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), accmulate masses, momemtum, and forces
+        // into grid points affected by the particle.
+        for (int p = p_start; p < p_end; ++p) {
+            mass_p = particles.get_mass(p);
+            ref_volume_p = particles.get_reference_volume(p);
+            momentum_p = mass_p*particles.get_velocity(p);
+            tau_p = particles.get_kirchhoff_stress(p);
+            AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p, momentum_p,
+                                        tau_p, batch_index_3d, grid);
+        }
+        p_start = p_end;
+    }
+
+    // Calculate grid velocities v_i by (mv)_i / m_i
+    grid->RescaleVelocities();
+}
+
 // TODO(yiminlin.tri): We assume particles all lies in the grid
 // Also may be a good idea to remove this routine's dependency on the grid,
 // this need future refactoring
@@ -41,13 +74,11 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
 
 void MPMTransfer::UpdateBasisAndGradientParticles(const Grid& grid,
                                                   const Particles& particles) {
-    int num_gridpt, num_particles, p_start, p_end, count;
+    int num_particles, p_start, p_end, count;
     double h;
-    num_gridpt = grid.get_num_gridpt();
     Vector3<int> num_gridpt_1D = grid.get_num_gridpt_1D();
     Vector3<int> bottom_corner = grid.get_bottom_corner();
-    std::vector<BSpline> bases(num_gridpt);
-    num_gridpt = grid.get_num_gridpt();
+    std::vector<BSpline> bases(grid.get_num_gridpt());
     num_particles = particles.get_num_particles();
     h = grid.get_h();
 
@@ -100,6 +131,36 @@ void MPMTransfer::EvalBasisOnBatch(int p, const Vector3<double>& xp,
         std::tie(bases_val_particles_[p][idx_local],
                  bases_grad_particles_[p][idx_local]) =
         bases[grid.Reduce3DIndex(i, j, k)].EvalBasisAndGradient(xp);
+    } else {
+        throw std::logic_error("Particles out of bound");
+    }
+    }
+    }
+    }
+}
+
+void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p, double V0_p,
+                                        const Vector3<double>& mv_p,
+                                        const Matrix3<double>& tau_p,
+                                        const Vector3<int>& batch_index_3d,
+                                        Grid* grid) {
+    int bi = batch_index_3d[0];
+    int bj = batch_index_3d[1];
+    int bk = batch_index_3d[2];
+    int idx_local;
+    double Ni_p;
+    for (int k = bk - 1; k <= bk + 1; ++k) {
+    for (int j = bj - 1; j <= bj + 1; ++j) {
+    for (int i = bi - 1; i <= bi + 1; ++i) {
+    if (grid->in_index_range(i, j, k)) {
+        idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+        Ni_p = bases_val_particles_[p][idx_local];
+        Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), update basis evaluations
+        grid->AccumulateMass(i, j, k, m_p*Ni_p);
+        grid->AccumulateVelocity(i, j, k, mv_p*Ni_p);
+        grid->AccumulateForce(i, j, k, -V0_p*tau_p*gradNi_p);
     } else {
         throw std::logic_error("Particles out of bound");
     }
