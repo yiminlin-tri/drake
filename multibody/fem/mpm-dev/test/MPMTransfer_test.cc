@@ -9,6 +9,7 @@ namespace multibody {
 namespace mpm {
 
 constexpr double kEps = 4.0 * std::numeric_limits<double>::epsilon();
+constexpr double TOLERANCE = 1e-10;
 
 class MPMTransferTest : public ::testing::Test {
  protected:
@@ -291,6 +292,199 @@ class MPMTransferTest : public ::testing::Test {
                                         Vector3<double>::Zero(), kEps));
         }
     }
+
+    void checkP2G_1() {
+        // Construct a grid of 5x5x5 on [-2,2]^3, and place 27 particles
+        // on the centering 3x3x3 grid points.
+        //                 -2  -1  0   1   2
+        //                 o - o - o - o - o
+        //                 |   |   |   |   |
+        //             o - o - o - o - o - o
+        //             |   |   |   |   |   |
+        //         o - o - o - o - o - o - o
+        //         |   |   |   |   |   |   |
+        //     o - o - o - o - o - o - o - o
+        //     |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o
+        // |   |   |   |omentum|
+        // o - o - o - o - o
+        int pc;
+        double sum_mass1, sum_mass2;
+        Vector3<double> sum_momentum1, sum_momentum2;
+        int h = 1.0;
+        Vector3<int> num_gridpt_1D = { 5,  5,  5};
+        Vector3<int> bottom_corner = {-2, -2, -2};
+        Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+        int num_particles = 27;
+        Particles particles = Particles(num_particles);
+        MPMTransfer mpm_transfer = MPMTransfer();
+
+        // Set particles' positions to be on grid points
+        sum_mass1 = 0.0;
+        sum_momentum1 = {0.0, 0.0, 0.0};
+        pc = num_particles;
+        for (int k = bottom_corner(2)+1;
+                 k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
+        for (int j = bottom_corner(1)+1;
+                 j < bottom_corner(1)+num_gridpt_1D(1)-1; ++j) {
+        for (int i = bottom_corner(0)+1;
+                 i < bottom_corner(0)+num_gridpt_1D(0)-1; ++i) {
+            --pc;
+            particles.set_position(pc, grid.get_position(i, j, k));
+            particles.set_mass(pc, pc+0.1);
+            sum_mass1 += pc+0.1;
+            particles.set_reference_volume(pc, 2*pc+0.1);
+            particles.set_velocity(pc, Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc));
+            sum_momentum1 += (pc+0.1)*Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
+            particles.set_kirchhoff_stress(pc, pc*Matrix3<double>::Identity());
+        }
+        }
+        }
+
+        // Sort the particles and set up the batches and preallocate basis
+        // evaluations
+        mpm_transfer.SetUpTransfer(grid, &particles);
+
+        // Transfer particles' information to grid
+        mpm_transfer.TransferParticlesToGrid(particles, &grid);
+        sum_mass2 = 0.0;
+        sum_momentum2 = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            sum_mass2 += grid.get_mass(i, j, k);
+            sum_momentum2 += grid.get_mass(i, j, k)*grid.get_velocity(i, j, k);
+        }
+        }
+        }
+
+        // Verify the conservation of mass and momentum
+        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum1-sum_momentum2,
+                                    Vector3<double>::Zero(),
+                                    TOLERANCE));
+    }
+
+    void checkP2G_2() {
+        // Construct a grid of 5x5x5 on [-2,2]^3, and place 27 particles
+        // on the centering 3x3x3 grid points, then add 3 particles inside
+        // the grid
+        //                 -2  -1  0   1   2
+        //                 o - o - o - o - o
+        //                 |   |   |   |   |
+        //             o - o - o - o - o - o
+        //             |   |   |   |   |   |
+        //         o - o - o - o - o - o - o
+        //         |   |   |   |   |   |   |
+        //     o - o - o - o - o - o - o - o
+        //     |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o - o
+        // |   |   |   |   |   |   |
+        // o - o - o - o - o - o - o
+        // |   |   |   |omentum|
+        // o - o - o - o - o
+        int pc;
+        double sum_mass1, sum_mass2;
+        Vector3<double> sum_momentum1, sum_momentum2;
+        int h = 1.0;
+        Vector3<int> num_gridpt_1D = { 5,  5,  5};
+        Vector3<int> bottom_corner = {-2, -2, -2};
+        Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+        int num_particles = 27;
+        Particles particles = Particles(num_particles);
+        MPMTransfer mpm_transfer = MPMTransfer();
+
+        // Set particles' positions to be on grid points
+        pc = num_particles;
+        sum_mass1 = 0.0;
+        sum_momentum1 = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2)+1;
+                 k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
+        for (int j = bottom_corner(1)+1;
+                 j < bottom_corner(1)+num_gridpt_1D(1)-1; ++j) {
+        for (int i = bottom_corner(0)+1;
+                 i < bottom_corner(0)+num_gridpt_1D(0)-1; ++i) {
+            --pc;
+            particles.set_position(pc, grid.get_position(i, j, k));
+            particles.set_mass(pc, pc+0.1);
+            sum_mass1 += pc+0.1;
+            particles.set_reference_volume(pc, 2*pc+0.1);
+            particles.set_velocity(pc, Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc));
+            sum_momentum1 += (pc+0.1)*Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
+            particles.set_kirchhoff_stress(pc, pc*Matrix3<double>::Identity());
+        }
+        }
+        }
+
+        // Add more particles
+        Vector3<double> pos1 = {0.2, 0.1, 0.3};
+        Vector3<double> vel1 = {-1.0, -2.0, -3.0};
+        double mass1 = 5.0;
+        double vol1  = 10.0;
+        Matrix3<double> F1 = pos1.asDiagonal();
+        Matrix3<double> stress1 = vel1.asDiagonal();
+
+        Vector3<double> pos2 = {0.3, -0.1, 0.6};
+        Vector3<double> vel2 = {-9.0, 8.0, -2.0};
+        double mass2 = 7.0;
+        double vol2  = 3.0;
+        Matrix3<double> F2 = pos2.asDiagonal();
+        Matrix3<double> stress2 = vel2.asDiagonal();
+
+        Vector3<double> pos3 = {0.2, -0.5, 0.3};
+        Vector3<double> vel3 = {2.0, -6.2, 8.0};
+        double mass3 = 2.0;
+        double vol3  = 12.0;
+        Matrix3<double> F3 = pos3.asDiagonal();
+        Matrix3<double> stress3 = vel3.asDiagonal();
+
+        particles.AddParticle(pos1, vel1, mass1, vol1, F1, stress1);
+        particles.AddParticle(pos2, vel2, mass2, vol2, F2, stress2);
+        particles.AddParticle(pos3, vel3, mass3, vol3, F3, stress3);
+
+        num_particles = particles.get_num_particles();
+        sum_mass1 += (mass1 + mass2 + mass3);
+        sum_momentum1 += (mass1*vel1 + mass2*vel2 + mass3*vel3);
+
+        // Sort the particles and set up the batches and preallocate basis
+        // evaluations
+        mpm_transfer.SetUpTransfer(grid, &particles);
+
+        // Transfer particles' information to grid
+        mpm_transfer.TransferParticlesToGrid(particles, &grid);
+        sum_mass2 = 0.0;
+        sum_momentum2 = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            sum_mass2 += grid.get_mass(i, j, k);
+            sum_momentum2 += grid.get_mass(i, j, k)*grid.get_velocity(i, j, k);
+        }
+        }
+        }
+
+        // Verify the conservation of mass and momentum
+        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum1-sum_momentum2,
+                                    Vector3<double>::Zero(),
+                                    TOLERANCE));
+    }
 };
 
 namespace {
@@ -302,6 +496,11 @@ TEST_F(MPMTransferTest, SortParticlesTest) {
 
 TEST_F(MPMTransferTest, SetUpTest) {
     checkPreallocation();
+}
+
+TEST_F(MPMTransferTest, P2GTest) {
+    checkP2G_1();
+    checkP2G_2();
 }
 
 }  // namespace
