@@ -13,9 +13,6 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
                                           Grid* grid) {
     int p_start, p_end;
     double mass_p, ref_volume_p;
-    Vector3<int> batch_index;
-    Vector3<double> momentum_p;
-    Matrix3<double> tau_p;
 
     // Clear particles states
     grid->ClearStates();
@@ -30,10 +27,10 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
         for (int p = p_start; p < p_end; ++p) {
             mass_p = particles.get_mass(p);
             ref_volume_p = particles.get_reference_volume(p);
-            momentum_p = mass_p*particles.get_velocity(p);
-            tau_p = particles.get_kirchhoff_stress(p);
-            AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p, momentum_p,
-                                        tau_p, batch_index_3d, grid);
+            AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
+                                        mass_p*particles.get_velocity(p),
+                                        particles.get_kirchhoff_stress(p),
+                                        batch_index_3d, grid);
         }
         p_start = p_end;
     }
