@@ -13,6 +13,10 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
                                           Grid* grid) {
     int p_start, p_end;
     double mass_p, ref_volume_p;
+    // Local sum of states m_i v_i f_i on the grid points
+    std::array<std::tuple<double,
+                          Vector3<double>,
+                          Vector3<double>>, 27> sum_local;
 
     // Clear particles states
     grid->ClearStates();
@@ -21,6 +25,14 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
     p_start = 0;
     for (const auto& [batch_index_flat, batch_index_3d] : grid->get_indices()) {
         p_end = p_start + batch_sizes_[batch_index_flat];
+
+        // Clear local scratch pad
+        for (auto& s : sum_local) {
+            std::get<0>(s) = 0.0;
+            std::get<1>(s) = Vector3<double>::Zero();
+            std::get<2>(s) = Vector3<double>::Zero();
+        }
+
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), accmulate masses, momemtum, and forces
         // into grid points affected by the particle.
@@ -30,8 +42,13 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
             AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
                                         mass_p*particles.get_velocity(p),
                                         particles.get_kirchhoff_stress(p),
-                                        batch_index_3d, grid);
+                                        batch_index_3d, *grid,
+                                        &sum_local);
         }
+
+        // Put sums of local scratch pads to grid
+        UpdateGridStatesOnBatch(batch_index_3d, sum_local, grid);
+
         p_start = p_end;
     }
 
@@ -137,29 +154,65 @@ void MPMTransfer::EvalBasisOnBatch(int p, const Vector3<double>& xp,
 }
 
 void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p, double V0_p,
-                                        const Vector3<double>& mv_p,
-                                        const Matrix3<double>& tau_p,
-                                        const Vector3<int>& batch_index_3d,
-                                        Grid* grid) {
+                                const Vector3<double>& mv_p,
+                                const Matrix3<double>& tau_p,
+                                const Vector3<int>& batch_index_3d,
+                                const Grid& grid,
+                                std::array<
+                                  std::tuple<double,
+                                             Vector3<double>,
+                                             Vector3<double>>, 27>* sum_local) {
+    // Local sum of states m_i v_i f_i on the grid points
     int bi = batch_index_3d[0];
     int bj = batch_index_3d[1];
     int bk = batch_index_3d[2];
     int idx_local;
     double Ni_p;
+
+    // Accumulate on local scratch pads
     for (int k = bk - 1; k <= bk + 1; ++k) {
     for (int j = bj - 1; j <= bj + 1; ++j) {
     for (int i = bi - 1; i <= bi + 1; ++i) {
-    if (grid->in_index_range(i, j, k)) {
+    if (grid.in_index_range(i, j, k)) {
         idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
         Ni_p = bases_val_particles_[p][idx_local];
         Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), update basis evaluations
-        grid->AccumulateMass(i, j, k, m_p*Ni_p);
-        grid->AccumulateVelocity(i, j, k, mv_p*Ni_p);
-        grid->AccumulateForce(i, j, k, -V0_p*tau_p*gradNi_p);
+        std::tuple<double, Vector3<double>, Vector3<double>>& state_i =
+                                                        (*sum_local)[idx_local];
+        std::get<0>(state_i) += m_p*Ni_p;
+        std::get<1>(state_i) += mv_p*Ni_p;
+        std::get<2>(state_i) += -V0_p*tau_p*gradNi_p;
     } else {
         throw std::logic_error("Particles out of bound");
+    }
+    }
+    }
+    }
+}
+
+void MPMTransfer::UpdateGridStatesOnBatch(const Vector3<int>& batch_index_3d,
+                           const std::array<std::tuple<double,
+                                            Vector3<double>,
+                                            Vector3<double>>, 27>& sum_local,
+                                          Grid* grid) {
+    int bi = batch_index_3d[0];
+    int bj = batch_index_3d[1];
+    int bk = batch_index_3d[2];
+    int idx_local;
+
+    // Put local scratch pad states into the grid
+    for (int k = bk - 1; k <= bk + 1; ++k) {
+    for (int j = bj - 1; j <= bj + 1; ++j) {
+    for (int i = bi - 1; i <= bi + 1; ++i) {
+    if (grid->in_index_range(i, j, k)) {
+        idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+        const std::tuple<double, Vector3<double>, Vector3<double>>& state_i =
+                                                        sum_local[idx_local];
+        grid->AccumulateMass(i, j, k, std::get<0>(state_i));
+        grid->AccumulateVelocity(i, j, k, std::get<1>(state_i));
+        grid->AccumulateForce(i, j, k, std::get<2>(state_i));
     }
     }
     }
