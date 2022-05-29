@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <numeric>
 #include <tuple>
 #include <vector>
@@ -30,6 +31,11 @@ class MPMTransfer {
     // Transfer masses, velocities, and Kirchhoff stresses on the particles
     // to masses, velocities, and forces on the grid
     void TransferParticlesToGrid(const Particles& particles, Grid* grid);
+
+    // Transfer velocities on the grids to velocities and deformation
+    // gradients on the particles
+    void TransferGridToParticles(const Grid& grid, double dt,
+                                 Particles* particles);
 
  private:
     friend class MPMTransferTest;
@@ -93,7 +99,16 @@ class MPMTransfer {
                            const std::array<std::tuple<double,
                                             Vector3<double>,
                                             Vector3<double>>, 27>& sum_local,
-                                 Grid* grid);
+                                            Grid* grid);
+
+    // Update particle states F_p^{n+1} and v_p^{n+1}
+    void UpdateParticleStates(const std::array<Vector3<double>, 27>&
+                                                            batch_velocities,
+                              const Vector3<int>& batch_index_3d,
+                              double dt, int p,
+                              EigenPtr<Vector3<double>> vp_new,
+                              EigenPtr<Matrix3<double>> F_scale,
+                              const Grid& grid, Particles* particles);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
