@@ -612,7 +612,7 @@ TEST_F(MPMTransferTest, SetUpTest) {
 
 TEST_F(MPMTransferTest, P2GTest) {
     checkP2GForce();
-    checkP2GMassVelocity2();
+    checkP2GMassVelocity1();
     checkP2GMassVelocity2();
 }
 
