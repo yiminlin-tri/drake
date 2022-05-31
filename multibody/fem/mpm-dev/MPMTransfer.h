@@ -132,8 +132,7 @@ class MPMTransfer {
                               double dt, int p,
                               EigenPtr<Vector3<double>> vp_new,
                               EigenPtr<Matrix3<double>> F_scale,
-                              const Grid& grid,
-                              const std::unique_ptr<Particles>& particles);
+                              Particles* particles);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
