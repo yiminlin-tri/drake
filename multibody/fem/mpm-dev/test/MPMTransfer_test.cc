@@ -594,6 +594,97 @@ class MPMTransferTest : public ::testing::Test {
                                     TOLERANCE));
     }
 
+    void checkG2PMassVelocity1() {
+        double sum_mass1, sum_mass2;
+        Vector3<double> sum_momentum1, sum_momentum2;
+        double dt = 0.0;
+
+        // First setup particles and grid using P2G
+        checkP2GMassVelocity1();
+        Vector3<int> bottom_corner = grid_->get_bottom_corner();
+        Vector3<int> num_gridpt_1D = grid_->get_num_gridpt_1D();
+        int num_particles = particles_->get_num_particles();
+
+        // Then we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
+
+        // Particles' sum of mass and momentum
+        sum_mass1 = 0.0;
+        sum_momentum1 = {0.0, 0.0, 0.0};
+        for (int p = 0; p < num_particles; ++p) {
+            sum_mass1 += particles_->get_mass(p);
+            sum_momentum1 += particles_->get_mass(p)
+                            *particles_->get_velocity(p);
+        }
+
+        // Grid's sum of mass and momentum
+        sum_mass2 = 0.0;
+        sum_momentum2 = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            sum_mass2 += grid_->get_mass(i, j, k);
+            sum_momentum2 += grid_->get_mass(i, j, k)
+                            *grid_->get_velocity(i, j, k);
+        }
+        }
+        }
+
+        // Verify the conservation of mass and momentum
+        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
+        EXPECT_NEAR(sum_mass1, sum_mass2, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum1, sum_momentum2,
+                                    TOLERANCE));
+    }
+
+    void checkG2PMassVelocity2() {
+        double sum_mass1, sum_mass2;
+        Vector3<double> sum_momentum1, sum_momentum2;
+        double dt = 0.0;
+
+        // First setup particles and grid using P2G
+        checkP2GMassVelocity2();
+        Vector3<int> bottom_corner = grid_->get_bottom_corner();
+        Vector3<int> num_gridpt_1D = grid_->get_num_gridpt_1D();
+        int num_particles = particles_->get_num_particles();
+
+        // Then we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
+
+        // Particles' sum of mass and momentum
+        sum_mass1 = 0.0;
+        sum_momentum1 = {0.0, 0.0, 0.0};
+        for (int p = 0; p < num_particles; ++p) {
+            sum_mass1 += particles_->get_mass(p);
+            sum_momentum1 += particles_->get_mass(p)
+                            *particles_->get_velocity(p);
+        }
+
+        // Grid's sum of mass and momentum
+        sum_mass2 = 0.0;
+        sum_momentum2 = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            sum_mass2 += grid_->get_mass(i, j, k);
+            sum_momentum2 += grid_->get_mass(i, j, k)
+                            *grid_->get_velocity(i, j, k);
+        }
+        }
+        }
+
+        // Verify the conservation of mass and momentum
+        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum1, sum_momentum2,
+                                    TOLERANCE));
+    }
+
     std::unique_ptr<Particles> particles_;
     std::unique_ptr<Grid> grid_;
     std::unique_ptr<MPMTransfer> mpm_transfer_;
@@ -612,8 +703,13 @@ TEST_F(MPMTransferTest, SetUpTest) {
 
 TEST_F(MPMTransferTest, P2GTest) {
     checkP2GForce();
+    checkP2GMassVelocity1();
     checkP2GMassVelocity2();
-    checkP2GMassVelocity2();
+}
+
+TEST_F(MPMTransferTest, G2PTest) {
+    checkG2PMassVelocity1();
+    checkG2PMassVelocity2();
 }
 
 }  // namespace
