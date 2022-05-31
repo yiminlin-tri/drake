@@ -66,6 +66,7 @@ drake_cc_library(
         "Particles.h",
     ],
     deps = [
+        ":CorotatedModel",
         "//common:essential",
     ],
 )

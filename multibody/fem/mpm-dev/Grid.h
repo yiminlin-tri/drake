@@ -87,6 +87,15 @@ class Grid {
     // Check the passed in (i, j, k) lies within the index range of this Grid
     bool in_index_range(int i, int j, int k) const;
 
+    // Assume the explicit grid force at step n f^n is calculated and stored in
+    // the member variable, we update the velocity with the formula
+    // v^{n+1} = v^n + dt*f^n/m^n
+    void UpdateVelocity(double dt);
+    
+    // Enforce the slip boundary condition, where the normal component of
+    // grid velocities at boundaries are overwritted to be 0 (Dirichlet BC)
+    void EnforceSlipBoundaryCondition();
+
  private:
     int num_gridpt_;
     Vector3<int> num_gridpt_1D_;              // Number of grid points on the

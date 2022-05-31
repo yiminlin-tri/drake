@@ -147,6 +147,25 @@ bool Grid::in_index_range(int i, int j, int k) const {
             (k >= bottom_corner_(2)));
 }
 
+void Grid::UpdateVelocity(double dt) {
+    for (int i = 0; i < num_gridpt_; ++i) {
+        velocities_[i] += dt*forces_[i]/masses_[i];
+    }
+}
+
+void Grid::EnforceSlipBoundaryCondition() {
+    for (const auto& [index_flat, index_3d] : indices_) {
+        // For each dimension
+        for (int d = 0; d < 3; ++d) {
+            // If it is a wall, enforce slip BC
+            if ((index_3d(d) == bottom_corner(d))
+            || (index_3d(d) == bottom_corner(d) + num_gridpt_1D(d) - 1)) {
+                velocities_[idx_flat][d] = 0.0;
+            }
+        }
+    }
+}
+
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake
