@@ -34,6 +34,11 @@ class MPMTransfer {
     void TransferParticlesToGrid(const Particles& particles,
                                  const std::unique_ptr<Grid>& grid);
 
+    // Transfer velocities on the grids to velocities and deformation
+    // gradients on the particles
+    void TransferGridToParticles(const Grid& grid, double dt,
+                                 const std::unique_ptr<Particles>& particles);
+
  private:
     friend class MPMTransferTest;
 
@@ -108,6 +113,16 @@ class MPMTransfer {
     void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
                                const std::array<GridState, 27>& sum_local,
                                const std::unique_ptr<Grid>& grid);
+
+    // Update particle states F_p^{n+1} and v_p^{n+1}
+    void UpdateParticleStates(const std::array<Vector3<double>, 27>&
+                                                            batch_velocities,
+                              const Vector3<int>& batch_index_3d,
+                              double dt, int p,
+                              EigenPtr<Vector3<double>> vp_new,
+                              EigenPtr<Matrix3<double>> F_scale,
+                              const Grid& grid,
+                              const std::unique_ptr<Particles>& particles);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.

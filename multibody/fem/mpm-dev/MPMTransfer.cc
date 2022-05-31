@@ -51,6 +51,48 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
     grid->RescaleVelocities();
 }
 
+void MPMTransfer::TransferGridToParticles(const Grid& grid, double dt,
+                                const std::unique_ptr<Particles>& particles) {
+    int bi, bj, bk, idx_local;
+    int p_start, p_end;
+    // F^{n+1}_p = F_scale*F^n_p
+    Matrix3<double> F_scale;
+    Vector3<double> vp_new;
+    // A local array holding velocities v^{n+1}_i at a batch
+    std::array<Vector3<double>, 27> batch_velocities;
+
+    // For each batch of particles
+    p_start = 0;
+    for (const auto& [batch_index_flat, batch_index_3d] : grid.get_indices()) {
+        p_end = p_start + batch_sizes_[batch_index_flat];
+
+        // Preallocate velocities at grid points in the current batch on a local
+        // array
+        bi = batch_index_3d[0];
+        bj = batch_index_3d[1];
+        bk = batch_index_3d[2];
+        for (int k = bk - 1; k <= bk + 1; ++k) {
+        for (int j = bj - 1; j <= bj + 1; ++j) {
+        for (int i = bi - 1; i <= bi + 1; ++i) {
+        if (grid.in_index_range(i, j, k)) {
+            idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
+            batch_velocities[idx_local] = grid.get_velocity(i, j, k);
+        }
+        }
+        }
+        }
+
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), update the particles' states
+        for (int p = p_start; p < p_end; ++p) {
+            UpdateParticleStates(batch_velocities, batch_index_3d, dt, p,
+                                 &vp_new, &F_scale, grid, particles);
+        }
+
+        p_start = p_end;
+    }
+}
+
 // TODO(yiminlin.tri): We assume particles all lies in the grid
 // Also may be a good idea to remove this routine's dependency on the grid,
 // this need future refactoring
