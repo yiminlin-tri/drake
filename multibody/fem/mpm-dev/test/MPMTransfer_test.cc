@@ -39,8 +39,9 @@ class MPMTransferTest : public ::testing::Test {
 
         Grid grid = Grid(num_grid_pt_1D, h, bottom_corner);
         num_particles = 27;
-        Particles particles = Particles(num_particles);
-        EXPECT_EQ(particles.get_num_particles(), num_particles);
+        std::unique_ptr<Particles> particles =
+                                    std::make_unique<Particles>(num_particles);
+        EXPECT_EQ(particles->get_num_particles(), num_particles);
         MPMTransfer mpm_transfer = MPMTransfer();
         num_grid_pt = grid.get_num_gridpt();
 
@@ -55,44 +56,44 @@ class MPMTransferTest : public ::testing::Test {
                                                                         ++j) {
         for (int i = bottom_corner(0); i < bottom_corner(0)+num_grid_pt_1D(0);
                                                                         ++i) {
-            particles.set_position(--pc, grid.get_position(i, j, k));
+            particles->set_position(--pc, grid.get_position(i, j, k));
         }
         }
         }
 
         // Sanity check
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(2.0, 2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(1),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(1),
                                     Vector3<double>(0.0, 2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(8),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(8),
                                     Vector3<double>(-2.0, -2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(13),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(13),
                                     Vector3<double>(0.0, 0.0, 0.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(26),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(26),
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
 
         // Check particles in the correct ordering after sorting
-        mpm_transfer.SortParticles(grid, &particles);
+        mpm_transfer.SortParticles(grid, particles);
 
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(1),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(1),
                                     Vector3<double>(0.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(8),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(8),
                                     Vector3<double>(2.0, 2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(13),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(13),
                                     Vector3<double>(0.0, 0.0, 0.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(26),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(26),
                                     Vector3<double>(2.0, 2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
 
@@ -116,13 +117,14 @@ class MPMTransferTest : public ::testing::Test {
 
         num_particles = 30;
         Grid grid = Grid(num_grid_pt_1D, h, bottom_corner);
-        Particles particles = Particles(num_particles);
+        std::unique_ptr<Particles> particles =
+                                    std::make_unique<Particles>(num_particles);
         MPMTransfer mpm_transfer = MPMTransfer();
         num_grid_pt = grid.get_num_gridpt();
 
-        particles.set_position(0, Vector3<double>(-0.5, 0.5, -0.5));
-        particles.set_position(1, Vector3<double>(0.5, 0.5, 0.5));
-        particles.set_position(2, Vector3<double>(0.5, -0.5, 0.5));
+        particles->set_position(0, Vector3<double>(-0.5, 0.5, -0.5));
+        particles->set_position(1, Vector3<double>(0.5, 0.5, 0.5));
+        particles->set_position(2, Vector3<double>(0.5, -0.5, 0.5));
         pc = num_particles;
         for (int k = bottom_corner(2); k < bottom_corner(2)+num_grid_pt_1D(2);
                                                                         ++k) {
@@ -130,41 +132,41 @@ class MPMTransferTest : public ::testing::Test {
                                                                         ++j) {
         for (int i = bottom_corner(0); i < bottom_corner(0)+num_grid_pt_1D(0);
                                                                         ++i) {
-            particles.set_position(--pc, grid.get_position(i, j, k));
+            particles->set_position(--pc, grid.get_position(i, j, k));
         }
         }
         }
 
         // Sanity check
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-0.5, 0.5, -0.5),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(1),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(1),
                                     Vector3<double>(0.5, 0.5, 0.5),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(2),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(2),
                                     Vector3<double>(0.5, -0.5, 0.5),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(3),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(3),
                                     Vector3<double>(2.0, 2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(29),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(29),
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
 
-        mpm_transfer.SortParticles(grid, &particles);
+        mpm_transfer.SortParticles(grid, particles);
 
         // Check sorting
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(1),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(1),
                                     Vector3<double>(0.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(8),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(8),
                                     Vector3<double>(2.0, 2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(29),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(29),
                                     Vector3<double>(2.0, 2.0, 2.0),
                                     std::numeric_limits<double>::epsilon()));
 
@@ -193,25 +195,26 @@ class MPMTransferTest : public ::testing::Test {
 
         num_particles = 9;
         Grid grid = Grid(num_grid_pt_1D, h, bottom_corner);
-        Particles particles = Particles(num_particles);
+        std::unique_ptr<Particles> particles =
+                                    std::make_unique<Particles>(num_particles);
         MPMTransfer mpm_transfer = MPMTransfer();
         num_grid_pt = grid.get_num_gridpt();
 
-        particles.set_position(0, Vector3<double>(1.5, 1.5, 1.5));
-        particles.set_position(1, Vector3<double>(-1.5, -1.5, -1.5));
-        particles.set_position(2, Vector3<double>(-0.5, 0.5, -0.5));
+        particles->set_position(0, Vector3<double>(1.5, 1.5, 1.5));
+        particles->set_position(1, Vector3<double>(-1.5, -1.5, -1.5));
+        particles->set_position(2, Vector3<double>(-0.5, 0.5, -0.5));
 
         // Sanity check
-        mpm_transfer.SortParticles(grid, &particles);
+        mpm_transfer.SortParticles(grid, particles);
 
         // Check sorting
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-1.5, -1.5, -1.5),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-0.5, 0.5, -0.5),
                                     std::numeric_limits<double>::epsilon()));
-        EXPECT_TRUE(CompareMatrices(particles.get_position(0),
+        EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(1.5, 1.5, 1.5),
                                     std::numeric_limits<double>::epsilon()));
 
@@ -255,7 +258,8 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<int> bottom_corner = {-2, -2, -2};
         Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
         int num_particles = 27;
-        Particles particles = Particles(num_particles);
+        std::unique_ptr<Particles> particles =
+                                    std::make_unique<Particles>(num_particles);
         MPMTransfer mpm_transfer = MPMTransfer();
 
         // Set particles' positions to be on grid points
@@ -266,21 +270,21 @@ class MPMTransferTest : public ::testing::Test {
                  j < bottom_corner(1)+num_gridpt_1D(1)-1; ++j) {
         for (int i = bottom_corner(0)+1;
                  i < bottom_corner(0)+num_gridpt_1D(0)-1; ++i) {
-            particles.set_position(--pc, grid.get_position(i, j, k));
+            particles->set_position(--pc, grid.get_position(i, j, k));
         }
         }
         }
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
-        mpm_transfer.SetUpTransfer(grid, &particles);
+        mpm_transfer.SetUpTransfer(grid, particles);
 
         // The particles are sorted, and for all particles, all bases that cover
         // the particle shall have evaluations sum to 1, and gradients sum to
         // 0, by the partition of unity property.
         for (int p = 0; p < num_particles; ++p) {
             EXPECT_EQ(mpm_transfer.bases_val_particles_[p][13], 0.75*0.75*0.75);
-            xp = particles.get_position(p);
+            xp = particles->get_position(p);
             sum_val = 0.0;
             sum_gradient = {0.0, 0.0, 0.0};
             for (int i = 0; i < 27; ++i) {
@@ -293,7 +297,7 @@ class MPMTransferTest : public ::testing::Test {
         }
     }
 
-    void checkP2G_0() {
+    void checkP2GForce() {
         // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
         // at the center
         //        -2   0   2
@@ -313,9 +317,9 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<int> num_gridpt_1D = { 3,  3,  3};
         Vector3<int> bottom_corner = {-1, -1, -1};
         int num_particles = 1;
-        grid_ = new Grid(num_gridpt_1D, h, bottom_corner);
-        particles_ = new Particles(num_particles);
-        mpm_transfer_ = new MPMTransfer();
+        grid_ = std::make_unique<Grid>(num_gridpt_1D, h, bottom_corner);
+        particles_ = std::make_unique<Particles>(num_particles);
+        mpm_transfer_ = std::make_unique<MPMTransfer>();
 
         // Set particles' positions to be on grid points
         mass_p = 2.0;
@@ -350,9 +354,8 @@ class MPMTransferTest : public ::testing::Test {
         }
 
         // Verify the conservation of mass and momentum
-        EXPECT_TRUE(std::abs(mass_p-sum_mass_grid) < TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(momentum_p-sum_momentum_grid,
-                                    Vector3<double>::Zero(), TOLERANCE));
+        EXPECT_NEAR(mass_p, sum_mass_grid, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(momentum_p, sum_momentum_grid, TOLERANCE));
 
         // Test Force
         // At grid point (0, 0, 0), since the particle locates at this grid
@@ -382,7 +385,7 @@ class MPMTransferTest : public ::testing::Test {
         }
     }
 
-    void checkP2G_1() {
+    void checkP2GMassVelocity1() {
         // Construct a grid of 5x5x5 on [-2,2]^3, and place 27 particles
         // on the centering 3x3x3 grid points.
         //                 -2  -1  0   1   2
@@ -404,36 +407,42 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |   |   |
         // o - o - o - o - o
         int pc;
-        double sum_mass1, sum_mass2;
-        Vector3<double> sum_momentum1, sum_momentum2;
+        double sum_mass_particles, sum_mass_grid;
+        Vector3<double> sum_momentum_particles, sum_momentum_grid;
         int h = 1.0;
         Vector3<int> num_gridpt_1D = { 5,  5,  5};
         Vector3<int> bottom_corner = {-2, -2, -2};
         int num_particles = 27;
-        grid_ = new Grid(num_gridpt_1D, h, bottom_corner);
-        particles_ = new Particles(num_particles);
-        mpm_transfer_ = new MPMTransfer();
+        grid_ = std::make_unique<Grid>(num_gridpt_1D, h, bottom_corner);
+        particles_ = std::make_unique<Particles>(num_particles);
+        mpm_transfer_ = std::make_unique<MPMTransfer>();
 
         // Set particles' positions to be on grid points
-        sum_mass1 = 0.0;
-        sum_momentum1 = {0.0, 0.0, 0.0};
+        double dummy_mass, dummy_reference_volume;
+        Vector3<double> dummy_velocity, dummy_momentum;
+        Matrix3<double> dummy_tau;
         pc = num_particles;
+        sum_mass_particles = 0.0;
+        sum_momentum_particles = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2)+1;
                  k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
         for (int j = bottom_corner(1)+1;
                  j < bottom_corner(1)+num_gridpt_1D(1)-1; ++j) {
         for (int i = bottom_corner(0)+1;
                  i < bottom_corner(0)+num_gridpt_1D(0)-1; ++i) {
+            dummy_mass = pc+0.1;
+            dummy_reference_volume = 2*pc+0.1;
+            dummy_velocity = Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
+            dummy_momentum = dummy_mass*dummy_velocity;
+            dummy_tau = pc*Matrix3<double>::Identity();
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
-            particles_->set_mass(pc, pc+0.1);
-            sum_mass1 += pc+0.1;
-            particles_->set_reference_volume(pc, 2*pc+0.1);
-            particles_->set_velocity(pc,
-                                     Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc));
-            sum_momentum1 += (pc+0.1)*Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
-            particles_->set_kirchhoff_stress(pc,
-                                             pc*Matrix3<double>::Identity());
+            particles_->set_mass(pc, dummy_mass);
+            sum_mass_particles += dummy_mass;
+            particles_->set_reference_volume(pc, dummy_reference_volume);
+            particles_->set_velocity(pc, dummy_velocity);
+            sum_momentum_particles += dummy_momentum;
+            particles_->set_kirchhoff_stress(pc, dummy_tau);
         }
         }
         }
@@ -444,29 +453,28 @@ class MPMTransferTest : public ::testing::Test {
 
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
-        sum_mass2 = 0.0;
-        sum_momentum2 = {0.0, 0.0, 0.0};
+        sum_mass_grid = 0.0;
+        sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass2 += grid_->get_mass(i, j, k);
-            sum_momentum2 += grid_->get_mass(i, j, k)
-                            *grid_->get_velocity(i, j, k);
+            sum_mass_grid += grid_->get_mass(i, j, k);
+            sum_momentum_grid += grid_->get_mass(i, j, k)
+                                *grid_->get_velocity(i, j, k);
         }
         }
         }
 
         // Verify the conservation of mass and momentum
-        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum1-sum_momentum2,
-                                    Vector3<double>::Zero(),
+        EXPECT_NEAR(sum_mass_particles, sum_mass_grid, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum_particles, sum_momentum_grid,
                                     TOLERANCE));
     }
 
-    void checkP2G_2() {
+    void checkP2GMassVelocity2() {
         // Construct a grid of 5x5x5 on [-2,2]^3, and place 27 particles
         // on the centering 3x3x3 grid points, then add 3 particles inside
         // the grid
@@ -489,36 +497,42 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |   |   |
         // o - o - o - o - o
         int pc;
-        double sum_mass1, sum_mass2;
-        Vector3<double> sum_momentum1, sum_momentum2;
+        double sum_mass_particles, sum_mass_grid;
+        Vector3<double> sum_momentum_particles, sum_momentum_grid;
         int h = 1.0;
         Vector3<int> num_gridpt_1D = { 5,  5,  5};
         Vector3<int> bottom_corner = {-2, -2, -2};
         int num_particles = 27;
-        grid_ = new Grid(num_gridpt_1D, h, bottom_corner);
-        particles_ = new Particles(num_particles);
-        mpm_transfer_ = new MPMTransfer();
+        grid_ = std::make_unique<Grid>(num_gridpt_1D, h, bottom_corner);
+        particles_ = std::make_unique<Particles>(num_particles);
+        mpm_transfer_ = std::make_unique<MPMTransfer>();
 
         // Set particles' positions to be on grid points
+        double dummy_mass, dummy_reference_volume;
+        Vector3<double> dummy_velocity, dummy_momentum;
+        Matrix3<double> dummy_tau;
         pc = num_particles;
-        sum_mass1 = 0.0;
-        sum_momentum1 = {0.0, 0.0, 0.0};
+        sum_mass_particles = 0.0;
+        sum_momentum_particles = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2)+1;
                  k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
         for (int j = bottom_corner(1)+1;
                  j < bottom_corner(1)+num_gridpt_1D(1)-1; ++j) {
         for (int i = bottom_corner(0)+1;
                  i < bottom_corner(0)+num_gridpt_1D(0)-1; ++i) {
+            dummy_mass = pc+0.1;
+            dummy_reference_volume = 2*pc+0.1;
+            dummy_velocity = Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
+            dummy_momentum = dummy_mass*dummy_velocity;
+            dummy_tau = pc*Matrix3<double>::Identity();
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
-            particles_->set_mass(pc, pc+0.1);
-            sum_mass1 += pc+0.1;
-            particles_->set_reference_volume(pc, 2*pc+0.1);
-            particles_->set_velocity(pc,
-                                     Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc));
-            sum_momentum1 += (pc+0.1)*Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
-            particles_->set_kirchhoff_stress(pc,
-                                             pc*Matrix3<double>::Identity());
+            particles_->set_mass(pc, dummy_mass);
+            sum_mass_particles += dummy_mass;
+            particles_->set_reference_volume(pc, dummy_reference_volume);
+            particles_->set_velocity(pc, dummy_velocity);
+            sum_momentum_particles += dummy_momentum;
+            particles_->set_kirchhoff_stress(pc, dummy_tau);
         }
         }
         }
@@ -550,8 +564,8 @@ class MPMTransferTest : public ::testing::Test {
         particles_->AddParticle(pos3, vel3, mass3, vol3, F3, stress3);
 
         num_particles = particles_->get_num_particles();
-        sum_mass1 += (mass1 + mass2 + mass3);
-        sum_momentum1 += (mass1*vel1 + mass2*vel2 + mass3*vel3);
+        sum_mass_particles += (mass1 + mass2 + mass3);
+        sum_momentum_particles += (mass1*vel1 + mass2*vel2 + mass3*vel3);
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -559,31 +573,30 @@ class MPMTransferTest : public ::testing::Test {
 
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
-        sum_mass2 = 0.0;
-        sum_momentum2 = {0.0, 0.0, 0.0};
+        sum_mass_grid = 0.0;
+        sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass2 += grid_->get_mass(i, j, k);
-            sum_momentum2 += grid_->get_mass(i, j, k)
-                            *grid_->get_velocity(i, j, k);
+            sum_mass_grid += grid_->get_mass(i, j, k);
+            sum_momentum_grid += grid_->get_mass(i, j, k)
+                                *grid_->get_velocity(i, j, k);
         }
         }
         }
 
         // Verify the conservation of mass and momentum
-        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum1-sum_momentum2,
-                                    Vector3<double>::Zero(),
+        EXPECT_NEAR(sum_mass_particles, sum_mass_grid, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum_particles, sum_momentum_grid,
                                     TOLERANCE));
     }
 
-    Particles* particles_;
-    Grid* grid_;
-    MPMTransfer* mpm_transfer_;
+    std::unique_ptr<Particles> particles_;
+    std::unique_ptr<Grid> grid_;
+    std::unique_ptr<MPMTransfer> mpm_transfer_;
 };
 
 namespace {
@@ -598,18 +611,9 @@ TEST_F(MPMTransferTest, SetUpTest) {
 }
 
 TEST_F(MPMTransferTest, P2GTest) {
-    checkP2G_0();
-    delete particles_;
-    delete grid_;
-    delete mpm_transfer_;
-    checkP2G_1();
-    delete particles_;
-    delete grid_;
-    delete mpm_transfer_;
-    checkP2G_2();
-    delete particles_;
-    delete grid_;
-    delete mpm_transfer_;
+    checkP2GForce();
+    checkP2GMassVelocity2();
+    checkP2GMassVelocity2();
 }
 
 }  // namespace
