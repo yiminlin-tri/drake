@@ -37,7 +37,7 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
             AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
                                         mass_p*particles.get_velocity(p),
                                         particles.get_kirchhoff_stress(p),
-                                        batch_index_3d, &sum_local);
+                                        &sum_local);
         }
 
         // Put sums of local scratch pads to grid
@@ -152,23 +152,14 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
                                 double reference_volume_p,
                                 const Vector3<double>& mv_p,
                                 const Matrix3<double>& tau_p,
-                                const Vector3<int>& batch_index_3d,
                                 std::array<GridState, 27>* sum_local) {
-    // Local sum of states m_i v_i f_i on the grid points
-    int bi = batch_index_3d[0];
-    int bj = batch_index_3d[1];
-    int bk = batch_index_3d[2];
     int idx_local;
     double Ni_p;
-    Vector3<int> grid_index;
 
     // Accumulate on local scratch pads
     for (int a = -1; a <= 1; ++a) {
     for (int b = -1; b <= 1; ++b) {
     for (int c = -1; c <= 1; ++c) {
-        grid_index(0) = bi+a;
-        grid_index(1) = bj+b;
-        grid_index(2) = bk+c;
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         Ni_p = bases_val_particles_[p][idx_local];
         Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];

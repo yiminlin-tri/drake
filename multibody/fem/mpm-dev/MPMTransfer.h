@@ -98,7 +98,6 @@ class MPMTransfer {
                                      double reference_volume_p,
                                      const Vector3<double>& momentum_p,
                                      const Matrix3<double>& tau_p,
-                                     const Vector3<int>& batch_index_3d,
                                      std::array<GridState, 27>* sum_local);
 
     void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
