@@ -79,7 +79,7 @@ class MPMTransferTest : public ::testing::Test {
                                     std::numeric_limits<double>::epsilon()));
 
         // Check particles in the correct ordering after sorting
-        mpm_transfer.SortParticles(grid, particles);
+        mpm_transfer.SortParticles(grid, particles.get());
 
         EXPECT_TRUE(CompareMatrices(particles->get_position(0),
                                     Vector3<double>(-2.0, -2.0, -2.0),
@@ -154,7 +154,7 @@ class MPMTransferTest : public ::testing::Test {
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
 
-        mpm_transfer.SortParticles(grid, particles);
+        mpm_transfer.SortParticles(grid, particles.get());
 
         // Check sorting
         EXPECT_TRUE(CompareMatrices(particles->get_position(0),
@@ -205,7 +205,7 @@ class MPMTransferTest : public ::testing::Test {
         particles->set_position(2, Vector3<double>(-0.5, 0.5, -0.5));
 
         // Sanity check
-        mpm_transfer.SortParticles(grid, particles);
+        mpm_transfer.SortParticles(grid, particles.get());
 
         // Check sorting
         EXPECT_TRUE(CompareMatrices(particles->get_position(0),
@@ -277,7 +277,7 @@ class MPMTransferTest : public ::testing::Test {
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
-        mpm_transfer.SetUpTransfer(grid, particles);
+        mpm_transfer.SetUpTransfer(grid, particles.get());
 
         // The particles are sorted, and for all particles, all bases that cover
         // the particle shall have evaluations sum to 1, and gradients sum to
@@ -334,10 +334,10 @@ class MPMTransferTest : public ::testing::Test {
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
-        mpm_transfer_->SetUpTransfer(*grid_, particles_);
+        mpm_transfer_->SetUpTransfer(*grid_, particles_.get());
 
         // Transfer particles' information to grid
-        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
         sum_mass_grid = 0.0;
         sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
@@ -449,10 +449,10 @@ class MPMTransferTest : public ::testing::Test {
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
-        mpm_transfer_->SetUpTransfer(*grid_, particles_);
+        mpm_transfer_->SetUpTransfer(*grid_, particles_.get());
 
         // Transfer particles' information to grid
-        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
         sum_mass_grid = 0.0;
         sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
@@ -569,10 +569,10 @@ class MPMTransferTest : public ::testing::Test {
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
-        mpm_transfer_->SetUpTransfer(*grid_, particles_);
+        mpm_transfer_->SetUpTransfer(*grid_, particles_.get());
 
         // Transfer particles' information to grid
-        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
         sum_mass_grid = 0.0;
         sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);

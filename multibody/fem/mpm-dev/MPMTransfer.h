@@ -26,13 +26,11 @@ class MPMTransfer {
     // bases' evaluations for transfer routines. This routine has to be called
     // at the beginning of each time step (before P2G and G2P transfers),
     // otherwise the results will be incorrect.
-    void SetUpTransfer(const Grid& grid,
-                       const std::unique_ptr<Particles>& particles);
+    void SetUpTransfer(const Grid& grid, Particles* particles);
 
     // Transfer masses, velocities, and Kirchhoff stresses on the particles
     // to masses, velocities, and forces on the grid
-    void TransferParticlesToGrid(const Particles& particles,
-                                 const std::unique_ptr<Grid>& grid);
+    void TransferParticlesToGrid(const Particles& particles, Grid* grid);
 
  private:
     friend class MPMTransferTest;
@@ -79,8 +77,7 @@ class MPMTransfer {
     // o = = = o = = = o = = = o = = = o
     // The batches are ordered in a lexiographical ordering, similar to grid
     // points.
-    void SortParticles(const Grid& grid,
-                       const std::unique_ptr<Particles>& particles);
+    void SortParticles(const Grid& grid, Particles* particles);
 
     // Update the evalutions and gradients of BSpline bases on each particle,
     // and update bases_val_particles_ and bases_grad_particles_
@@ -102,16 +99,17 @@ class MPMTransfer {
                                      const Vector3<double>& momentum_p,
                                      const Matrix3<double>& tau_p,
                                      const Vector3<int>& batch_index_3d,
-                                     const Grid& grid,
                                      std::array<GridState, 27>* sum_local);
 
     void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
                                const std::array<GridState, 27>& sum_local,
-                               const std::unique_ptr<Grid>& grid);
+                               Grid* grid);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
     Vector3<int> CalcBatchIndex(const Vector3<double>& xp, double h) const;
+
+    void ThrowIfParticlesOutOfBound(const Grid& grid);
 
     // Evaluations and gradients of BSpline bases on each particle
     // i.e. N_i(x_p), \nabla N_i(x_p)

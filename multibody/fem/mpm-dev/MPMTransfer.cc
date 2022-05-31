@@ -4,14 +4,14 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-void MPMTransfer::SetUpTransfer(const Grid& grid,
-                                const std::unique_ptr<Particles>& particles) {
+void MPMTransfer::SetUpTransfer(const Grid& grid, Particles* particles) {
     SortParticles(grid, particles);
+    ThrowIfParticlesOutOfBound(grid);
     UpdateBasisAndGradientParticles(grid, *particles);
 }
 
 void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
-                                          const std::unique_ptr<Grid>& grid) {
+                                          Grid* grid) {
     int p_start, p_end;
     double mass_p, ref_volume_p;
     // Local sum of states m_i v_i f_i on the grid points
@@ -37,8 +37,7 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
             AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
                                         mass_p*particles.get_velocity(p),
                                         particles.get_kirchhoff_stress(p),
-                                        batch_index_3d, *grid,
-                                        &sum_local);
+                                        batch_index_3d, &sum_local);
         }
 
         // Put sums of local scratch pads to grid
@@ -54,8 +53,7 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
 // TODO(yiminlin.tri): We assume particles all lies in the grid
 // Also may be a good idea to remove this routine's dependency on the grid,
 // this need future refactoring
-void MPMTransfer::SortParticles(const Grid& grid,
-                                const std::unique_ptr<Particles>& particles) {
+void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
     Vector3<int> batch_idx_3D;
     int num_particles = particles->get_num_particles();
     // A temporary array storing the particle index permutation after sorting
@@ -139,16 +137,12 @@ void MPMTransfer::EvalBasisOnBatch(int p, const Vector3<double>& xp,
         grid_index(0) = bi+a;
         grid_index(1) = bj+b;
         grid_index(2) = bk+c;
-        if (grid.in_index_range(grid_index)) {
-            idx_local = (a+1) + 3*(b+1) + 9*(c+1);
-            // For each particle in the batch (Assume particles are sorted with
-            // respect to the batch index), update basis evaluations
-            std::tie(bases_val_particles_[p][idx_local],
-                    bases_grad_particles_[p][idx_local]) =
-            bases[grid.Reduce3DIndex(grid_index)].EvalBasisAndGradient(xp);
-        } else {
-            throw std::logic_error("Particles out of bound");
-        }
+        idx_local = (a+1) + 3*(b+1) + 9*(c+1);
+        // For each particle in the batch (Assume particles are sorted with
+        // respect to the batch index), update basis evaluations
+        std::tie(bases_val_particles_[p][idx_local],
+                bases_grad_particles_[p][idx_local]) =
+        bases[grid.Reduce3DIndex(grid_index)].EvalBasisAndGradient(xp);
     }
     }
     }
@@ -159,7 +153,6 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
                                 const Vector3<double>& mv_p,
                                 const Matrix3<double>& tau_p,
                                 const Vector3<int>& batch_index_3d,
-                                const Grid& grid,
                                 std::array<GridState, 27>* sum_local) {
     // Local sum of states m_i v_i f_i on the grid points
     int bi = batch_index_3d[0];
@@ -173,10 +166,9 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
     for (int a = -1; a <= 1; ++a) {
     for (int b = -1; b <= 1; ++b) {
     for (int c = -1; c <= 1; ++c) {
-    grid_index(0) = bi+a;
-    grid_index(1) = bj+b;
-    grid_index(2) = bk+c;
-    if (grid.in_index_range(grid_index)) {
+        grid_index(0) = bi+a;
+        grid_index(1) = bj+b;
+        grid_index(2) = bk+c;
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         Ni_p = bases_val_particles_[p][idx_local];
         Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
@@ -186,9 +178,6 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
         state_i.mass += m_p*Ni_p;
         state_i.velocity += mv_p*Ni_p;
         state_i.force += -reference_volume_p*tau_p*gradNi_p;
-    } else {
-        throw std::logic_error("Particles out of bound");
-    }
     }
     }
     }
@@ -196,7 +185,7 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
 
 void MPMTransfer::WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
                                 const std::array<GridState, 27>& sum_local,
-                                const std::unique_ptr<Grid>& grid) {
+                                Grid* grid) {
     int bi = batch_index_3d[0];
     int bj = batch_index_3d[1];
     int bk = batch_index_3d[2];
@@ -207,16 +196,14 @@ void MPMTransfer::WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
     for (int a = -1; a <= 1; ++a) {
     for (int b = -1; b <= 1; ++b) {
     for (int c = -1; c <= 1; ++c) {
-    grid_index(0) = bi+a;
-    grid_index(1) = bj+b;
-    grid_index(2) = bk+c;
-    if (grid->in_index_range(grid_index)) {
+        grid_index(0) = bi+a;
+        grid_index(1) = bj+b;
+        grid_index(2) = bk+c;
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         const GridState& state_i = sum_local[idx_local];
         grid->AccumulateMass(grid_index, state_i.mass);
         grid->AccumulateVelocity(grid_index, state_i.velocity);
         grid->AccumulateForce(grid_index, state_i.force);
-    }
     }
     }
     }
@@ -226,6 +213,25 @@ Vector3<int> MPMTransfer::CalcBatchIndex(const Vector3<double>& xp, double h)
                                                                         const {
     return Vector3<int>(std::round(xp(0)/h), std::round(xp(1)/h),
                         std::round(xp(2)/h));
+}
+
+void MPMTransfer::ThrowIfParticlesOutOfBound(const Grid& grid) {
+    // For each batch of particles
+    for (const auto& [batch_index_flat, batch_index_3d] : grid.get_indices()) {
+        if (batch_sizes_[batch_index_flat] > 0) {
+            // Throw error if we detect an invalid grid point
+            for (int a = -1; a <= 1; ++a) {
+            for (int b = -1; b <= 1; ++b) {
+            for (int c = -1; c <= 1; ++c) {
+            if (!grid.in_index_range(batch_index_3d[0]+a, batch_index_3d[1]+b,
+                                     batch_index_3d[2]+c)) {
+                throw std::logic_error("Particles out of bound");
+            }
+            }
+            }
+            }
+        }
+    }
 }
 
 }  // namespace mpm
