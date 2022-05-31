@@ -37,7 +37,7 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
             AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
                                         mass_p*particles.get_velocity(p),
                                         particles.get_kirchhoff_stress(p),
-                                        batch_index_3d, &sum_local);
+                                        &sum_local);
         }
 
         // Put sums of local scratch pads to grid
@@ -51,7 +51,7 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
 }
 
 void MPMTransfer::TransferGridToParticles(const Grid& grid, double dt,
-                                const std::unique_ptr<Particles>& particles) {
+                                          Particles* particles) {
     int bi, bj, bk, idx_local;
     int p_start, p_end;
     // F^{n+1}_p = F_scale*F^n_p
@@ -84,8 +84,8 @@ void MPMTransfer::TransferGridToParticles(const Grid& grid, double dt,
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), update the particles' states
         for (int p = p_start; p < p_end; ++p) {
-            UpdateParticleStates(batch_velocities, batch_index_3d, dt, p,
-                                 &vp_new, &F_scale, grid, particles);
+            UpdateParticleStates(batch_velocities, dt, p,
+                                 &vp_new, &F_scale, particles);
         }
 
         p_start = p_end;
@@ -194,12 +194,7 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
                                 double reference_volume_p,
                                 const Vector3<double>& mv_p,
                                 const Matrix3<double>& tau_p,
-                                const Vector3<int>& batch_index_3d,
                                 std::array<GridState, 27>* sum_local) {
-    // Local sum of states m_i v_i f_i on the grid points
-    int bi = batch_index_3d[0];
-    int bj = batch_index_3d[1];
-    int bk = batch_index_3d[2];
     int idx_local;
     double Ni_p;
     Vector3<int> grid_index;
@@ -208,9 +203,6 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
     for (int a = -1; a <= 1; ++a) {
     for (int b = -1; b <= 1; ++b) {
     for (int c = -1; c <= 1; ++c) {
-        grid_index(0) = bi+a;
-        grid_index(1) = bj+b;
-        grid_index(2) = bk+c;
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         Ni_p = bases_val_particles_[p][idx_local];
         Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
@@ -249,6 +241,42 @@ void MPMTransfer::WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
     }
     }
     }
+}
+
+void MPMTransfer::UpdateParticleStates(const std::array<Vector3<double>, 27>&
+                                                            batch_velocities,
+                                       double dt, int p,
+                                       EigenPtr<Vector3<double>> vp_new,
+                                       EigenPtr<Matrix3<double>> F_scale,
+                                       Particles* particles) {
+    int idx_local;
+    double Ni_p;
+
+    // Reset scratch vector and matrices
+    vp_new->setZero();
+    F_scale->setZero();
+
+    // For each grid points affecting the current particle
+    for (int a = -1; a <= 1; ++a) {
+    for (int b = -1; b <= 1; ++b) {
+    for (int c = -1; c <= 1; ++c) {
+        idx_local = (a+1) + 3*(b+1) + 9*(c+1);
+        Ni_p = bases_val_particles_[p][idx_local];
+        const Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
+        const Vector3<double>& vi_new = batch_velocities[idx_local];
+        *vp_new += vi_new*Ni_p;
+        // Accumulate Fscale: F_p^{n+1} = (I + dt*Fscale)*F_p^n
+        *F_scale += vi_new*gradNi_p.transpose();
+    }
+    }
+    }
+
+    // Update velocities and deformation gradients of the particle
+    // F_p^{n+1} = (I + dt*F_scale)*F_p^n
+    particles->set_deformation_gradient(p,
+                        (Matrix3<double>::Identity() + dt*(*F_scale))
+                        *particles->get_deformation_gradient(p));
+    particles->set_velocity(p, *vp_new);
 }
 
 Vector3<int> MPMTransfer::CalcBatchIndex(const Vector3<double>& xp, double h)
