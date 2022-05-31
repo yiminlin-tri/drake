@@ -148,7 +148,7 @@ GTEST_TEST(GridClassTest, TestGetIndices) {
     }
 }
 
-GTEST_TEST(GridClassTest, TestClearStatesAndAccumulationAndRescale) {
+GTEST_TEST(GridClassTest, TestResetStatesAndAccumulationAndRescale) {
     Vector3<int> num_gridpt_1D = {6, 3, 4};
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
@@ -187,22 +187,29 @@ GTEST_TEST(GridClassTest, TestClearStatesAndAccumulationAndRescale) {
     }
     }
 
-    grid.ClearStates();
+    grid.ResetStates();
 
-    // Test ClearStates sets all states to zero
+    // Test ResetStates sets all states to zero
     for (int k = 0; k < 4; ++k) {
     for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 6; ++i) {
         EXPECT_TRUE(CompareMatrices(grid.get_velocity(i, j, k),
                                     Vector3<double>::Zero(), kEps));
+        EXPECT_TRUE(CompareMatrices(grid.get_force(i, j, k),
+                                    Vector3<double>::Zero(), kEps));
+        EXPECT_EQ(grid.get_mass(i, j, k), 0.0);
     }
     }
     }
 
     // Test accumulation
+    Vector3<int> grid_index;
     for (int k = 0; k < 4; ++k) {
     for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 6; ++i) {
+        grid_index(0) = i;
+        grid_index(1) = j;
+        grid_index(2) = k;
         // Randomly put some values in
         grid.AccumulateMass(i, j, k, 1.0);
         grid.AccumulateVelocity(i, j, k, Vector3<double>(1.0, -1.0, 1.0));
@@ -213,9 +220,9 @@ GTEST_TEST(GridClassTest, TestClearStatesAndAccumulationAndRescale) {
                                     Vector3<double>(-1.0, -1.0, 1.0), kEps));
         EXPECT_EQ(grid.get_mass(i, j, k), 1.0);
 
-        grid.AccumulateMass(i, j, k, 1.2);
-        grid.AccumulateVelocity(i, j, k, Vector3<double>(1.2, -1.2, 1.2));
-        grid.AccumulateForce(i, j, k, Vector3<double>(-1.2, -1.2, 1.2));
+        grid.AccumulateMass(grid_index, 1.2);
+        grid.AccumulateVelocity(grid_index, Vector3<double>(1.2, -1.2, 1.2));
+        grid.AccumulateForce(grid_index, Vector3<double>(-1.2, -1.2, 1.2));
         EXPECT_TRUE(CompareMatrices(grid.get_velocity(i, j, k),
                                     Vector3<double>(2.2, -2.2, 2.2), kEps));
         EXPECT_TRUE(CompareMatrices(grid.get_force(i, j, k),
