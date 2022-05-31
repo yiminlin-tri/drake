@@ -68,17 +68,23 @@ class Grid {
                                             const Vector3<double>& velocity);
     void AccumulateMass(int i, int j, int k, double mass);
     void AccumulateForce(int i, int j, int k, const Vector3<double>& force);
+    void AccumulateVelocity(const Vector3<int>& index_3d,
+                                            const Vector3<double>& velocity);
+    void AccumulateMass(const Vector3<int>& index_3d, double mass);
+    void AccumulateForce(const Vector3<int>& index_3d,
+                         const Vector3<double>& force);
 
     // Rescale the velocities_ vector by the mass_, used in P2G where we
     // temporarily store momentum mv into velocities
     void RescaleVelocities();
 
     // Set masses, velocities and forces to be 0
-    void ClearStates();
+    void ResetStates();
 
     // Reduce an 3D (i, j, k) index in the index space to a corresponding
     // linear lexiographical ordered index
     int Reduce3DIndex(int i, int j, int k) const;
+    int Reduce3DIndex(const Vector3<int>& index_3d) const;
 
     // Expand a linearly lexiographical ordered index to a 3D index (i, j, k)
     // in the index space
@@ -86,6 +92,7 @@ class Grid {
 
     // Check the passed in (i, j, k) lies within the index range of this Grid
     bool in_index_range(int i, int j, int k) const;
+    bool in_index_range(const Vector3<int>& index_3d) const;
 
  private:
     int num_gridpt_;

@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <numeric>
+#include <tuple>
 #include <vector>
 
 #include "drake/common/eigen_types.h"
@@ -79,11 +81,21 @@ class MPMTransfer {
     // particle states (m, mv, tau) to (m, mv, f). Note that we temporarily
     // store the momentum into particles' velocities, in TransferParticlesToGrid
     // we will scale the momentum with the updated mass to get the velocities.
-    void AccumulateGridStatesOnBatch(int p, double mass_p, double V0_p,
+    void AccumulateGridStatesOnBatch(int p, double mass_p,
+                                     double reference_volume_p,
                                      const Vector3<double>& momentum_p,
                                      const Matrix3<double>& tau_p,
                                      const Vector3<int>& batch_index_3d,
-                                     Grid* grid);
+                                     const Grid& grid,
+                                     std::array<std::tuple<double,
+                                             Vector3<double>,
+                                             Vector3<double>>, 27>* sum_local);
+
+    void UpdateGridStatesOnBatch(const Vector3<int>& batch_index_3d,
+                           const std::array<std::tuple<double,
+                                            Vector3<double>,
+                                            Vector3<double>>, 27>& sum_local,
+                                            Grid* grid);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
