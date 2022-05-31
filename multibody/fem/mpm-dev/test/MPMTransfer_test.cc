@@ -293,6 +293,95 @@ class MPMTransferTest : public ::testing::Test {
         }
     }
 
+    void checkP2G_0() {
+        // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
+        // at the center
+        //        -2   0   2
+        //         o - o - o
+        //         |   |   |
+        //     o - o - o - o
+        //     |   |   |   |
+        // o - o - o - o - o
+        // |   |   |   |
+        // o - o - o - o
+        // |   |   |
+        // o - o - o
+        double mass_p, reference_volume_p, sum_mass_grid;
+        Vector3<double> momentum_p, sum_momentum_grid;
+        Matrix3<double> tau_p;
+        int h = 2.0;
+        Vector3<int> num_gridpt_1D = { 3,  3,  3};
+        Vector3<int> bottom_corner = {-1, -1, -1};
+        int num_particles = 1;
+        grid_ = new Grid(num_gridpt_1D, h, bottom_corner);
+        particles_ = new Particles(num_particles);
+        mpm_transfer_ = new MPMTransfer();
+
+        // Set particles' positions to be on grid points
+        mass_p = 2.0;
+        reference_volume_p = 0.1;
+        tau_p = 3.0*Matrix3<double>::Identity();
+        momentum_p = {0.2, -0.4, 0.6};
+        particles_->set_position(0, grid_->get_position(0, 0, 0));
+        particles_->set_mass(0, mass_p);
+        particles_->set_reference_volume(0, reference_volume_p);
+        particles_->set_velocity(0, momentum_p/mass_p);
+        particles_->set_kirchhoff_stress(0, tau_p);
+
+        // Sort the particles and set up the batches and preallocate basis
+        // evaluations
+        mpm_transfer_->SetUpTransfer(*grid_, particles_);
+
+        // Transfer particles' information to grid
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_);
+        sum_mass_grid = 0.0;
+        sum_momentum_grid = {0.0, 0.0, 0.0};
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            sum_mass_grid += grid_->get_mass(i, j, k);
+            sum_momentum_grid += grid_->get_mass(i, j, k)
+                                *grid_->get_velocity(i, j, k);
+        }
+        }
+        }
+
+        // Verify the conservation of mass and momentum
+        EXPECT_TRUE(std::abs(mass_p-sum_mass_grid) < TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(momentum_p-sum_momentum_grid,
+                                    Vector3<double>::Zero(), TOLERANCE));
+
+        // Test Force
+        // At grid point (0, 0, 0), since the particle locates at this grid
+        // point, \grad N_(i, j, k)(x_p) = 0 in this case.
+        EXPECT_TRUE(CompareMatrices(grid_->get_force(0, 0, 0),
+                                    Vector3<double>::Zero(), TOLERANCE));
+
+        // At other grid points, every components of the gradient look like
+        // /grad N_(i, j, k)(x_p) = 1/h * \grad N * N * N, the product of
+        // a gradient and two evaluations. Evaluations are the same for all
+        // grid points, by symmetry of the grid. N = 1/8 in this case.
+        // The gradients' compoents have value \pm 1/2, depending on the actual
+        // location of the grid point. So /grad N_(i, j, k)(x_p) =
+        // [\pm 1/256, \pm 1/256, \pm 1/256].
+        // Since we have only one grid point, the forces have values
+        // -V0_p*tau_p*[\pm 1/256, \pm 1/256, \pm 1/256]
+        Matrix3<double> scale = -1.0/256.0*reference_volume_p*tau_p;
+        for (int k = -1; k <= 1; ++k) {
+        for (int j = -1; j <= 1; ++j) {
+        for (int i = -1; i <= 1; ++i) {
+        if ((i != 0) && (j != 0) && (k != 0)) {
+            EXPECT_TRUE(CompareMatrices(grid_->get_force(i, j, k),
+                                    scale*Vector3<double>(i, j, k), TOLERANCE));
+        }
+        }
+        }
+        }
+    }
+
     void checkP2G_1() {
         // Construct a grid of 5x5x5 on [-2,2]^3, and place 27 particles
         // on the centering 3x3x3 grid points.
@@ -312,7 +401,7 @@ class MPMTransferTest : public ::testing::Test {
         // o - o - o - o - o - o - o - o
         // |   |   |   |   |   |   |
         // o - o - o - o - o - o - o
-        // |   |   |   |omentum|
+        // |   |   |   |   |
         // o - o - o - o - o
         int pc;
         double sum_mass1, sum_mass2;
@@ -397,7 +486,7 @@ class MPMTransferTest : public ::testing::Test {
         // o - o - o - o - o - o - o - o
         // |   |   |   |   |   |   |
         // o - o - o - o - o - o - o
-        // |   |   |   |omentum|
+        // |   |   |   |   |
         // o - o - o - o - o
         int pc;
         double sum_mass1, sum_mass2;
@@ -509,6 +598,10 @@ TEST_F(MPMTransferTest, SetUpTest) {
 }
 
 TEST_F(MPMTransferTest, P2GTest) {
+    checkP2G_0();
+    delete particles_;
+    delete grid_;
+    delete mpm_transfer_;
     checkP2G_1();
     delete particles_;
     delete grid_;
