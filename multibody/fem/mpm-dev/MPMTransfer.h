@@ -26,14 +26,29 @@ class MPMTransfer {
     // bases' evaluations for transfer routines. This routine has to be called
     // at the beginning of each time step (before P2G and G2P transfers),
     // otherwise the results will be incorrect.
-    void SetUpTransfer(const Grid& grid, Particles* particles);
+    void SetUpTransfer(const Grid& grid,
+                       const std::unique_ptr<Particles>& particles);
 
     // Transfer masses, velocities, and Kirchhoff stresses on the particles
     // to masses, velocities, and forces on the grid
-    void TransferParticlesToGrid(const Particles& particles, Grid* grid);
+    void TransferParticlesToGrid(const Particles& particles,
+                                 const std::unique_ptr<Grid>& grid);
 
  private:
     friend class MPMTransferTest;
+
+    struct GridState {
+        double mass;
+        Vector3<double> velocity;
+        Vector3<double> force;
+
+        void reset() {
+            mass = 0.0;
+            velocity.setZero();
+            force.setZero();
+        }
+    };
+
     // Sort the particles according to the batch number, in increasing order.
     // As below shown, o denotes the grid points, $ denotes the batch centered
     // around the grid point. # of batch = # of grid points
@@ -64,7 +79,8 @@ class MPMTransfer {
     // o = = = o = = = o = = = o = = = o
     // The batches are ordered in a lexiographical ordering, similar to grid
     // points.
-    void SortParticles(const Grid& grid, Particles* particles);
+    void SortParticles(const Grid& grid,
+                       const std::unique_ptr<Particles>& particles);
 
     // Update the evalutions and gradients of BSpline bases on each particle,
     // and update bases_val_particles_ and bases_grad_particles_
@@ -87,15 +103,11 @@ class MPMTransfer {
                                      const Matrix3<double>& tau_p,
                                      const Vector3<int>& batch_index_3d,
                                      const Grid& grid,
-                                     std::array<std::tuple<double,
-                                             Vector3<double>,
-                                             Vector3<double>>, 27>* sum_local);
+                                     std::array<GridState, 27>* sum_local);
 
-    void UpdateGridStatesOnBatch(const Vector3<int>& batch_index_3d,
-                           const std::array<std::tuple<double,
-                                            Vector3<double>,
-                                            Vector3<double>>, 27>& sum_local,
-                                            Grid* grid);
+    void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
+                               const std::array<GridState, 27>& sum_local,
+                               const std::unique_ptr<Grid>& grid);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
