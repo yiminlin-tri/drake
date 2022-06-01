@@ -633,8 +633,8 @@ class MPMTransferTest : public ::testing::Test {
     }
 
     void checkG2PMassVelocity1() {
-        double sum_mass1, sum_mass2;
-        Vector3<double> sum_momentum1, sum_momentum2;
+        double sum_mass_particle, sum_mass_grid;
+        Vector3<double> sum_momentum_particle, sum_momentum_grid;
         double dt = 0.0;
 
         // First setup particles and grid using P2G
@@ -647,40 +647,39 @@ class MPMTransferTest : public ::testing::Test {
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        sum_mass1 = 0.0;
-        sum_momentum1 = {0.0, 0.0, 0.0};
+        sum_mass_particle = 0.0;
+        sum_momentum_particle = {0.0, 0.0, 0.0};
         for (int p = 0; p < num_particles; ++p) {
-            sum_mass1 += particles_->get_mass(p);
-            sum_momentum1 += particles_->get_mass(p)
+            sum_mass_particle += particles_->get_mass(p);
+            sum_momentum_particle += particles_->get_mass(p)
                             *particles_->get_velocity(p);
         }
 
         // Grid's sum of mass and momentum
-        sum_mass2 = 0.0;
-        sum_momentum2 = {0.0, 0.0, 0.0};
+        sum_mass_grid = 0.0;
+        sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass2 += grid_->get_mass(i, j, k);
-            sum_momentum2 += grid_->get_mass(i, j, k)
+            sum_mass_grid += grid_->get_mass(i, j, k);
+            sum_momentum_grid += grid_->get_mass(i, j, k)
                             *grid_->get_velocity(i, j, k);
         }
         }
         }
 
         // Verify the conservation of mass and momentum
-        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
-        EXPECT_NEAR(sum_mass1, sum_mass2, TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum1, sum_momentum2,
+        EXPECT_NEAR(sum_mass_particle, sum_mass_grid, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum_particle, sum_momentum_grid,
                                     TOLERANCE));
     }
 
     void checkG2PMassVelocity2() {
-        double sum_mass1, sum_mass2;
-        Vector3<double> sum_momentum1, sum_momentum2;
+        double sum_mass_particle, sum_mass_grid;
+        Vector3<double> sum_momentum_particle, sum_momentum_grid;
         double dt = 0.0;
 
         // First setup particles and grid using P2G
@@ -693,33 +692,33 @@ class MPMTransferTest : public ::testing::Test {
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        sum_mass1 = 0.0;
-        sum_momentum1 = {0.0, 0.0, 0.0};
+        sum_mass_particle = 0.0;
+        sum_momentum_particle = {0.0, 0.0, 0.0};
         for (int p = 0; p < num_particles; ++p) {
-            sum_mass1 += particles_->get_mass(p);
-            sum_momentum1 += particles_->get_mass(p)
+            sum_mass_particle += particles_->get_mass(p);
+            sum_momentum_particle += particles_->get_mass(p)
                             *particles_->get_velocity(p);
         }
 
         // Grid's sum of mass and momentum
-        sum_mass2 = 0.0;
-        sum_momentum2 = {0.0, 0.0, 0.0};
+        sum_mass_grid = 0.0;
+        sum_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass2 += grid_->get_mass(i, j, k);
-            sum_momentum2 += grid_->get_mass(i, j, k)
+            sum_mass_grid += grid_->get_mass(i, j, k);
+            sum_momentum_grid += grid_->get_mass(i, j, k)
                             *grid_->get_velocity(i, j, k);
         }
         }
         }
 
         // Verify the conservation of mass and momentum
-        EXPECT_TRUE(std::abs(sum_mass1-sum_mass2) < TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum1, sum_momentum2,
+        EXPECT_NEAR(sum_mass_particle, sum_mass_grid, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_momentum_particle, sum_momentum_grid,
                                     TOLERANCE));
     }
 
