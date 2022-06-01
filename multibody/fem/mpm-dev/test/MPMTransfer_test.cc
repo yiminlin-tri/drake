@@ -700,6 +700,66 @@ class MPMTransferTest : public ::testing::Test {
                                     TOLERANCE));
     }
 
+    void checkG2PForce() {
+        // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
+        // at the center
+        //        -2   0   2
+        //         o - o - o
+        //         |   |   |
+        //     o - o - o - o
+        //     |   |   |   |
+        // o - o - o - o - o
+        // |   |   |   |
+        // o - o - o - o
+        // |   |   |
+        // o - o - o
+        double mass_p;
+        Matrix3<double> tau_p;
+        int h = 2.0;
+        Vector3<int> num_gridpt_1D = { 3,  3,  3};
+        Vector3<int> bottom_corner = {-1, -1, -1};
+        Vector3<double> velocity_i = {0.1, 0.2, 0.3};
+        int num_particles = 1;
+        double dt = 0.1;
+        grid_ = std::make_unique<Grid>(num_gridpt_1D, h, bottom_corner);
+        particles_ = std::make_unique<Particles>(num_particles);
+        mpm_transfer_ = std::make_unique<MPMTransfer>();
+
+        // Initialize particles' positions to be on grid points
+        mass_p = 0.2;
+        tau_p = 3.0*Matrix3<double>::Identity();
+        particles_->set_position(0, grid_->get_position(0, 0, 0));
+        particles_->set_mass(0, mass_p);
+        particles_->set_kirchhoff_stress(0, tau_p);
+
+        // Initialize the grid velocity field. We assume it is constant,
+        // so the deformation gradient would not change
+        for (int k = bottom_corner(2);
+                 k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+        for (int j = bottom_corner(1);
+                 j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+        for (int i = bottom_corner(0);
+                 i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+            grid_->set_velocity(i, j, k, velocity_i);
+        }
+        }
+        }
+
+        // Sort the particles and set up the batches and preallocate basis
+        // evaluations
+        mpm_transfer_->SetUpTransfer(*grid_, particles_.get());
+
+        // Grid to particles transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
+
+        // Since the velocity field is constant, the deformation gradient
+        // doesn't change with respect to time
+        EXPECT_TRUE(CompareMatrices(tau_p, particles_->get_kirchhoff_stress(0),
+                                    TOLERANCE));
+        EXPECT_TRUE(CompareMatrices(velocity_i, particles_->get_velocity(0),
+                                    TOLERANCE));
+    }
+
     void checkG2PMassVelocity1() {
         double sum_mass_particle, sum_mass_grid;
         Vector3<double> sum_momentum_particle, sum_momentum_grid;
@@ -815,6 +875,7 @@ TEST_F(MPMTransferTest, P2GTest) {
 }
 
 TEST_F(MPMTransferTest, G2PTest) {
+    checkG2PForce();
     checkG2PMassVelocity1();
     checkG2PMassVelocity2();
 }
