@@ -42,14 +42,14 @@ class PoseSliders(LeafSystem):
     Value = namedtuple("Value", ("roll", "pitch", "yaw", "x", "y", "z"))
     Value.__new__.__defaults__ = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
-    def __init__(self, visible=Visible(), min_range=MinRange(),
+    def __init__(self, visible=Visible(), min_index_range=MinRange(),
                  max_range=MaxRange(), value=Value()):
         """
         Args:
             visible: An object with boolean elements for 'roll', 'pitch',
                      'yaw', 'x', 'y', 'z'; the intention is for this to be the
                      PoseSliders.Visible() namedtuple.  Defaults to all true.
-            min_range, max_range, value: Objects with float values for 'roll',
+            min_index_range, max_range, value: Objects with float values for 'roll',
                       'pitch', 'yaw', 'x', 'y', 'z'; the intention is for the
                       caller to use the PoseSliders.MinRange, MaxRange, and
                       Value namedtuples.  See those tuples for default values.
@@ -70,28 +70,28 @@ class PoseSliders(LeafSystem):
         self.DeclarePeriodicEvent(0.01, 0.0,
                                   PublishEvent(self._process_event_queue))
 
-        self._roll = FloatSlider(min=min_range.roll,
+        self._roll = FloatSlider(min=min_index_range.roll,
                                  max=max_range.roll,
                                  value=value.roll,
                                  step=0.01,
                                  continuous_update=True,
                                  description="roll",
                                  layout=Layout(width='90%'))
-        self._pitch = FloatSlider(min=min_range.pitch,
+        self._pitch = FloatSlider(min=min_index_range.pitch,
                                   max=max_range.pitch,
                                   value=value.pitch,
                                   step=0.01,
                                   continuous_update=True,
                                   description="pitch",
                                   layout=Layout(width='90%'))
-        self._yaw = FloatSlider(min=min_range.yaw,
+        self._yaw = FloatSlider(min=min_index_range.yaw,
                                 max=max_range.yaw,
                                 value=value.yaw,
                                 step=0.01,
                                 continuous_update=True,
                                 description="yaw",
                                 layout=Layout(width='90%'))
-        self._x = FloatSlider(min=min_range.x,
+        self._x = FloatSlider(min=min_index_range.x,
                               max=max_range.x,
                               value=value.x,
                               step=0.01,
@@ -99,14 +99,14 @@ class PoseSliders(LeafSystem):
                               description="x",
                               orient='horizontal',
                               layout=Layout(width='90%'))
-        self._y = FloatSlider(min=min_range.y,
+        self._y = FloatSlider(min=min_index_range.y,
                               max=max_range.y,
                               value=value.y,
                               step=0.01,
                               continuous_update=True,
                               description="y",
                               layout=Layout(width='90%'))
-        self._z = FloatSlider(min=min_range.z,
+        self._z = FloatSlider(min=min_index_range.z,
                               max=max_range.z,
                               value=value.z,
                               step=0.01,

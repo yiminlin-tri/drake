@@ -100,8 +100,8 @@ TEST_F(PiecewisePoseTest, TestVelocity) {
     expected.head<3>() = orientation_.angular_velocity(time);
     expected.tail<3>() = position_.derivative().value(time);
 
-    if (!orientation_.is_time_in_range(time)) expected.head<3>().setZero();
-    if (!position_.is_time_in_range(time)) expected.tail<3>().setZero();
+    if (!orientation_.is_time_in_index_range(time)) expected.head<3>().setZero();
+    if (!position_.is_time_in_index_range(time)) expected.tail<3>().setZero();
 
     EXPECT_TRUE(drake::CompareMatrices(dut_.GetVelocity(time), expected, 1e-12,
                                        drake::MatrixCompareType::absolute));
@@ -117,7 +117,7 @@ TEST_F(PiecewisePoseTest, TestAcceleration) {
     expected.head<3>() = Vector3<double>::Zero();
     expected.tail<3>() = position_.derivative(2).value(time);
 
-    if (!position_.is_time_in_range(time)) expected.tail<3>().setZero();
+    if (!position_.is_time_in_index_range(time)) expected.tail<3>().setZero();
 
     EXPECT_TRUE(drake::CompareMatrices(dut_.GetAcceleration(time), expected,
                                        1e-12,

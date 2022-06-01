@@ -69,12 +69,12 @@ math::RigidTransform<T> PiecewisePose<T>::GetPose(const T& time) const {
 template <typename T>
 Vector6<T> PiecewisePose<T>::GetVelocity(const T& time) const {
   Vector6<T> velocity;
-  if (orientation_.is_time_in_range(time)) {
+  if (orientation_.is_time_in_index_range(time)) {
     velocity.template head<3>() = orientation_.angular_velocity(time);
   } else {
     velocity.template head<3>().setZero();
   }
-  if (position_.is_time_in_range(time)) {
+  if (position_.is_time_in_index_range(time)) {
     velocity.template tail<3>() = velocity_.value(time);
   } else {
     velocity.template tail<3>().setZero();
@@ -85,12 +85,12 @@ Vector6<T> PiecewisePose<T>::GetVelocity(const T& time) const {
 template <typename T>
 Vector6<T> PiecewisePose<T>::GetAcceleration(const T& time) const {
   Vector6<T> acceleration;
-  if (orientation_.is_time_in_range(time)) {
+  if (orientation_.is_time_in_index_range(time)) {
     acceleration.template head<3>() = orientation_.angular_acceleration(time);
   } else {
     acceleration.template head<3>().setZero();
   }
-  if (position_.is_time_in_range(time)) {
+  if (position_.is_time_in_index_range(time)) {
     acceleration.template tail<3>() = acceleration_.value(time);
   } else {
     acceleration.template tail<3>().setZero();
