@@ -187,7 +187,7 @@ class TestTrajectories(unittest.TestCase):
         numpy_compare.assert_float_equal(pp.start_time(segment_index=0), 0.)
         numpy_compare.assert_float_equal(pp.end_time(segment_index=0), 1.)
         numpy_compare.assert_float_equal(pp.duration(segment_index=0), 1.)
-        numpy_compare.assert_equal(pp.is_time_in_index_range(t=1.5), True)
+        numpy_compare.assert_equal(pp.is_time_in_range(t=1.5), True)
         self.assertEqual(pp.get_segment_index(t=1.5), 1)
         numpy_compare.assert_float_equal(pp.get_segment_times(), [0., 1., 2.])
 

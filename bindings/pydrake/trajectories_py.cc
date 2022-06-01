@@ -200,8 +200,8 @@ struct Impl {
               cls_doc.start_time.doc)
           .def("end_time", overload_cast_explicit<T>(&Class::end_time),
               cls_doc.end_time.doc)
-          .def("is_time_in_index_range", &Class::is_time_in_index_range, py::arg("t"),
-              cls_doc.is_time_in_index_range.doc)
+          .def("is_time_in_range", &Class::is_time_in_range, py::arg("t"),
+              cls_doc.is_time_in_range.doc)
           .def("get_segment_index", &Class::get_segment_index, py::arg("t"),
               cls_doc.get_segment_index.doc)
           .def("get_segment_times", &Class::get_segment_times,
