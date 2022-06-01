@@ -275,6 +275,7 @@ void MPMTransfer::UpdateParticleStates(const std::array<Vector3<double>, 27>&
         grad_vp_new += vi_new*gradNi_p.transpose();
     }
     }
+    }
 
     // Update velocities and deformation gradients of the particle
     // F_p^{n+1} = (I + dt*grad_vp_new)*F_p^n
