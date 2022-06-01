@@ -6,7 +6,6 @@ namespace mpm {
 
 void MPMTransfer::SetUpTransfer(const Grid& grid, Particles* particles) {
     SortParticles(grid, particles);
-    ThrowIfParticlesOutOfBound(grid);
     UpdateBasisAndGradientParticles(grid, *particles);
 }
 
@@ -105,11 +104,26 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
     batch_sizes_.resize(grid.get_num_gridpt());  // Initialize batch_size to be
                                                  // 0 for every batch
 
-    // Preallocate the indices of batches
+    // Preallocate the indices of batches, and check particles out of bounds
+    // error
     for (int p = 0; p < num_particles; ++p) {
         batch_idx_3D = CalcBatchIndex(particles->get_position(p), grid.get_h());
         batch_indices[p] = grid.Reduce3DIndex(batch_idx_3D(0), batch_idx_3D(1),
                                               batch_idx_3D(2));
+        for (int a = -1; a <= 1; ++a) {
+        for (int b = -1; b <= 1; ++b) {
+        for (int c = -1; c <= 1; ++c) {
+        if (!grid.in_index_range(batch_idx_3D[0]+a, batch_idx_3D[1]+b,
+                                 batch_idx_3D[2]+c)) {
+            throw std::logic_error("Particles out of bound");
+        }
+        }
+        }
+        }
+    }
+
+    // Accumulate batch sizes
+    for (int p = 0; p < num_particles; ++p) {
         ++batch_sizes_[batch_indices[p]];
     }
 
@@ -197,7 +211,6 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
                                 std::array<GridState, 27>* sum_local) {
     int idx_local;
     double Ni_p;
-    Vector3<int> grid_index;
 
     // Accumulate on local scratch pads
     for (int a = -1; a <= 1; ++a) {
@@ -283,25 +296,6 @@ Vector3<int> MPMTransfer::CalcBatchIndex(const Vector3<double>& xp, double h)
                                                                         const {
     return Vector3<int>(std::round(xp(0)/h), std::round(xp(1)/h),
                         std::round(xp(2)/h));
-}
-
-void MPMTransfer::ThrowIfParticlesOutOfBound(const Grid& grid) {
-    // For each batch of particles
-    for (const auto& [batch_index_flat, batch_index_3d] : grid.get_indices()) {
-        if (batch_sizes_[batch_index_flat] > 0) {
-            // Throw error if we detect an invalid grid point
-            for (int a = -1; a <= 1; ++a) {
-            for (int b = -1; b <= 1; ++b) {
-            for (int c = -1; c <= 1; ++c) {
-            if (!grid.in_index_range(batch_index_3d[0]+a, batch_index_3d[1]+b,
-                                     batch_index_3d[2]+c)) {
-                throw std::logic_error("Particles out of bound");
-            }
-            }
-            }
-            }
-        }
-    }
 }
 
 }  // namespace mpm
