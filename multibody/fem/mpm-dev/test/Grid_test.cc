@@ -266,16 +266,16 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
 
     grid.UpdateVelocity(dt);
 
-    // v^{n+1} = v^n + dt*f^n/m = [t, -t, t] + 0.2*[-t, t, -t]/t
-    //                          = [t, -t, t] + [-0.2, 0.2, -0.2]
-    //                          = [t-0.2, -t+0.2, t-0.2]
+    // v^{n+1} = v^n + dt*f^n/m = [t, -t, t] + dt*[-t, t, -t]/t
+    //                          = [t, -t, t] + [-dt, dt, -dt]
+    //                          = [t-dt, -t+dt, t-dt]
     // t: tmpscaling
     for (int k = 1; k < 4; ++k) {
     for (int j = 1; j < 3; ++j) {
     for (int i = 1; i < 6; ++i) {
         tmpscaling = 1.2*k + 0.3*j + i;
         EXPECT_TRUE(CompareMatrices(grid.get_velocity(i, j, k),
-            Vector3<double>(tmpscaling-0.2, -tmpscaling+0.2, tmpscaling-0.2),
+            Vector3<double>(tmpscaling-dt, -tmpscaling+dt, tmpscaling-dt),
             kEps));
     }
     }
