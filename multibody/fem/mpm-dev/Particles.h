@@ -71,6 +71,7 @@ class Particles {
 
     // Assume the deformation gradient is updated, update Kirchhoff stress tau
     // given the constitutive relation
+    // TODO(yiminlin.tri): Add support for general constitutive models
     void UpdateKirchhoffStresses(const CorotatedModel& corotated_model);
 
     // Particle advection using the updated velocities, assuming they are

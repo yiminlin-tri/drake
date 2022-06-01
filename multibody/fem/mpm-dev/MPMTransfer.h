@@ -115,10 +115,10 @@ class MPMTransfer {
                                Grid* grid);
 
     // Update particle states F_p^{n+1} and v_p^{n+1}
-    void UpdateParticleStates(const std::array<Vector3<double>, 27>&
+    void WriteBatchStateToParticles(const std::array<Vector3<double>, 27>&
                                                             batch_velocities,
-                              double dt, int p,
-                              Particles* particles);
+                                    double dt, int p,
+                                    Particles* particles);
 
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
