@@ -99,6 +99,17 @@ class Grid {
     // v^{n+1} = v^n + dt*f^n/m^n
     void UpdateVelocity(double dt);
 
+    // Enforce slip and no-slip wall boundary conditions on the grid's boundary.
+    // They are both Dirichlet boundary conditions. We strongly impose no-slip
+    // boundary condition by enforcing the velocity near boundary to be 0, and
+    // impose slip boundary condition by enforcing the normal velocity near
+    // boundary to be 0 with the same tangential velocity. Note that grid points
+    // "near" boundary are the grid nodes that are at most 2h away from the
+    // boundary grid points. This will ensure the correctness of boundary
+    // condition.
+    void EnforceSlipBoundaryCondition();
+    void EnforceNoSlipBoundaryCondition();
+
  private:
     int num_gridpt_;
     Vector3<int> num_gridpt_1D_;              // Number of grid points on the

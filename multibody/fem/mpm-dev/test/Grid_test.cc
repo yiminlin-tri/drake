@@ -282,6 +282,92 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
     }
 }
 
+GTEST_TEST(GridClassTest, TestSlipBoundaryCondition) {
+    Vector3<int> num_gridpt_1D = {10, 20, 30};
+    double h = 1.0;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+
+    // Populate the grid with nonzero velocities
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
+        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
+    }
+    }
+    }
+
+    // Enforce slip BC
+    grid.EnforceSlipBoundaryCondition();
+
+    // Check velocity after enforcement, hardcode values for verification
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
+        if (i < bottom_corner(0)+3
+         || i >= bottom_corner(0)+num_gridpt_1D(0)-3) {
+            EXPECT_EQ(velocity_i(0), 0);
+        } else {
+            EXPECT_EQ(velocity_i(0), 1);
+        }
+        if (j < bottom_corner(1)+3
+         || j >= bottom_corner(1)+num_gridpt_1D(1)-3) {
+            EXPECT_EQ(velocity_i(1), 0);
+        } else {
+            EXPECT_EQ(velocity_i(1), 1);
+        }
+        if (k < bottom_corner(2)+3
+         || k >= bottom_corner(2)+num_gridpt_1D(2)-3) {
+            EXPECT_EQ(velocity_i(2), 0);
+        } else {
+            EXPECT_EQ(velocity_i(2), 1);
+        }
+    }
+    }
+    }
+}
+
+GTEST_TEST(GridClassTest, TestNoSlipBoundaryCondition) {
+    Vector3<int> num_gridpt_1D = {10, 20, 30};
+    double h = 1.0;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+
+    // Populate the grid with nonzero velocities
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
+        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
+    }
+    }
+    }
+
+    // Enforce no slip BC
+    grid.EnforceNoSlipBoundaryCondition();
+
+    // Check velocity after enforcement, hardcode values for verification
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
+        if (i < bottom_corner(0)+3
+         || i >= bottom_corner(0)+num_gridpt_1D(0)-3 || j < bottom_corner(1)+3
+         || j >= bottom_corner(1)+num_gridpt_1D(1)-3 || k < bottom_corner(2)+3
+         || k >= bottom_corner(2)+num_gridpt_1D(2)-3 ) {
+            EXPECT_TRUE(CompareMatrices(velocity_i, Vector3<double>::Zero(),
+                        kEps));
+        } else {
+            EXPECT_TRUE(CompareMatrices(velocity_i, Vector3<double>::Ones(),
+                        kEps));
+        }
+    }
+    }
+    }
+}
+
 }  // namespace
 }  // namespace internal
 }  // namespace mpm
