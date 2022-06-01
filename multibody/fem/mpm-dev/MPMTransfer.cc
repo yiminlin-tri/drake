@@ -79,7 +79,7 @@ void MPMTransfer::TransferGridToParticles(const Grid& grid, double dt,
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), update the particles' states
         for (int p = p_start; p < p_end; ++p) {
-            UpdateParticleStates(batch_velocities, dt, p, particles);
+            WriteBatchStateToParticles(batch_velocities, dt, p, particles);
         }
 
         p_start = p_end;
@@ -251,10 +251,10 @@ void MPMTransfer::WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
     }
 }
 
-void MPMTransfer::UpdateParticleStates(const std::array<Vector3<double>, 27>&
-                                                            batch_velocities,
-                                       double dt, int p,
-                                       Particles* particles) {
+void MPMTransfer::WriteBatchStateToParticles(
+                        const std::array<Vector3<double>, 27>& batch_velocities,
+                                                        double dt, int p,
+                                                        Particles* particles) {
     int idx_local;
     double Ni_p;
 
