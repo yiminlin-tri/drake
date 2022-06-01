@@ -41,7 +41,7 @@ class PiecewiseTrajectory : public Trajectory<T> {
   /**
    * Returns true iff `t >= getStartTime() && t <= getEndTime()`.
    */
-  boolean<T> is_time_in_index_range(const T& t) const;
+  boolean<T> is_time_in_range(const T& t) const;
 
   int get_segment_index(const T& t) const;
 

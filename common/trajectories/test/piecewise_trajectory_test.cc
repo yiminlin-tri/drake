@@ -113,7 +113,7 @@ void TestScalarType() {
   EXPECT_EQ(value.cols(), 0);
 
   EXPECT_TRUE(static_cast<bool>(
-      traj.is_time_in_index_range((traj.start_time() + traj.end_time()) / 2.0)));
+      traj.is_time_in_range((traj.start_time() + traj.end_time()) / 2.0)));
 }
 
 GTEST_TEST(PiecewiseTrajectoryTest, ScalarTypes) {
