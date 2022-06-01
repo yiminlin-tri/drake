@@ -108,8 +108,6 @@ class MPMTransfer {
     // this particle is in.
     Vector3<int> CalcBatchIndex(const Vector3<double>& xp, double h) const;
 
-    void ThrowIfParticlesOutOfBound(const Grid& grid);
-
     // Evaluations and gradients of BSpline bases on each particle
     // i.e. N_i(x_p), \nabla N_i(x_p)
     // Length of the vector = # of particles.
