@@ -118,8 +118,6 @@ class MPMTransfer {
     void UpdateParticleStates(const std::array<Vector3<double>, 27>&
                                                             batch_velocities,
                               double dt, int p,
-                              EigenPtr<Vector3<double>> vp_new,
-                              EigenPtr<Matrix3<double>> F_scale,
                               Particles* particles);
 
     // Given the position of a particle xp, calculate the index of the batch

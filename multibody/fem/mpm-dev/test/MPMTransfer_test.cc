@@ -78,7 +78,7 @@ class MPMTransferTest : public ::testing::Test {
                                     Vector3<double>(-2.0, -2.0, -2.0),
                                     std::numeric_limits<double>::epsilon()));
 
-        // Check particles in the correct ordering after sorting
+        // Check particles out of bound error
         EXPECT_THROW(mpm_transfer.SortParticles(grid, particles.get()),
                      std::exception);
     }
@@ -700,7 +700,7 @@ class MPMTransferTest : public ::testing::Test {
                                     TOLERANCE));
     }
 
-    void checkG2PForce() {
+    void checkG2PDeformationGrad() {
         // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
         // at the center
         //        -2   0   2
@@ -714,7 +714,7 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |
         // o - o - o
         double mass_p;
-        Matrix3<double> tau_p;
+        Matrix3<double> F_p;
         int h = 2.0;
         Vector3<int> num_gridpt_1D = { 3,  3,  3};
         Vector3<int> bottom_corner = {-1, -1, -1};
@@ -727,10 +727,10 @@ class MPMTransferTest : public ::testing::Test {
 
         // Initialize particles' positions to be on grid points
         mass_p = 0.2;
-        tau_p = 3.0*Matrix3<double>::Identity();
+        F_p   = 2.0*Matrix3<double>::Identity();
         particles_->set_position(0, grid_->get_position(0, 0, 0));
         particles_->set_mass(0, mass_p);
-        particles_->set_kirchhoff_stress(0, tau_p);
+        particles_->set_deformation_gradient(0, F_p);
 
         // Initialize the grid velocity field. We assume it is constant,
         // so the deformation gradient would not change
@@ -754,7 +754,8 @@ class MPMTransferTest : public ::testing::Test {
 
         // Since the velocity field is constant, the deformation gradient
         // doesn't change with respect to time
-        EXPECT_TRUE(CompareMatrices(tau_p, particles_->get_kirchhoff_stress(0),
+        EXPECT_TRUE(CompareMatrices(F_p,
+                                    particles_->get_deformation_gradient(0),
                                     TOLERANCE));
         EXPECT_TRUE(CompareMatrices(velocity_i, particles_->get_velocity(0),
                                     TOLERANCE));
@@ -763,7 +764,7 @@ class MPMTransferTest : public ::testing::Test {
     void checkG2PMassVelocity1() {
         double sum_mass_particle, sum_mass_grid;
         Vector3<double> sum_momentum_particle, sum_momentum_grid;
-        double dt = 0.0;
+        double dt = 0.1;
 
         // First setup particles and grid using P2G
         checkP2GMassVelocity1();
@@ -808,7 +809,7 @@ class MPMTransferTest : public ::testing::Test {
     void checkG2PMassVelocity2() {
         double sum_mass_particle, sum_mass_grid;
         Vector3<double> sum_momentum_particle, sum_momentum_grid;
-        double dt = 0.0;
+        double dt = 0.1;
 
         // First setup particles and grid using P2G
         checkP2GMassVelocity2();
@@ -875,7 +876,7 @@ TEST_F(MPMTransferTest, P2GTest) {
 }
 
 TEST_F(MPMTransferTest, G2PTest) {
-    checkG2PForce();
+    checkG2PDeformationGrad();
     checkG2PMassVelocity1();
     checkG2PMassVelocity2();
 }
