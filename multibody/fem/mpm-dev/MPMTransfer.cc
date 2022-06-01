@@ -69,13 +69,11 @@ void MPMTransfer::TransferGridToParticles(const Grid& grid, double dt,
         bi = batch_index_3d[0];
         bj = batch_index_3d[1];
         bk = batch_index_3d[2];
-        for (int k = bk - 1; k <= bk + 1; ++k) {
-        for (int j = bj - 1; j <= bj + 1; ++j) {
-        for (int i = bi - 1; i <= bi + 1; ++i) {
-        if (grid.in_index_range(i, j, k)) {
-            idx_local = (i-bi+1) + 3*(j-bj+1) + 9*(k-bk+1);
-            batch_velocities[idx_local] = grid.get_velocity(i, j, k);
-        }
+        for (int a = -1; a <= 1; ++a) {
+        for (int b = -1; b <= 1; ++b) {
+        for (int c = -1; c <= 1; ++c) {
+            idx_local = (a+1) + 3*(b+1) + 9*(c+1);
+            batch_velocities[idx_local] = grid.get_velocity(bi+a, bj+b, bk+c);
         }
         }
         }

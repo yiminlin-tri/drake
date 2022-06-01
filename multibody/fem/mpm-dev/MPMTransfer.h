@@ -82,6 +82,11 @@ class MPMTransfer {
     // o = = = o = = = o = = = o = = = o
     // The batches are ordered in a lexiographical ordering, similar to grid
     // points.
+    // SortParticles assume particles are within the bound. We define a particle
+    // is not in bound if the particle does not lie within the grid, or the
+    // particle's position is in the boundary batches. For example, in above
+    // case, the batches that correspond to boundary grid points are boundary
+    // batches.
     void SortParticles(const Grid& grid, Particles* particles);
 
     // Update the evalutions and gradients of BSpline bases on each particle,
