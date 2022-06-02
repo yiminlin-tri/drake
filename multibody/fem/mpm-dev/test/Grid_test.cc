@@ -284,6 +284,8 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
 }
 
 GTEST_TEST(GridClassTest, TestWallBoundaryCondition) {
+    // In this test case, we enforce slip wall boundary condition to the
+    // boundary of a 10x20x30 grid.
     Vector3<int> num_gridpt_1D = {10, 20, 30};
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
