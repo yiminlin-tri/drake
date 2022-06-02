@@ -180,10 +180,12 @@ void Grid::EnforceWallBoundaryCondition(double friction_coefficient,
     // For all grid points
     for (const auto& [index_flat, index_3d] : indices_) {
         // If the grid point is inside the boundary space and its distance to
-        // the half plane is less than 2h, or the grid point is outside the
-        // boundary space
-        if (boundary_space.CalcSignedDistance(positions_[index_flat])
-                                                                >= -2.0*h_) {
+        // the half plane is at most 2h, enforce BC. If the grid point is
+        // outside the boundary space, set the velocity to be 0.0.
+        double dist = boundary_space.CalcSignedDistance(positions_[index_flat]);
+        if (dist > 0) {
+            velocities_[index_flat] = Vector3<double>::Zero();
+        } else if (dist >= -2.0*h_) {
             const Vector3<double>& normal = boundary_space.normal();
             const Vector3<double>& v_i = velocities_[index_flat];
             double vn = v_i.dot(normal);           // v \dot normal

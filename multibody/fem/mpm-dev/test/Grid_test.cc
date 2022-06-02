@@ -1,5 +1,7 @@
 #include "drake/multibody/fem/mpm-dev/Grid.h"
 
+#include <cmath>
+
 #include <gtest/gtest.h>
 
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
@@ -283,7 +285,7 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
     }
 }
 
-GTEST_TEST(GridClassTest, TestWallBoundaryCondition) {
+GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     // In this test case, we enforce slip wall boundary condition to the
     // boundary of a 10x20x30 grid.
     Vector3<int> num_gridpt_1D = {10, 20, 30};
@@ -358,6 +360,60 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition) {
             EXPECT_EQ(velocity_i(2), 0);
         } else {
             EXPECT_EQ(velocity_i(2), 1);
+        }
+    }
+    }
+    }
+}
+
+GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
+    // In this test case, we enforce frictional wall boundary condition to the
+    // plane on a 21x21x21 grid of the domain [0, 10]x[0, 10]x[0, 10]. The
+    // boundary plane has outward normal (1, 1, 1), contains the point (5, 5,
+    // 5).
+    Vector3<int> num_gridpt_1D = {21, 21, 21};
+    double h = 0.5;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Vector3<double> velocity_grid = Vector3<double>(1.0, 2.0, 3.0);
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    // The boundary space
+    geometry::internal::PosedHalfSpace<double> boundary_space =
+                                                  {Vector3<double>(-1, -1, -1),
+                                                   Vector3<double>(5, 5, 5)};
+    // Friction coefficient
+    double mu = 0.05;
+
+    // Populate the grid with nonzero velocities
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        grid.set_velocity(i, j, k, velocity_grid);
+        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
+    }
+    }
+    }
+
+    // Enforce wall boundary condition
+    grid.EnforceWallBoundaryCondition(mu, boundary_space);
+
+    // Check velocity after enforcement, hardcode values for verification
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        const Vector3<double>& position_i = grid.get_position(i, j, k);
+        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
+        double dist = boundary_space.CalcSignedDistance(position_i);
+        if (dist > 0) {
+            EXPECT_TRUE(CompareMatrices(velocity_i,
+                                        Vector3<double>::Zero(), kEps));
+        } else if (dist >= -2.0*grid.get_h()) {
+            // Given v_i = (1, 2, 3), n = 1/sqrt(3)*(-1, -1, -1)
+            // Then v_t = (-1, 0, 1), vn = 6/sqrt(3)
+            // v = v_t + \mu vn v_t/\|v_t\| = (-1-mu*sqrt(6), 0, 1+mu*sqrt(6))
+            EXPECT_TRUE(CompareMatrices(velocity_i,
+                                        Vector3<double>(-1+std::sqrt(6)*mu,
+                                                        0.0, 1-std::sqrt(6)*mu),
+                                        kEps));
         }
     }
     }
