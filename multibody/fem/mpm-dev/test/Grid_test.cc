@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
+#include "drake/geometry/proximity/posed_half_space.h"
 
 namespace drake {
 namespace multibody {
@@ -282,11 +283,40 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
     }
 }
 
-GTEST_TEST(GridClassTest, TestSlipBoundaryCondition) {
+GTEST_TEST(GridClassTest, TestWallBoundaryCondition) {
     Vector3<int> num_gridpt_1D = {10, 20, 30};
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    // Array of 6 boundary spaces, correspond to 6 faces of the grid domain
+    std::vector<geometry::internal::PosedHalfSpace<double>> boundary_space_vec;
+    // The number of grid points to enforce Dirichlet boundary conditions.
+    int boundary_thickness = 3;
+    // We assume an ideal slip boundary condition
+    double friction_coefficient = 0.0;
+    // Number of faces of a cube domain
+    int num_faces = 6;
+    boundary_space_vec.reserve(num_faces);
+
+    // Initialize the boundary spaces
+    boundary_space_vec[0] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(1, 0, 0),
+                                                   Vector3<double>(9, 0, 0));
+    boundary_space_vec[1] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(-1, 0, 0),
+                                                   Vector3<double>(0, 0, 0));
+    boundary_space_vec[2] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 1, 0),
+                                                   Vector3<double>(0, 19, 0));
+    boundary_space_vec[3] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, -1, 0),
+                                                   Vector3<double>(0, 0, 0));
+    boundary_space_vec[4] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 0, 1),
+                                                   Vector3<double>(0, 0, 29));
+    boundary_space_vec[5] =
+        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 0, -1),
+                                                   Vector3<double>(0, 0, 0));
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -299,69 +329,33 @@ GTEST_TEST(GridClassTest, TestSlipBoundaryCondition) {
     }
 
     // Enforce slip BC
-    grid.EnforceSlipBoundaryCondition();
+    for (int f = 0; f < num_faces; ++f) {
+        grid.EnforceWallBoundaryCondition(friction_coefficient,
+                                          boundary_space_vec[f]);
+    }
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        if (i < bottom_corner(0)+3
-         || i >= bottom_corner(0)+num_gridpt_1D(0)-3) {
+        if (i < bottom_corner(0)+boundary_thickness
+         || i >= bottom_corner(0)+num_gridpt_1D(0)-boundary_thickness) {
             EXPECT_EQ(velocity_i(0), 0);
         } else {
             EXPECT_EQ(velocity_i(0), 1);
         }
-        if (j < bottom_corner(1)+3
-         || j >= bottom_corner(1)+num_gridpt_1D(1)-3) {
+        if (j < bottom_corner(1)+boundary_thickness
+         || j >= bottom_corner(1)+num_gridpt_1D(1)-boundary_thickness) {
             EXPECT_EQ(velocity_i(1), 0);
         } else {
             EXPECT_EQ(velocity_i(1), 1);
         }
-        if (k < bottom_corner(2)+3
-         || k >= bottom_corner(2)+num_gridpt_1D(2)-3) {
+        if (k < bottom_corner(2)+boundary_thickness
+         || k >= bottom_corner(2)+num_gridpt_1D(2)-boundary_thickness) {
             EXPECT_EQ(velocity_i(2), 0);
         } else {
             EXPECT_EQ(velocity_i(2), 1);
-        }
-    }
-    }
-    }
-}
-
-GTEST_TEST(GridClassTest, TestNoSlipBoundaryCondition) {
-    Vector3<int> num_gridpt_1D = {10, 20, 30};
-    double h = 1.0;
-    Vector3<int> bottom_corner  = {0, 0, 0};
-    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
-
-    // Populate the grid with nonzero velocities
-    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
-    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
-    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
-        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
-    }
-    }
-    }
-
-    // Enforce no slip BC
-    grid.EnforceNoSlipBoundaryCondition();
-
-    // Check velocity after enforcement, hardcode values for verification
-    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
-    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
-    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        if (i < bottom_corner(0)+3
-         || i >= bottom_corner(0)+num_gridpt_1D(0)-3 || j < bottom_corner(1)+3
-         || j >= bottom_corner(1)+num_gridpt_1D(1)-3 || k < bottom_corner(2)+3
-         || k >= bottom_corner(2)+num_gridpt_1D(2)-3 ) {
-            EXPECT_TRUE(CompareMatrices(velocity_i, Vector3<double>::Zero(),
-                        kEps));
-        } else {
-            EXPECT_TRUE(CompareMatrices(velocity_i, Vector3<double>::Ones(),
-                        kEps));
         }
     }
     }

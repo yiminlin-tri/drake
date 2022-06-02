@@ -175,30 +175,21 @@ void Grid::UpdateVelocity(double dt) {
     }
 }
 
-void Grid::EnforceSlipBoundaryCondition() {
+void Grid::EnforceWallBoundaryCondition(double friction_coefficient,
+            const geometry::internal::PosedHalfSpace<double>& boundary_space) {
+    // For all grid points
     for (const auto& [index_flat, index_3d] : indices_) {
-        // For each dimension
-        for (int d = 0; d < 3; ++d) {
-            // If it is a wall, enforce slip BC
-            if ((index_3d(d) < bottom_corner_(d)+3)
-             || (index_3d(d) >=
-                            bottom_corner_(d)+num_gridpt_1D_(d)-3)) {
-                velocities_[index_flat](d) = 0.0;
-            }
-        }
-    }
-}
-
-void Grid::EnforceNoSlipBoundaryCondition() {
-    for (const auto& [index_flat, index_3d] : indices_) {
-        // For each dimension
-        for (int d = 0; d < 3; ++d) {
-            // If it is a wall, enforce slip BC
-            if ((index_3d(d) < bottom_corner_(d)+3)
-             || (index_3d(d) >=
-                            bottom_corner_(d)+num_gridpt_1D_(d)-3)) {
-                velocities_[index_flat] = Vector3<double>::Zero();
-            }
+        // If the grid point is inside the boundary space and its distance to
+        // the half plane is less than 2h, or the grid point is outside the
+        // boundary space
+        if (boundary_space.CalcSignedDistance(positions_[index_flat])
+                                                                >= -2.0*h_) {
+            const Vector3<double>& normal = boundary_space.normal();
+            const Vector3<double>& v_i = velocities_[index_flat];
+            double vn = v_i.dot(normal);           // v \dot normal
+            Vector3<double> vt = v_i - vn*normal;  // Tangential velocity
+            velocities_[index_flat] = vt
+                                    + friction_coefficient*vn*vt.normalized();
         }
     }
 }

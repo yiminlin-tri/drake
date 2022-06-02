@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "drake/common/eigen_types.h"
+#include "drake/geometry/proximity/posed_half_space.h"
 
 namespace drake {
 namespace multibody {
@@ -99,16 +100,17 @@ class Grid {
     // v^{n+1} = v^n + dt*f^n/m^n
     void UpdateVelocity(double dt);
 
-    // Enforce slip and no-slip wall boundary conditions on the grid's boundary.
-    // They are both Dirichlet boundary conditions. We strongly impose no-slip
-    // boundary condition by enforcing the velocity near boundary to be 0, and
-    // impose slip boundary condition by enforcing the normal velocity near
-    // boundary to be 0 with the same tangential velocity. Note that grid points
-    // "near" boundary are the grid nodes that are at most 2h away from the
+    // Enforce wall boundary conditions on the given half space. THe normal of
+    // the given half space is the outward pointing normal from the interior of
+    // the domain to the exterior of the domain. We strongly impose this
+    // Dirichlet boundary conditions to all grid points at most 2h away from the
     // boundary grid points. This will ensure the correctness of boundary
-    // condition.
-    void EnforceSlipBoundaryCondition();
-    void EnforceNoSlipBoundaryCondition();
+    // condition and particles would not go out of bound. We enforce the
+    // velocity at wall boundary as v = v_t + \mu * v_n v_t / \|v_t\|, where v_t
+    // is the tangential velocity, v_n = v \dot n, n the outward normal of the
+    // halfplane, and \mu the friction_coefficient
+    void EnforceWallBoundaryCondition(double friction_coefficient,
+            const geometry::internal::PosedHalfSpace<double>& boundary_space);
 
  private:
     int num_gridpt_;
