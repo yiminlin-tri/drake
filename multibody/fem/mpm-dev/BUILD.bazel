@@ -86,6 +86,20 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "BoundaryCondition",
+    srcs = [
+        "BoundaryCondition.cc",
+    ],
+    hdrs = [
+        "BoundaryCondition.h",
+    ],
+    deps = [
+        "//common:essential",
+        "//geometry/proximity:posed_half_space",
+    ],
+)
+
+drake_cc_library(
     name = "MPMTransfer",
     srcs = [
         "MPMTransfer.cc",
@@ -168,6 +182,15 @@ drake_cc_googletest(
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
         "//math:geometric_transform",
+    ],
+)
+
+drake_cc_googletest(
+    name = "BoundaryCondition_test",
+    deps = [
+        ":BoundaryCondition",
+        "//common:essential",
+        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
