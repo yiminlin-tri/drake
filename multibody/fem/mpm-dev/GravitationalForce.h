@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include <vector>
 
 #include "drake/common/eigen_types.h"
@@ -9,16 +10,20 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-// A class providing the utitlities to apply external forces to the grid
-class ExternalForces {
+// A class providing the utitlities to apply gravitational forces to the grid
+class GravitationalForce {
  public:
-    ExternalForces() = default;
+    GravitationalForce();
+    explicit GravitationalForce(Vector3<double> g);
 
     // Apply the gravitational forces to grid points. (Equivalently, apply
     // gravitational acceleration to the velocity)
-    // v_new = v_prev + dt*(0, 0, -g), where g = 9.81
+    // v_new = v_prev + dt*gravitational_acceleration
     void ApplyGravitationalForces(double dt, Grid* grid) const;
-};  // class ExternalForces
+
+ private:
+    Vector3<double> gravitational_acceleration_;
+};  // class GravitationalForce
 
 }  // namespace mpm
 }  // namespace multibody

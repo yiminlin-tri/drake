@@ -101,12 +101,12 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "ExternalForces",
+    name = "GravitationalForce",
     srcs = [
-        "ExternalForces.cc",
+        "GravitationalForce.cc",
     ],
     hdrs = [
-        "ExternalForces.h",
+        "GravitationalForce.h",
     ],
     deps = [
         ":Grid",
@@ -210,9 +210,9 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
-    name = "ExternalForces_test",
+    name = "GravitationalForce_test",
     deps = [
-        ":ExternalForces",
+        ":GravitationalForce",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
     ],
