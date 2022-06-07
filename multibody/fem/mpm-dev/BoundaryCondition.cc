@@ -47,6 +47,8 @@ void BoundaryCondition::Apply(const Vector3<double>& position,
             if (vt_norm <= boundary.friction_coefficient*vn_norm) {
                 *velocity = Vector3<double>::Zero();
             } else {
+                // If the tangential velocity is zero, the updated velocity is
+                // zero by above.
                 *velocity = vt - boundary.friction_coefficient
                                 *vn_norm*vt/vt_norm;
             }
