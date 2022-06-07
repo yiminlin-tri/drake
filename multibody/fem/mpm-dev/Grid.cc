@@ -175,24 +175,11 @@ void Grid::UpdateVelocity(double dt) {
     }
 }
 
-void Grid::EnforceWallBoundaryCondition(double friction_coefficient,
-            const geometry::internal::PosedHalfSpace<double>& boundary_space) {
-    // For all grid points
+void Grid::EnforceBoundaryCondition(BoundaryCondition boundary_condition) {
+    // For all grid points, enfroce frictional wall boundary condition
     for (const auto& [index_flat, index_3d] : indices_) {
-        // If the grid point is inside the boundary space and its distance to
-        // the half plane is at most 2h, enforce BC. If the grid point is
-        // outside the boundary space, set the velocity to be 0.0.
-        double dist = boundary_space.CalcSignedDistance(positions_[index_flat]);
-        if (dist > 0) {
-            velocities_[index_flat] = Vector3<double>::Zero();
-        } else if (dist >= -2.0*h_) {
-            const Vector3<double>& normal = boundary_space.normal();
-            const Vector3<double>& v_i = velocities_[index_flat];
-            double vn = v_i.dot(normal);           // v \dot normal
-            Vector3<double> vt = v_i - vn*normal;  // Tangential velocity
-            velocities_[index_flat] = vt
-                                    + friction_coefficient*vn*vt.normalized();
-        }
+        boundary_condition.UpdateFrictionalWallVelocity(positions_[index_flat],
+                                                    &velocities_[index_flat]);
     }
 }
 

@@ -6,6 +6,7 @@
 
 #include "drake/common/eigen_types.h"
 #include "drake/geometry/proximity/posed_half_space.h"
+#include "drake/multibody/fem/mpm-dev/BoundaryCondition.h"
 
 namespace drake {
 namespace multibody {
@@ -103,14 +104,9 @@ class Grid {
     // Enforce wall boundary conditions on the given half space. THe normal of
     // the given half space is the outward pointing normal from the interior of
     // the domain to the exterior of the domain. We strongly impose this
-    // Dirichlet boundary conditions to all grid points at most 2h away from the
-    // boundary grid points. This will ensure the correctness of boundary
-    // condition and particles would not go out of bound. We enforce the
-    // velocity at wall boundary as v = v_t + \mu * v_n v_t / \|v_t\|, where v_t
-    // is the tangential velocity, v_n = v \dot n, n the outward normal of the
-    // halfplane, and \mu the friction_coefficient
-    void EnforceWallBoundaryCondition(double friction_coefficient,
-            const geometry::internal::PosedHalfSpace<double>& boundary_space);
+    // Dirichlet boundary conditions given by boundary_condition to all grid
+    // points in the boundary half- spaces.
+    void EnforceBoundaryCondition(BoundaryCondition boundary_condition);
 
  private:
     int num_gridpt_;

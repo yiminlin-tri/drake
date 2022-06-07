@@ -80,6 +80,7 @@ drake_cc_library(
         "Grid.h",
     ],
     deps = [
+        ":BoundaryCondition",
         "//common:essential",
         "//geometry/proximity:posed_half_space",
     ],

@@ -292,35 +292,17 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
-    // Array of 6 boundary spaces, correspond to 6 faces of the grid domain
-    std::vector<geometry::internal::PosedHalfSpace<double>> boundary_space_vec;
-    // The number of grid points to enforce Dirichlet boundary conditions.
-    int boundary_thickness = 3;
     // We assume an ideal slip boundary condition
-    double friction_coefficient = 0.0;
-    // Number of faces of a cube domain
-    int num_faces = 6;
-    boundary_space_vec.reserve(num_faces);
+    double mu = 0.0;
+    BoundaryCondition bc = BoundaryCondition();
 
     // Initialize the boundary spaces
-    boundary_space_vec[0] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(1, 0, 0),
-                                                   Vector3<double>(9, 0, 0));
-    boundary_space_vec[1] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(-1, 0, 0),
-                                                   Vector3<double>(0, 0, 0));
-    boundary_space_vec[2] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 1, 0),
-                                                   Vector3<double>(0, 19, 0));
-    boundary_space_vec[3] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, -1, 0),
-                                                   Vector3<double>(0, 0, 0));
-    boundary_space_vec[4] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 0, 1),
-                                                   Vector3<double>(0, 0, 29));
-    boundary_space_vec[5] =
-        geometry::internal::PosedHalfSpace<double>(Vector3<double>(0, 0, -1),
-                                                   Vector3<double>(0, 0, 0));
+    bc.AddBoundary({mu, {{1, 0, 0}, {9, 0, 0}}});
+    bc.AddBoundary({mu, {{-1, 0, 0}, {0, 0, 0}}});
+    bc.AddBoundary({mu, {{0, 1, 0}, {0, 19, 0}}});
+    bc.AddBoundary({mu, {{0, -1, 0}, {0, 0, 0}}});
+    bc.AddBoundary({mu, {{0, 0, 1}, {0, 0, 29}}});
+    bc.AddBoundary({mu, {{0, 0, -1}, {0, 0, 0}}});
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -333,30 +315,27 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     }
 
     // Enforce slip BC
-    for (int f = 0; f < num_faces; ++f) {
-        grid.EnforceWallBoundaryCondition(friction_coefficient,
-                                          boundary_space_vec[f]);
-    }
+    grid.EnforceBoundaryCondition(bc);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        if (i < bottom_corner(0)+boundary_thickness
-         || i >= bottom_corner(0)+num_gridpt_1D(0)-boundary_thickness) {
+        if (i == bottom_corner(0)
+         || i == bottom_corner(0)+num_gridpt_1D(0)-1) {
             EXPECT_EQ(velocity_i(0), 0);
         } else {
             EXPECT_EQ(velocity_i(0), 1);
         }
-        if (j < bottom_corner(1)+boundary_thickness
-         || j >= bottom_corner(1)+num_gridpt_1D(1)-boundary_thickness) {
+        if (j == bottom_corner(1)
+         || j == bottom_corner(1)+num_gridpt_1D(1)-1) {
             EXPECT_EQ(velocity_i(1), 0);
         } else {
             EXPECT_EQ(velocity_i(1), 1);
         }
-        if (k < bottom_corner(2)+boundary_thickness
-         || k >= bottom_corner(2)+num_gridpt_1D(2)-boundary_thickness) {
+        if (k == bottom_corner(2)
+         || k == bottom_corner(2)+num_gridpt_1D(2)-1) {
             EXPECT_EQ(velocity_i(2), 0);
         } else {
             EXPECT_EQ(velocity_i(2), 1);
@@ -376,12 +355,12 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     Vector3<int> bottom_corner  = {0, 0, 0};
     Vector3<double> velocity_grid = Vector3<double>(1.0, 2.0, 3.0);
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
-    // The boundary space
-    geometry::internal::PosedHalfSpace<double> boundary_space =
-                                                  {Vector3<double>(-1, -1, -1),
-                                                   Vector3<double>(5, 5, 5)};
     // Friction coefficient
     double mu = 0.05;
+    BoundaryCondition bc = BoundaryCondition();
+
+    // Initialize the boundary spaces
+    bc.AddBoundary({mu, {{-1, -1, -1}, {5, 5, 5}}});
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -394,7 +373,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     }
 
     // Enforce wall boundary condition
-    grid.EnforceWallBoundaryCondition(mu, boundary_space);
+    grid.EnforceBoundaryCondition(bc);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -402,18 +381,20 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& position_i = grid.get_position(i, j, k);
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        double dist = boundary_space.CalcSignedDistance(position_i);
-        if (dist > 0) {
+        double dist =
+            bc.get_boundary(0).boundary_space.CalcSignedDistance(position_i);
+        // If the grid point is not on/in the boundary, velocity shall be the
+        // same
+        if (dist < 0) {
             EXPECT_TRUE(CompareMatrices(velocity_i,
-                                        Vector3<double>::Zero(), kEps));
-        } else if (dist >= -2.0*grid.get_h()) {
+                                        Vector3<double>{1.0, 2.0, 3.0}, kEps));
+        } else {
             // Given v_i = (1, 2, 3), n = 1/sqrt(3)*(-1, -1, -1)
             // Then v_t = (-1, 0, 1), vn = 6/sqrt(3)
-            // v = v_t + \mu vn v_t/\|v_t\| = (-1-mu*sqrt(6), 0, 1+mu*sqrt(6))
+            // v = vt - \mu v_n vt/\|vt\| = (1-0.05\sqrt(6)) (-1, 0, 1)
             EXPECT_TRUE(CompareMatrices(velocity_i,
-                                        Vector3<double>(-1+std::sqrt(6)*mu,
-                                                        0.0, 1-std::sqrt(6)*mu),
-                                        kEps));
+                            (1.0-0.05*sqrt(6))*Vector3<double>(-1.0, 0.0, 1.0),
+                            kEps));
         }
     }
     }

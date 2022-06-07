@@ -29,7 +29,33 @@ void BoundaryCondition::AddBoundary(const
     boundaries_.emplace_back(boundary);
 }
 
+void BoundaryCondition::UpdateFrictionalWallVelocity(
+                                            const Vector3<double>& position,
+                                            Vector3<double>* velocity) const {
+    // For all boundaries
+    for (const auto& boundary : boundaries_) {
+        // If the grid point is on/in the boundary, enforce the frictional wall
+        // boundary condition
+        if (boundary.boundary_space.CalcSignedDistance(position) >= 0) {
+            // Normal vector of the boundary plane
+            const Vector3<double>& n_i = boundary.boundary_space.normal();
+            // Normal and tangential components of the velocity
+            Vector3<double> vn = velocity->dot(n_i)*n_i;
+            Vector3<double> vt = *velocity - vn;
+            // Normal and tangential speed
+            double v_n = vn.norm();
+            double v_t = vt.norm();
 
+            // Limit the amount of friction to at most eliminating the
+            // tangential velocity
+            if (v_t <= boundary.friction_coefficient*v_n) {
+                *velocity = Vector3<double>::Zero();
+            } else {
+                *velocity = vt - boundary.friction_coefficient*v_n*vt/v_t;
+            }
+        }
+    }
+}
 
 }  // namespace mpm
 }  // namespace multibody
