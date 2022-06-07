@@ -4,12 +4,10 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-BoundaryCondition::BoundaryCondition(
-            const std::vector<Boundary>& boundaries) {
-    boundaries_ = boundaries;
-}
+BoundaryCondition::BoundaryCondition(std::vector<Boundary> boundaries):
+                                        boundaries_(std::move(boundaries)) {}
 
-int BoundaryCondition::get_num_boundary() const {
+int BoundaryCondition::get_num_boundaries() const {
     return boundaries_.size();
 }
 
@@ -24,34 +22,33 @@ const BoundaryCondition::Boundary&
     return boundaries_[index];
 }
 
-void BoundaryCondition::AddBoundary(const
-                                    BoundaryCondition::Boundary& boundary) {
-    boundaries_.emplace_back(boundary);
+void BoundaryCondition::AddBoundary(BoundaryCondition::Boundary boundary) {
+    boundaries_.emplace_back(std::move(boundary));
 }
 
-void BoundaryCondition::UpdateFrictionalWallVelocity(
-                                            const Vector3<double>& position,
-                                            Vector3<double>* velocity) const {
+void BoundaryCondition::Apply(const Vector3<double>& position,
+                                    Vector3<double>* velocity) const {
     // For all boundaries
     for (const auto& boundary : boundaries_) {
         // If the grid point is on/in the boundary, enforce the frictional wall
         // boundary condition
-        if (boundary.boundary_space.CalcSignedDistance(position) >= 0) {
+        if (boundary.boundary_space.CalcSignedDistance(position) <= 0) {
             // Normal vector of the boundary plane
             const Vector3<double>& n_i = boundary.boundary_space.normal();
             // Normal and tangential components of the velocity
             Vector3<double> vn = velocity->dot(n_i)*n_i;
             Vector3<double> vt = *velocity - vn;
             // Normal and tangential speed
-            double v_n = vn.norm();
-            double v_t = vt.norm();
+            double vn_norm = vn.norm();
+            double vt_norm = vt.norm();
 
             // Limit the amount of friction to at most eliminating the
             // tangential velocity
-            if (v_t <= boundary.friction_coefficient*v_n) {
+            if (vt_norm <= boundary.friction_coefficient*vn_norm) {
                 *velocity = Vector3<double>::Zero();
             } else {
-                *velocity = vt - boundary.friction_coefficient*v_n*vt/v_t;
+                *velocity = vt - boundary.friction_coefficient
+                                *vn_norm*vt/vt_norm;
             }
         }
     }

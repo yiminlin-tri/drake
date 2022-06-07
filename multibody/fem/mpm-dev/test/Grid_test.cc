@@ -297,12 +297,12 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     BoundaryCondition bc = BoundaryCondition();
 
     // Initialize the boundary spaces
-    bc.AddBoundary({mu, {{1, 0, 0}, {9, 0, 0}}});
-    bc.AddBoundary({mu, {{-1, 0, 0}, {0, 0, 0}}});
-    bc.AddBoundary({mu, {{0, 1, 0}, {0, 19, 0}}});
-    bc.AddBoundary({mu, {{0, -1, 0}, {0, 0, 0}}});
-    bc.AddBoundary({mu, {{0, 0, 1}, {0, 0, 29}}});
-    bc.AddBoundary({mu, {{0, 0, -1}, {0, 0, 0}}});
+    bc.AddBoundary({mu, {{-1, 0, 0}, {9, 0, 0}}});
+    bc.AddBoundary({mu, {{1, 0, 0}, {0, 0, 0}}});
+    bc.AddBoundary({mu, {{0, -1, 0}, {0, 19, 0}}});
+    bc.AddBoundary({mu, {{0, 1, 0}, {0, 0, 0}}});
+    bc.AddBoundary({mu, {{0, 0, -1}, {0, 0, 29}}});
+    bc.AddBoundary({mu, {{0, 0, 1}, {0, 0, 0}}});
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -385,7 +385,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
             bc.get_boundary(0).boundary_space.CalcSignedDistance(position_i);
         // If the grid point is not on/in the boundary, velocity shall be the
         // same
-        if (dist < 0) {
+        if (dist > 0) {
             EXPECT_TRUE(CompareMatrices(velocity_i,
                                         Vector3<double>{1.0, 2.0, 3.0}, kEps));
         } else {

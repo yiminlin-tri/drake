@@ -106,7 +106,7 @@ class Grid {
     // the domain to the exterior of the domain. We strongly impose this
     // Dirichlet boundary conditions given by boundary_condition to all grid
     // points in the boundary half- spaces.
-    void EnforceBoundaryCondition(BoundaryCondition boundary_condition);
+    void EnforceBoundaryCondition(const BoundaryCondition& boundary_condition);
 
  private:
     int num_gridpt_;
