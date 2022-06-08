@@ -86,7 +86,7 @@ class MPMDriver {
     // output_directory/case_name($step).bgeo
     void WriteParticlesToBgeo(int step);
 
-    // Initialize particles, grid, and mpm_transfer
+    // Initialize particles and grid
     void SetUpDriver();
 
     // Symplectic Euler time stepping till endtime with dt

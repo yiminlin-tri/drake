@@ -54,7 +54,7 @@ int DoMain() {
         Vector3<int>(0, 0, 0),             // Bottom corner of the grid
         1.0,                               // Young's modulus
         0.499,                             // Poisson's ratio
-        0.00,                              // Friction coefficient
+        0.10,                              // Friction coefficient
         {0.0, 0.0, -9.81}                  // Gravitational acceleration
     };
 
@@ -66,7 +66,7 @@ int DoMain() {
     BoundaryCondition::Boundary b2 = {param.mu, {{0, -1, 0}, {0, 9, 0}}};
     BoundaryCondition::Boundary b3 = {param.mu, {{0, 1, 0}, {0, 1, 0}}};
     BoundaryCondition::Boundary b4 = {param.mu, {{0, 0, -1}, {0, 0, 9}}};
-    BoundaryCondition::Boundary b5 = {param.mu, {{0, 0, 1}, {0, 0, 1}}};
+    BoundaryCondition::Boundary b5 = {param.mu, {{0, -1, 10}, {0, 0, 1}}};
     std::vector<BoundaryCondition::Boundary> boundaries =
                                                     {b0, b1, b2, b3, b4, b5};
 

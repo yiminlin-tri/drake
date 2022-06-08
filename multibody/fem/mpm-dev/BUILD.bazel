@@ -146,6 +146,7 @@ drake_cc_library(
     name = "poisson_disk_sampling",
     hdrs = [
         "poisson_disk_sampling.h",
+        "//common:eigen_types.h",
     ],
 )
 

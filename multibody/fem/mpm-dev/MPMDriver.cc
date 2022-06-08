@@ -42,26 +42,25 @@ void MPMDriver::DoTimeStepping() {
 }
 
 void MPMDriver::InitializeParticles() {
-    float r = param_.sample_r;
-    float h = param_.h;
-    std::array<float, 3> x_min = {{param_.bottom_corner(0)*h,
+    double h = param_.h;
+    std::array<double, 3> x_min = {{param_.bottom_corner(0)*h,
                                    param_.bottom_corner(1)*h,
                                    param_.bottom_corner(2)*h}};
-    std::array<float, 3> x_max =
+    std::array<double, 3> x_max =
               {{(param_.bottom_corner(0)+param_.num_gridpt_1D(0)-1)*h,
                 (param_.bottom_corner(1)+param_.num_gridpt_1D(1)-1)*h,
                 (param_.bottom_corner(2)+param_.num_gridpt_1D(2)-1)*h}};
-    std::vector<std::array<float, 3>> particles_sample_positions =
-                                thinks::PoissonDiskSampling(r, x_min, x_max);
+    std::vector<Vector3<double>> particles_sample_positions =
+        thinks::PoissonDiskSampling<double, 3, Vector3<double>>(param_.sample_r,
+                                                                x_min, x_max);
 
     // Pick out sampled particles that are in the object
     int num_samples = particles_sample_positions.size();
-    std::vector<std::array<float, 3>> particles_positions;
+    std::vector<Vector3<double>> particles_positions;
     for (int p = 0; p < num_samples; ++p) {
-        const std::array<float, 3>& pos_p = particles_sample_positions[p];
-        Vector3<double> xp = Vector3<double>(pos_p[0], pos_p[1], pos_p[2]);
+        const Vector3<double>& xp = particles_sample_positions[p];
         if (param_.object_indicator(xp)) {
-            particles_positions.emplace_back(pos_p);
+            particles_positions.emplace_back(xp);
         }
     }
 
@@ -74,8 +73,7 @@ void MPMDriver::InitializeParticles() {
 
     // Add particles
     for (int p = 0; p < num_particles; ++p) {
-        const std::array<float, 3>& pos_p = particles_positions[p];
-        Vector3<double> xp = Vector3<double>(pos_p[0], pos_p[1], pos_p[2]);
+        const Vector3<double>& xp = particles_positions[p];
         particles_.AddParticle(xp, param_.velocity_field(xp),
                                    param_.density_field(xp)*reference_volume_p,
                                    reference_volume_p,
