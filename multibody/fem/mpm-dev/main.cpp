@@ -1,3 +1,4 @@
+#include <array>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -38,24 +39,27 @@ int DoMain() {
     // TODO(yiminlin.tri): ignore level set and use [4, 6]x[4, 6]x[3, 5] box now
     // And we use a grid of size [0,10]^3
     MPMDriver::MPMParameters param {
-        "mpm-test",                        // case name
-        "/home/yiminlin/Desktop/output",   // output directory name
-        1,                                 // Interval of outputting
-        5.0,                               // End time
-        0.005,                             // Time step size
-        box_indicator,                     // Object indicator
-        constant_density,                  // Density distribution
-        constant_velocity,                 // Velocity distribution
-        8.0,                               // Total volume of the object
-        0.1,                               // Radius of Poission disk sampling
-        1.0,                               // Grid size
-        Vector3<int>(11, 11, 11),          // Number of grid points in each
-                                           // direction
-        Vector3<int>(0, 0, 0),             // Bottom corner of the grid
-        1.0,                               // Young's modulus
-        0.499,                             // Poisson's ratio
-        0.10,                              // Friction coefficient
-        {0.0, 0.0, -9.81}                  // Gravitational acceleration
+        "mpm-test",                            // case name
+        "/home/yiminlin/Desktop/output",       // output directory name
+        1,                                     // Interval of outputting
+        5.0,                                   // End time
+        0.005,                                 // Time step size
+        box_indicator,                         // Object indicator
+        constant_density,                      // Density distribution
+        constant_velocity,                     // Velocity distribution
+        8.0,                                   // Total volume of the object
+        0.1,                                   // Radius of Poission disk
+                                               // sampling
+        std::array<double, 3>{4.0, 4.0, 3.0},  // x_min,         Bounding box of
+        std::array<double, 3>{6.0, 6.0, 5.0},  // x_max,         particles
+        1.0,                                   // Grid size
+        Vector3<int>(11, 11, 11),              // Number of grid points in each
+                                               // direction
+        Vector3<int>(0, 0, 0),                 // Bottom corner of the grid
+        1.0,                                   // Young's modulus
+        0.499,                                 // Poisson's ratio
+        0.10,                                  // Friction coefficient
+        {0.0, 0.0, -9.81}                      // Gravitational acceleration
     };
 
     std::unique_ptr<MPMDriver> driver;

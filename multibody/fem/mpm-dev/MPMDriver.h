@@ -46,6 +46,8 @@ class MPMDriver {
         VelocityField velocity_field;
         double total_volume;
         double sample_r;
+        std::array<double, 3> x_min;                 // Specify the bounding box
+        std::array<double, 3> x_max;                 // of initial particles
         // Grid parameters, as documented in Grid Class
         double h;
         Vector3<int> num_gridpt_1D;
