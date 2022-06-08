@@ -95,6 +95,7 @@ class MPMDriver {
     MPMParameters param_;
     Particles particles_;
     Grid grid_;
+    MPMTransfer mpm_transfer_;
     BoundaryCondition boundary_condition_;
 };  // class MPMDriver
 

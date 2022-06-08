@@ -21,6 +21,7 @@ void MPMDriver::Run() {
 void MPMDriver::SetUpDriver() {
     MPMDriver::InitializeParticles();
     grid_ = Grid(param_.num_gridpt_1D, param_.h, param_.bottom_corner);
+    mpm_transfer_ = MPMTransfer();
 }
 
 void MPMDriver::DoTimeStepping() {
@@ -96,12 +97,11 @@ void MPMDriver::AdvanceOneTimeStep() {
     GravitationalForce gravitational_force = GravitationalForce(param_.g);
 
     // Set up the transfer routines (Preallocations, sort the particles)
-    MPMTransfer mpm_transfer = MPMTransfer();
-    mpm_transfer.SetUpTransfer(grid_, &particles_);
+    mpm_transfer_.SetUpTransfer(grid_, &particles_);
 
     // Main Algorithm:
     // P2G
-    mpm_transfer.TransferParticlesToGrid(particles_, &grid_);
+    mpm_transfer_.TransferParticlesToGrid(particles_, &grid_);
 
     // Update grid velocity
     grid_.UpdateVelocity(param_.dt);
@@ -111,7 +111,7 @@ void MPMDriver::AdvanceOneTimeStep() {
     grid_.EnforceBoundaryCondition(boundary_condition_);
 
     // G2P
-    mpm_transfer.TransferGridToParticles(grid_, param_.dt, &particles_);
+    mpm_transfer_.TransferGridToParticles(grid_, param_.dt, &particles_);
 
     // Advect and update particles
     particles_.UpdateKirchhoffStresses(corotated_model);
