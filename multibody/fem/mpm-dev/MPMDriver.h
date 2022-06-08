@@ -98,6 +98,8 @@ class MPMDriver {
     Particles particles_;
     Grid grid_;
     MPMTransfer mpm_transfer_;
+    CorotatedModel corotated_model_;
+    GravitationalForce gravitational_force_;
     BoundaryCondition boundary_condition_;
 };  // class MPMDriver
 

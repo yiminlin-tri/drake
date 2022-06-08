@@ -4,7 +4,8 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-MPMDriver::MPMDriver(MPMParameters param) {
+MPMDriver::MPMDriver(MPMParameters param): corotated_model_(param.E, param.nu),
+                                           gravitational_force_(param.g) {
     param_ = param;
 }
 
@@ -93,8 +94,8 @@ void MPMDriver::WriteParticlesToBgeo(int step) {
 }
 
 void MPMDriver::AdvanceOneTimeStep() {
-    CorotatedModel corotated_model = CorotatedModel(param_.E, param_.nu);
-    GravitationalForce gravitational_force = GravitationalForce(param_.g);
+    // Update Stresses on particles
+    particles_.UpdateKirchhoffStresses(corotated_model_);
 
     // Set up the transfer routines (Preallocations, sort the particles)
     mpm_transfer_.SetUpTransfer(grid_, &particles_);
@@ -107,14 +108,13 @@ void MPMDriver::AdvanceOneTimeStep() {
     grid_.UpdateVelocity(param_.dt);
 
     // Apply gravitational force and enforce boundary condition
-    gravitational_force.ApplyGravitationalForces(param_.dt, &grid_);
+    gravitational_force_.ApplyGravitationalForces(param_.dt, &grid_);
     grid_.EnforceBoundaryCondition(boundary_condition_);
 
     // G2P
     mpm_transfer_.TransferGridToParticles(grid_, param_.dt, &particles_);
 
-    // Advect and update particles
-    particles_.UpdateKirchhoffStresses(corotated_model);
+    // Advect particles
     particles_.AdvectParticles(param_.dt);
 }
 

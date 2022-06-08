@@ -62,8 +62,7 @@ int DoMain() {
         {0.0, 0.0, -9.81}                      // Gravitational acceleration
     };
 
-    std::unique_ptr<MPMDriver> driver;
-    driver.reset(new MPMDriver(param));
+    auto driver = std::make_unique<MPMDriver>(std::move(param));
 
     BoundaryCondition::Boundary b0 = {param.mu, {{-1, 0, 0}, {9, 0, 0}}};
     BoundaryCondition::Boundary b1 = {param.mu, {{1, 0, 0}, {1, 0, 0}}};
@@ -74,7 +73,7 @@ int DoMain() {
     std::vector<BoundaryCondition::Boundary> boundaries =
                                                     {b0, b1, b2, b3, b4, b5};
 
-    driver->InitializeBoundaryConditions(boundaries);
+    driver->InitializeBoundaryConditions(std::move(boundaries));
     driver->Run();
 
     return 0;

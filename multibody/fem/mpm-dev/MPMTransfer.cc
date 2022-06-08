@@ -98,7 +98,7 @@ void MPMTransfer::SortParticles(const Grid& grid, Particles* particles) {
     std::vector<int> batch_indices(num_particles);
     // Initialize batch_size to be 0 for every batch
     batch_sizes_.resize(grid.get_num_gridpt());
-    fill(batch_sizes_.begin(), batch_sizes_.end(), 0.0);
+    fill(batch_sizes_.begin(), batch_sizes_.end(), 0);
 
     // Preallocate the indices of batches, and check particles out of bounds
     // error
