@@ -12,7 +12,7 @@ namespace mpm {
 // A base class providing the interface of primitive geometries' level set.
 class AnalyticLevelSet {
  public:
-    explicit AnalyticLevelSet(const Vector3<double>& center, double volume);
+    AnalyticLevelSet(const Vector3<double>& center, double volume);
 
     // Return true if the position is in the interiror of the level set.
     virtual bool InInterior(const Vector3<double>& position) const = 0;
