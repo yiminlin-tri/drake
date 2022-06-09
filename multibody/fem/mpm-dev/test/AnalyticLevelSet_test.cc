@@ -93,6 +93,44 @@ GTEST_TEST(AnalyticLevelSetTest, SphereTest) {
                                 TOLERANCE));
 }
 
+GTEST_TEST(AnalyticLevelSetTest, CylinderTest) {
+    double radius = 2.0;
+    double height = 0.5;
+
+    CylinderLevelSet cylinder = CylinderLevelSet(height, radius);
+
+    // Check InInterior
+    EXPECT_NEAR(cylinder.get_volume(), 4.0*M_PI, TOLERANCE);
+    EXPECT_TRUE(cylinder.InInterior({0.0, 0.0, 0.0}));
+    EXPECT_TRUE(cylinder.InInterior({0.2, 0.0, 0.2}));
+    EXPECT_FALSE(cylinder.InInterior({-0.5, -0.6, 0.7}));
+    EXPECT_FALSE(cylinder.InInterior({3.0, 0.0, -1.0}));
+
+    // Check normal
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({2.0, 0.0, 0.0}),
+                                                Vector3<double>{1.0, 0.0, 0.0},
+                                                TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({0.0, -2.0, 0.0}),
+                                                Vector3<double>{0.0, -1.0, 0.0},
+                                                TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, -1.0, 0.5}),
+                                                Vector3<double>{0.0, 0.0, 1.0},
+                                                TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, 1.0, -0.5}),
+                                                Vector3<double>{0.0, 0.0, -1.0},
+                                                TOLERANCE));
+
+    // Check Bounding Box
+    const std::array<Vector3<double>, 2>& bounding_box =
+                                                    cylinder.get_bounding_box();
+    EXPECT_TRUE(CompareMatrices(bounding_box[0],
+                                Vector3<double>{-2.0, -2.0, -0.5},
+                                TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(bounding_box[1],
+                                Vector3<double>{2.0, 2.0, 0.5},
+                                TOLERANCE));
+}
+
 }  // namespace
 }  // namespace internal
 }  // namespace mpm

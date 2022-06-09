@@ -70,6 +70,28 @@ class BoxLevelSet : public AnalyticLevelSet {
     Vector3<double> xscale_{};
 };  // class BoxLevelSet
 
+// An analytic level set class for right cylinder
+//         _.-----._
+//       .-         -.
+//       |-_       _-|
+//       |  ~-----~  |                     y
+//       |           |                z | /
+//       `._       _.'                    - x
+//          "-----"
+// Where the circular area is parallel to the xy-plane, and the central axis is
+// parallel to z-axis. The level set can be parametetrized as [rcosθ, rsinθ, z],
+// where r is the radius given, and z ∈ [-height, height]
+class CylinderLevelSet : public AnalyticLevelSet {
+ public:
+    explicit CylinderLevelSet(double height, double radius);
+    bool InInterior(const Vector3<double>& position) const final;
+    Vector3<double> Normal(const Vector3<double>& position) const final;
+
+ private:
+    double height_;
+    double radius_;
+};  // class CylinderLevelSet
+
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake
