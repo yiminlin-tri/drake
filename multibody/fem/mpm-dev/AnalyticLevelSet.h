@@ -2,6 +2,10 @@
 
 #include <math.h>
 
+#include <algorithm>
+#include <array>
+#include <limits>
+
 #include "drake/common/eigen_types.h"
 #include "drake/math/rotation_matrix.h"
 
@@ -9,48 +13,61 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-// A base class providing the interface of primitive geometries' level set.
+// A base class providing the interface of primitive geometries' level set in
+// reference configuration
 class AnalyticLevelSet {
  public:
-    AnalyticLevelSet(const Vector3<double>& center, double volume);
+    AnalyticLevelSet(double volume,
+                     const std::array<Vector3<double>, 2>& bounding_box);
 
     // Return true if the position is in the interiror of the level set.
     virtual bool InInterior(const Vector3<double>& position) const = 0;
 
+    // Return the outward unit normal of the analytic level set,
+    // return 0 if the position is in the interior or outside of the object
+    virtual Vector3<double> Normal(const Vector3<double>& position)
+                                                                     const = 0;
+
     // Return the volume enclosed by the level set
     double get_volume() const;
+
+    // Return the bounding bound of the geometry
+    // We denote the first component of bounding_box_ as xmin_, second component
+    // is xmax_. xmin_, xmax_ represents the bounding box of the geometry
+    // i.e. the geometry lies in
+    // [xmin_(0), xmax_(0)]X[xmin_(1), xmax_(1)]X[xmin_(2), xmax_(2)]
+    const std::array<Vector3<double>, 2>& get_bounding_box() const;
 
     virtual ~AnalyticLevelSet() = default;
 
  protected:
-    Vector3<double> center_;
     double volume_;
+    std::array<Vector3<double>, 2> bounding_box_{};
 };  // class AnalyticLevelSet
 
-// An analytic level set class for sphere with radius radius_ and center center_
+// An analytic level set class for sphere with radius radius_ and center
+// (0, 0, 0)
 class SphereLevelSet : public AnalyticLevelSet {
  public:
-    SphereLevelSet(const Vector3<double>& center, double radius);
-
-    bool InInterior(const Vector3<double>& position) const;
+    explicit SphereLevelSet(double radius);
+    bool InInterior(const Vector3<double>& position) const final;
+    Vector3<double> Normal(const Vector3<double>& position) const final;
 
  private:
     double radius_;
 };  // class SphereLevelSet
 
 // An analytic level set class for box of size
-// [-xscale(0), xscale(0)] X [-xscale(1), xscale(1)] X [xscale(2), xscale(2)],
-// then rotated by rotation_ and translated to center at center_
+// [-xscale(0), xscale(0)] X [-xscale(1), xscale(1)] X [xscale(2), xscale(2)]
+// centered at (0, 0, 0)
 class BoxLevelSet : public AnalyticLevelSet {
  public:
-    BoxLevelSet(const Vector3<double>& center, const Vector3<double>& xscale,
-                const math::RotationMatrix<double>& rotation);
-
-    bool InInterior(const Vector3<double>& position) const;
+    explicit BoxLevelSet(const Vector3<double>& xscale);
+    bool InInterior(const Vector3<double>& position) const final;
+    Vector3<double> Normal(const Vector3<double>& position) const final;
 
  private:
     Vector3<double> xscale_{};
-    math::RotationMatrix<double> rotation_{};
 };  // class BoxLevelSet
 
 }  // namespace mpm

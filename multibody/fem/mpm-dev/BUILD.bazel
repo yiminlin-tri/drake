@@ -245,7 +245,7 @@ drake_cc_googletest(
     deps = [
         ":AnalyticLevelSet",
         "//common:essential",
-        "//math:geometric_transform",
+        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
