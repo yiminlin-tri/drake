@@ -27,25 +27,25 @@ GTEST_TEST(AnalyticLevelSetTest, BoxTest) {
     EXPECT_FALSE(box.InInterior({-3.0, -2.0, -1.0}));
 
     // Check Normal
-    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.0, 1.0}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({0.0, 0.0, 0.1}),
                                            Vector3<double>{0.0, 0.0, 1.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.0, -1.0}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.0, -0.9}),
                                            Vector3<double>{0.0, 0.0, -1.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, -2.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, -1.8, 0.0}),
                                            Vector3<double>{0.0, -1.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 2.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.7, 0.7}),
                                            Vector3<double>{0.0, 1.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({3.0, -1.0, 0.5}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({2.5, -1.0, 0.5}),
                                            Vector3<double>{1.0, 0.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({-3.0, -1.0, 0.5}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({-2.0, -1.0, 0.5}),
                                            Vector3<double>{-1.0, 0.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({3.0, 3.0, 3.0}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({4.0, 3.0, 3.0}),
                                            Vector3<double>{0.0, 0.0, 0.0},
                                            TOLERANCE));
 
@@ -72,14 +72,14 @@ GTEST_TEST(AnalyticLevelSetTest, SphereTest) {
     EXPECT_FALSE(sphere.InInterior({3.0, 0.0, -1.0}));
 
     // Check normal
-    EXPECT_TRUE(CompareMatrices(sphere.Normal({2.0, 0.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(sphere.Normal({1.0, 0.0, 0.0}),
                                               Vector3<double>{1.0, 0.0, 0.0},
                                               TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(sphere.Normal({0.0, -2.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(sphere.Normal({0.0, -1.0, 0.0}),
                                               Vector3<double>{0.0, -1.0, 0.0},
                                               TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(sphere.Normal({1.0, 0.0, 0.0}),
-                                              Vector3<double>{0.0, 0.0, 0.0},
+    EXPECT_TRUE(CompareMatrices(sphere.Normal({0.0, 0.0, 1.0}),
+                                              Vector3<double>{0.0, 0.0, 1.0},
                                               TOLERANCE));
 
     // Check Bounding Box
@@ -107,18 +107,15 @@ GTEST_TEST(AnalyticLevelSetTest, CylinderTest) {
     EXPECT_FALSE(cylinder.InInterior({3.0, 0.0, -1.0}));
 
     // Check normal
-    EXPECT_TRUE(CompareMatrices(cylinder.Normal({2.0, 0.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, 0.0, 0.0}),
                                                 Vector3<double>{1.0, 0.0, 0.0},
                                                 TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(cylinder.Normal({0.0, -2.0, 0.0}),
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({0.0, -1.0, 0.0}),
                                                 Vector3<double>{0.0, -1.0, 0.0},
                                                 TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, -1.0, 0.5}),
-                                                Vector3<double>{0.0, 0.0, 1.0},
-                                                TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, 1.0, -0.5}),
-                                                Vector3<double>{0.0, 0.0, -1.0},
-                                                TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, -1.0, 0.2}),
+                                        Vector3<double>{sqrt(2), -sqrt(2), 0.0},
+                                        TOLERANCE));
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box =

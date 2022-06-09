@@ -23,8 +23,7 @@ class AnalyticLevelSet {
     // Return true if the position is in the interiror of the level set.
     virtual bool InInterior(const Vector3<double>& position) const = 0;
 
-    // Return the outward unit normal of the analytic level set,
-    // return 0 if the position is in the interior or outside of the object
+    // Return the outward unit normal of the interior of the analytic level set
     virtual Vector3<double> Normal(const Vector3<double>& position)
                                                                      const = 0;
 
@@ -60,8 +59,24 @@ class SphereLevelSet : public AnalyticLevelSet {
 // An analytic level set class for box of size
 // [-xscale(0), xscale(0)] X [-xscale(1), xscale(1)] X [xscale(2), xscale(2)]
 // centered at (0, 0, 0)
+// Imagine the box is aligned like:
+//          .+------+
+//        .' |    .'|
+//       +---+--+'  |
+// left  |   |  |   |     right
+//       |  .+--+---+                     y
+//       |.'    | .'                 z | /
+//       +------+'                       - x
+//        bottom
+// And the box can be naturally decomposed into 6 pyramids correspond to
+// each face of the box. For any point inside the box, we define its
+// interior normal as the outward normal of the closest face normal relative to
+// other faces. This is equivalently the face of the pyramid this point is in.
+// We break even in the order of left, right, front, back, bottom, and top
+// faces
 class BoxLevelSet : public AnalyticLevelSet {
  public:
+    // @pre Each entry in scale is positive.
     explicit BoxLevelSet(const Vector3<double>& xscale);
     bool InInterior(const Vector3<double>& position) const final;
     Vector3<double> Normal(const Vector3<double>& position) const final;
@@ -80,7 +95,10 @@ class BoxLevelSet : public AnalyticLevelSet {
 //          "-----"
 // Where the circular area is parallel to the xy-plane, and the central axis is
 // parallel to z-axis. The level set can be parametetrized as [rcosθ, rsinθ, z],
-// where r is the radius given, and z ∈ [-height, height]
+// where r is the radius given, and z ∈ [-height, height].
+// For all interior points, the normal is defined as the vector from its
+// position to the closest point on the cylindrical surface (ignoring the lid).
+// For points on the z axis, their normals are (1.0, 0.0, 0.0).
 class CylinderLevelSet : public AnalyticLevelSet {
  public:
     explicit CylinderLevelSet(double height, double radius);
