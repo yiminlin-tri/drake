@@ -12,7 +12,8 @@ Particles::Particles(int num_particles): num_particles_(num_particles),
                                          masses_(num_particles),
                                          reference_volumes_(num_particles),
                                          deformation_gradients_(num_particles),
-                                         kirchhoff_stresses_(num_particles) {
+                                         kirchhoff_stresses_(num_particles),
+                                         affine_matrices_(num_particles) {
     DRAKE_ASSERT(num_particles >= 0);
 }
 
@@ -44,6 +45,10 @@ const Matrix3<double>& Particles::get_kirchhoff_stress(int index) const {
     return kirchhoff_stresses_[index];
 }
 
+const Matrix3<double>& Particles::get_affine_matrix(int index) const {
+    return affine_matrices_[index];
+}
+
 const std::vector<Vector3<double>>& Particles::get_positions() const {
     return positions_;
 }
@@ -64,8 +69,13 @@ const std::vector<Matrix3<double>>& Particles::get_deformation_gradients()
                                                                         const {
     return deformation_gradients_;
 }
+
 const std::vector<Matrix3<double>>& Particles::get_kirchhoff_stresses() const {
     return kirchhoff_stresses_;
+}
+
+const std::vector<Matrix3<double>>& Particles::get_affine_matrices() const {
+    return affine_matrices_;
 }
 
 void Particles::set_position(int index, const Vector3<double>& position) {
@@ -96,6 +106,11 @@ void Particles::set_kirchhoff_stress(int index,
     kirchhoff_stresses_[index] = kirchhoff_stress;
 }
 
+void Particles::set_affine_matrix(int index,
+                                  const Matrix3<double>& affine_matrix) {
+    affine_matrices_[index] = affine_matrix;
+}
+
 void Particles::set_positions(const std::vector<Vector3<double>>& positions) {
     positions_ = positions;
 }
@@ -123,6 +138,11 @@ void Particles::set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
     kirchhoff_stresses_ = kirchhoff_stresses;
 }
 
+void Particles::set_affine_matrices(const std::vector<Matrix3<double>>&
+                            affine_matrices) {
+    affine_matrices_ = affine_matrices;
+}
+
 void Particles::Reorder(const std::vector<size_t>& new_order) {
     DRAKE_DEMAND(static_cast<int>(new_order.size()) == num_particles_);
     int p_new;
@@ -132,6 +152,7 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
     std::vector<double> reference_volumes_sorted(num_particles_);
     std::vector<Matrix3<double>> deformation_gradients_sorted(num_particles_);
     std::vector<Matrix3<double>> kirchhoff_stresses_sorted(num_particles_);
+    std::vector<Matrix3<double>> affine_matrices_sorted(num_particles_);
     for (int p = 0; p < num_particles_; ++p) {
         p_new = new_order[p];
         positions_sorted[p]             = positions_[p_new];
@@ -140,6 +161,7 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
         reference_volumes_sorted[p]     = reference_volumes_[p_new];
         deformation_gradients_sorted[p] = deformation_gradients_[p_new];
         kirchhoff_stresses_sorted[p]    = kirchhoff_stresses_[p_new];
+        affine_matrices_sorted[p]       = affine_matrices_[p_new];
     }
     positions_.swap(positions_sorted);
     velocities_.swap(velocities_sorted);
@@ -147,19 +169,22 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
     reference_volumes_.swap(reference_volumes_sorted);
     deformation_gradients_.swap(deformation_gradients_sorted);
     kirchhoff_stresses_.swap(kirchhoff_stresses_sorted);
+    affine_matrices_.swap(affine_matrices_sorted);
 }
 
 void Particles::AddParticle(const Vector3<double>& position,
                             const Vector3<double>& velocity,
                             double mass, double reference_volume,
                             const Matrix3<double>& deformation_gradient,
-                            const Matrix3<double>& kirchhoff_stress) {
+                            const Matrix3<double>& kirchhoff_stress,
+                            const Matrix3<double>& affine_matrix) {
     positions_.emplace_back(position);
     velocities_.emplace_back(velocity);
     masses_.emplace_back(mass);
     reference_volumes_.emplace_back(reference_volume);
     deformation_gradients_.emplace_back(deformation_gradient);
     kirchhoff_stresses_.emplace_back(kirchhoff_stress);
+    affine_matrices_.emplace_back(affine_matrix);
     num_particles_++;
 }
 

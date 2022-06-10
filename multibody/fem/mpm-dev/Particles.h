@@ -24,6 +24,7 @@ class Particles {
     const double& get_reference_volume(int index) const;
     const Matrix3<double>& get_deformation_gradient(int index) const;
     const Matrix3<double>& get_kirchhoff_stress(int index) const;
+    const Matrix3<double>& get_affine_matrix(int index) const;
 
     const std::vector<Vector3<double>>& get_positions() const;
     const std::vector<Vector3<double>>& get_velocities() const;
@@ -31,6 +32,7 @@ class Particles {
     const std::vector<double>& get_reference_volumes() const;
     const std::vector<Matrix3<double>>& get_deformation_gradients() const;
     const std::vector<Matrix3<double>>& get_kirchhoff_stresses() const;
+    const std::vector<Matrix3<double>>& get_affine_matrices() const;
 
     // TODO(yiminlin.tri): To this point, the encapsulation seems useless here,
     // Maybe directly make Particles as a struct and remove setters and getters?
@@ -45,6 +47,8 @@ class Particles {
                                  const Matrix3<double>& deformation_gradient);
     void set_kirchhoff_stress(int index,
                               const Matrix3<double>& kirchhoff_stress);
+    void set_affine_matrix(int index,
+                           const Matrix3<double>& affine_matrix);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
     void set_velocities(const std::vector<Vector3<double>>& velocities);
@@ -54,6 +58,8 @@ class Particles {
                                    deformation_gradients);
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
+    void set_affine_matrices(const std::vector<Matrix3<double>>&
+                             affine_matrices);
 
     // TODO(yiminlin.tri): in place sorting
     // Permute all states in the Particles with respect to the index set
@@ -67,7 +73,8 @@ class Particles {
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,
                      const Matrix3<double>& deformation_gradient,
-                     const Matrix3<double>& kirchhoff_stress);
+                     const Matrix3<double>& kirchhoff_stress,
+                     const Matrix3<double>& affine_matrix);
 
     // Assume the deformation gradient is updated, update Kirchhoff stress tau
     // given the constitutive relation
@@ -85,6 +92,8 @@ class Particles {
     std::vector<double> reference_volumes_{};
     std::vector<Matrix3<double>> deformation_gradients_{};
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
+    // The affine matrix B_p in APIC
+    std::vector<Matrix3<double>> affine_matrices_{};
 };  // class Particles
 
 }  // namespace mpm
