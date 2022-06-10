@@ -31,7 +31,7 @@ bool SphereLevelSet::InInterior(const Vector3<double>& position) const {
 
 Vector3<double> SphereLevelSet::Normal(const Vector3<double>& position) const {
     if (position.norm() == 0 || !InInterior(position)) {
-        return Vector3<double>::Zero();
+        return Vector3<double>{1.0, 0.0, 0.0};
     }
     return position.normalized();
 }
@@ -53,12 +53,12 @@ bool BoxLevelSet::InInterior(const Vector3<double>& position) const {
 
 Vector3<double> BoxLevelSet::Normal(const Vector3<double>& position) const {
     if (InInterior(position)) {
-        double dist_left   = (position(0) + xscale_(0))/xscale_(0)/2;
-        double dist_right  = (xscale_(0) - position(0))/xscale_(0)/2;
-        double dist_front  = (position(1) + xscale_(1))/xscale_(1)/2;
-        double dist_back   = (xscale_(1) - position(1))/xscale_(1)/2;
-        double dist_bottom = (position(2) + xscale_(2))/xscale_(2)/2;
-        double dist_top    = (xscale_(2) - position(2))/xscale_(2)/2;
+        double dist_left   = (position(0) + xscale_(0))/xscale_(0);
+        double dist_right  = (xscale_(0) - position(0))/xscale_(0);
+        double dist_front  = (position(1) + xscale_(1))/xscale_(1);
+        double dist_back   = (xscale_(1) - position(1))/xscale_(1);
+        double dist_bottom = (position(2) + xscale_(2))/xscale_(2);
+        double dist_top    = (xscale_(2) - position(2))/xscale_(2);
         double min_dist    = std::min({dist_left, dist_right,
                                        dist_front, dist_back,
                                        dist_bottom, dist_top});
@@ -74,7 +74,7 @@ Vector3<double> BoxLevelSet::Normal(const Vector3<double>& position) const {
                             { return Vector3<double>{0.0, 0.0, -1.0}; }
         if (min_dist == dist_top)
                             { return Vector3<double>{0.0, 0.0, 1.0}; }
-        return Vector3<double>::Zero();
+        DRAKE_UNREACHABLE();
     } else {
         return Vector3<double>::Zero();
     }
@@ -97,12 +97,11 @@ bool CylinderLevelSet::InInterior(const Vector3<double>& position) const {
 Vector3<double> CylinderLevelSet::Normal(const Vector3<double>& position)
                                                                         const {
     if (InInterior(position)) {
-        double d_squared = position(0)*position(0) + position(1)*position(1);
-        double d = std::sqrt(d_squared);
-        if ((position(0) == 0) && (position(1) == 0)) {
+        Vector3<double> projection_xy(position(0), position(1), 0.0);
+        if (projection_xy.norm() == 0) {
             return Vector3<double>{1.0, 0.0, 0.0};
         }
-        return d*Vector3<double>(position(0), position(1), 0.0);
+        return projection_xy.normalized();
     } else {
         return Vector3<double>::Zero();
     }

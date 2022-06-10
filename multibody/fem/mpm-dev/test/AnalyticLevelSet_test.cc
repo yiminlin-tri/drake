@@ -114,8 +114,8 @@ GTEST_TEST(AnalyticLevelSetTest, CylinderTest) {
                                                 Vector3<double>{0.0, -1.0, 0.0},
                                                 TOLERANCE));
     EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, -1.0, 0.2}),
-                                        Vector3<double>{sqrt(2), -sqrt(2), 0.0},
-                                        TOLERANCE));
+                                    .5*Vector3<double>{sqrt(2), -sqrt(2), 0.0},
+                                    TOLERANCE));
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box =

@@ -23,7 +23,8 @@ class AnalyticLevelSet {
     // Return true if the position is in the interiror of the level set.
     virtual bool InInterior(const Vector3<double>& position) const = 0;
 
-    // Return the outward unit normal of the interior of the analytic level set
+    // Return the outward unit normal of the interior of the analytic level set.
+    // Return zero vector for positions outside of the geometry.
     virtual Vector3<double> Normal(const Vector3<double>& position)
                                                                      const = 0;
 
@@ -50,6 +51,9 @@ class SphereLevelSet : public AnalyticLevelSet {
  public:
     explicit SphereLevelSet(double radius);
     bool InInterior(const Vector3<double>& position) const final;
+
+    // At the singularity (0, 0, 0), we define the interior normal vector
+    // as (1, 0, 0)
     Vector3<double> Normal(const Vector3<double>& position) const final;
 
  private:
@@ -69,9 +73,10 @@ class SphereLevelSet : public AnalyticLevelSet {
 //       +------+'                       - x
 //        bottom
 // And the box can be naturally decomposed into 6 pyramids correspond to
-// each face of the box. For any point inside the box, we define its
-// interior normal as the outward normal of the closest face normal relative to
-// other faces. This is equivalently the face of the pyramid this point is in.
+// each face of the box by connecting each face with the origin (0, 0, 0).
+// For any point inside the box, we define its interior normal as the outward
+// normal of the closest face normal relative to other faces. This is
+// equivalently the face of the pyramid this point is in.
 // We break even in the order of left, right, front, back, bottom, and top
 // faces
 class BoxLevelSet : public AnalyticLevelSet {
