@@ -72,13 +72,10 @@ class SphereLevelSet : public AnalyticLevelSet {
 //       |.'    | .'                 z | /
 //       +------+'                       - x
 //        bottom
-// And the box can be naturally decomposed into 6 pyramids correspond to
-// each face of the box by connecting each face with the origin (0, 0, 0).
 // For any point inside the box, we define its interior normal as the outward
-// normal of the closest face normal relative to other faces. This is
-// equivalently the face of the pyramid this point is in.
-// We break even in the order of left, right, front, back, bottom, and top
-// faces
+// normal of its closest face's normal. If multiple faces are closest to the
+// point. We break even in the order of left, right, front, back, bottom, and
+// top faces
 class BoxLevelSet : public AnalyticLevelSet {
  public:
     // @pre Each entry in scale is positive.

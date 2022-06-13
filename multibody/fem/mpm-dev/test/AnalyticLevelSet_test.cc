@@ -36,13 +36,16 @@ GTEST_TEST(AnalyticLevelSetTest, BoxTest) {
     EXPECT_TRUE(CompareMatrices(box.Normal({1.0, -1.8, 0.0}),
                                            Vector3<double>{0.0, -1.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.7, 0.7}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({1.0, 1.7, 0.6}),
                                            Vector3<double>{0.0, 1.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({2.5, -1.0, 0.5}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({2.5, -1.0, 0.2}),
                                            Vector3<double>{1.0, 0.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({-2.0, -1.0, 0.5}),
+    EXPECT_TRUE(CompareMatrices(box.Normal({-2.1, -0.2, 0.0}),
+                                           Vector3<double>{-1.0, 0.0, 0.0},
+                                           TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(box.Normal({-2.0, -0.2, 0.0}),
                                            Vector3<double>{-1.0, 0.0, 0.0},
                                            TOLERANCE));
     EXPECT_TRUE(CompareMatrices(box.Normal({4.0, 3.0, 3.0}),
