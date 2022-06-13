@@ -24,7 +24,7 @@ class AnalyticLevelSet {
     virtual bool InInterior(const Vector3<double>& position) const = 0;
 
     // Return the outward unit normal of the interior of the analytic level set.
-    // Return zero vector for positions outside of the geometry.
+    // @throws exception if the position is outside of the geometry
     virtual Vector3<double> Normal(const Vector3<double>& position)
                                                                      const = 0;
 
@@ -49,6 +49,7 @@ class AnalyticLevelSet {
 // (0, 0, 0)
 class SphereLevelSet : public AnalyticLevelSet {
  public:
+    // @pre the radius of the sphere is positive
     explicit SphereLevelSet(double radius);
     bool InInterior(const Vector3<double>& position) const final;
 
@@ -103,6 +104,7 @@ class BoxLevelSet : public AnalyticLevelSet {
 // For points on the z axis, their normals are (1.0, 0.0, 0.0).
 class CylinderLevelSet : public AnalyticLevelSet {
  public:
+    // @pre the height and the radius of the cylinder are positive
     explicit CylinderLevelSet(double height, double radius);
     bool InInterior(const Vector3<double>& position) const final;
     Vector3<double> Normal(const Vector3<double>& position) const final;

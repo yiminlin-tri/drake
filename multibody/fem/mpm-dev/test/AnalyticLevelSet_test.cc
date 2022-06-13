@@ -48,9 +48,7 @@ GTEST_TEST(AnalyticLevelSetTest, BoxTest) {
     EXPECT_TRUE(CompareMatrices(box.Normal({-2.0, -0.2, 0.0}),
                                            Vector3<double>{-1.0, 0.0, 0.0},
                                            TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(box.Normal({4.0, 3.0, 3.0}),
-                                           Vector3<double>{0.0, 0.0, 0.0},
-                                           TOLERANCE));
+    EXPECT_THROW(box.Normal({4.0, 3.0, 3.0}), std::exception);
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box = box.get_bounding_box();
@@ -84,6 +82,7 @@ GTEST_TEST(AnalyticLevelSetTest, SphereTest) {
     EXPECT_TRUE(CompareMatrices(sphere.Normal({0.0, 0.0, 1.0}),
                                               Vector3<double>{0.0, 0.0, 1.0},
                                               TOLERANCE));
+    EXPECT_THROW(sphere.Normal({3.0, 3.0, 2.0}), std::exception);
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box =
@@ -119,6 +118,7 @@ GTEST_TEST(AnalyticLevelSetTest, CylinderTest) {
     EXPECT_TRUE(CompareMatrices(cylinder.Normal({1.0, -1.0, 0.2}),
                                     .5*Vector3<double>{sqrt(2), -sqrt(2), 0.0},
                                     TOLERANCE));
+    EXPECT_THROW(cylinder.Normal({3.0, 3.0, 2.0}), std::exception);
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box =

@@ -30,19 +30,23 @@ bool SphereLevelSet::InInterior(const Vector3<double>& position) const {
 }
 
 Vector3<double> SphereLevelSet::Normal(const Vector3<double>& position) const {
-    if (position.norm() == 0 || !InInterior(position)) {
-        return Vector3<double>{1.0, 0.0, 0.0};
+    if (InInterior(position)) {
+        if (position.norm() == 0) {
+            return Vector3<double>{1.0, 0.0, 0.0};
+        }
+        return position.normalized();
+    } else {
+        throw std::logic_error("Normal outside of the level set is unavaiable");
     }
-    return position.normalized();
 }
 
 BoxLevelSet::BoxLevelSet(const Vector3<double>& xscale):
                     AnalyticLevelSet(8*xscale(0)*xscale(1)*xscale(2),
                                     {{-xscale, xscale}}),
                     xscale_(xscale) {
-    DRAKE_ASSERT(xscale_(0) >= 0);
-    DRAKE_ASSERT(xscale_(1) >= 0);
-    DRAKE_ASSERT(xscale_(2) >= 0);
+    DRAKE_ASSERT(xscale_(0) > 0);
+    DRAKE_ASSERT(xscale_(1) > 0);
+    DRAKE_ASSERT(xscale_(2) > 0);
 }
 
 bool BoxLevelSet::InInterior(const Vector3<double>& position) const {
@@ -76,7 +80,7 @@ Vector3<double> BoxLevelSet::Normal(const Vector3<double>& position) const {
                             { return Vector3<double>{0.0, 0.0, 1.0}; }
         DRAKE_UNREACHABLE();
     } else {
-        return Vector3<double>::Zero();
+        throw std::logic_error("Normal outside of the level set is unavaiable");
     }
 }
 
@@ -85,6 +89,7 @@ CylinderLevelSet::CylinderLevelSet(double height, double radius):
                                             {{{-radius, -radius, -height},
                                               { radius,  radius,  height}}}),
                                             height_(height), radius_(radius) {
+    DRAKE_DEMAND(height > 0);
     DRAKE_DEMAND(radius > 0);
 }
 
@@ -103,7 +108,7 @@ Vector3<double> CylinderLevelSet::Normal(const Vector3<double>& position)
         }
         return projection_xy.normalized();
     } else {
-        return Vector3<double>::Zero();
+        throw std::logic_error("Normal outside of the level set is unavaiable");
     }
 }
 
