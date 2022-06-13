@@ -560,18 +560,18 @@ struct VecTraits<std::array<FloatT, N>> {
 };
 
 // Specialization of vector traits for Vector3
-template<typename FloatT>
-struct VecTraits<drake::Vector3<FloatT>> {
-  using ValueType = typename drake::Vector3<FloatT>::Scalar;
+template<>
+struct VecTraits<drake::Vector3<double>> {
+  using ValueType = typename drake::Vector3<double>::Scalar;
   static constexpr auto kSize = 3;
 
-  static constexpr auto Get(const drake::Vector3<FloatT>& vec,
-                            const std::size_t i) -> ValueType {
+  static auto Get(const drake::Vector3<double>& vec,
+                  const std::size_t i) -> ValueType {
     return vec(i);
   }
 
-  static constexpr void Set(drake::Vector3<FloatT>* vec,
-                            const std::size_t i, const ValueType val) {
+  static void Set(drake::Vector3<double>* vec,
+                  const std::size_t i, const ValueType val) {
     (*vec)(i) = val;
   }
 };
