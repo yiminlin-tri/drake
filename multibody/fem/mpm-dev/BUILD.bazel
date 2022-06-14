@@ -12,7 +12,7 @@ load(
 )
 load("//tools/lint:lint.bzl", "add_lint_tests")
 
-drake_cc_library(
+drake_cc_binary(
     name = "mpm",
     srcs = [
         "main.cpp",
@@ -165,6 +165,18 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "MPMParameters",
+    hdrs = [
+        "MPMParameters.h",
+    ],
+    deps = [
+        ":AnalyticLevelSet",
+        "//common:essential",
+        "//math:geometric_transform",
+    ],
+)
+
+drake_cc_library(
     name = "MPMDriver",
     srcs = [
         "MPMDriver.cc",
@@ -176,18 +188,12 @@ drake_cc_library(
         ":CorotatedModel",
         ":GravitationalForce",
         ":Grid",
+        ":MPMParameters",
         ":MPMTransfer",
         ":Particles",
         ":particles_to_bgeo",
         ":poisson_disk_sampling",
         "//common:essential",
-    ],
-)
-
-drake_cc_binary(
-    name = "run_mpm",
-    deps = [
-        ":mpm",
     ],
 )
 

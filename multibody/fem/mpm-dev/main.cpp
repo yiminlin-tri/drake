@@ -3,6 +3,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <Partio.h>
@@ -17,64 +18,52 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-bool box_indicator(const Vector3<double>& position) {
-    if ((position(0) <= 6) && (position(0) >= 4)
-     && (position(1) <= 6) && (position(1) >= 4)
-     && (position(2) <= 5) && (position(2) >= 3)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-double constant_density(const Vector3<double>& position) {
-    return position(0)-position(0)+1.0;
-}
-
-Vector3<double> constant_velocity(const Vector3<double>& position) {
-    return position-position+Vector3<double>(0.0, 0.0, 1.0);
-}
-
 int DoMain() {
-    // TODO(yiminlin.tri): ignore level set and use [4, 6]x[4, 6]x[3, 5] box now
-    // And we use a grid of size [0,10]^3
-    MPMDriver::MPMParameters param {
-        "mpm-test",                            // case name
-        "/home/yiminlin/Desktop/output",       // output directory name
-        1,                                     // Interval of outputting
-        5.0,                                   // End time
-        0.005,                                 // Time step size
-        box_indicator,                         // Object indicator
-        constant_density,                      // Density distribution
-        constant_velocity,                     // Velocity distribution
-        8.0,                                   // Total volume of the object
-        0.1,                                   // Radius of Poission disk
-                                               // sampling
-        std::array<double, 3>{4.0, 4.0, 3.0},  // x_min,         Bounding box of
-        std::array<double, 3>{6.0, 6.0, 5.0},  // x_max,         particles
-        1.0,                                   // Grid size
-        Vector3<int>(11, 11, 11),              // Number of grid points in each
-                                               // direction
-        Vector3<int>(0, 0, 0),                 // Bottom corner of the grid
-        1.0,                                   // Young's modulus
-        0.499,                                 // Poisson's ratio
+    MPMParameters::PhysicalParameters p_param {
+        8e4,                                   // Young's modulus
+        0.49,                                  // Poisson's ratio
         0.10,                                  // Friction coefficient
         {0.0, 0.0, -9.81}                      // Gravitational acceleration
     };
 
+    MPMParameters::InitialConditionParameters init_param {
+        1272,                                  // Density
+        {0.0, 0.0, 0.0},                       // Initial Velocity
+    };
+
+    MPMParameters::SolverParameters s_param {
+        5e-1,                                  // End time
+        2e-4,                                  // Time step size
+        1,                                     // Min num of particles per cell
+        0.01,                                  // Grid size
+        Vector3<int>(23, 23, 23),              // Number of grid points in each
+                                               // direction
+        Vector3<int>(-1, -1, -1),              // Bottom corner of the grid
+    };
+
+    MPMParameters::IOParameters io_param {
+        "mpm-test",                            // case name
+        "/home/yiminlin/Desktop/output",       // output directory name
+        1e-3,                                  // Interval of outputting
+    };
+
+    MPMParameters param {p_param, init_param, s_param, io_param};
     auto driver = std::make_unique<MPMDriver>(std::move(param));
 
-    BoundaryCondition::Boundary b0 = {param.mu, {{-1, 0, 0}, {9, 0, 0}}};
-    BoundaryCondition::Boundary b1 = {param.mu, {{1, 0, 0}, {1, 0, 0}}};
-    BoundaryCondition::Boundary b2 = {param.mu, {{0, -1, 0}, {0, 9, 0}}};
-    BoundaryCondition::Boundary b3 = {param.mu, {{0, 1, 0}, {0, 1, 0}}};
-    BoundaryCondition::Boundary b4 = {param.mu, {{0, 0, -1}, {0, 0, 9}}};
-    BoundaryCondition::Boundary b5 = {param.mu, {{0, -1, 10}, {0, 0, 1}}};
-    std::vector<BoundaryCondition::Boundary> boundaries =
-                                                    {b0, b1, b2, b3, b4, b5};
+    BoundaryCondition::Boundary b0 = {p_param.mu, {{1, 0, 0}, {0, 0, 0}}};
+    BoundaryCondition::Boundary b1 = {p_param.mu, {{-1, 0, std::sqrt(3)},
+                                                   {0, 0, 0}}};
+    std::vector<BoundaryCondition::Boundary> boundaries = {b0, b1};
+
+    Vector3<double> xscale = {0.02, 0.02, 0.02};
+    Vector3<double> translation = {0.18, 0.1, 0.18};
+    BoxLevelSet level_set = BoxLevelSet(xscale);
+    // Translate the level set by:
+    math::RigidTransform<double> pose
+                                = math::RigidTransform<double>(translation);
 
     driver->InitializeBoundaryConditions(std::move(boundaries));
-    driver->Run();
+    driver->Run(level_set, pose);
 
     return 0;
 }

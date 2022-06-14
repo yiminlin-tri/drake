@@ -242,11 +242,13 @@ void MPMTransfer::WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
         grid_index(0) = bi+a;
         grid_index(1) = bj+b;
         grid_index(2) = bk+c;
+    if (grid->in_index_range(grid_index)) {
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         const GridState& state_i = sum_local[idx_local];
         grid->AccumulateMass(grid_index, state_i.mass);
         grid->AccumulateVelocity(grid_index, state_i.velocity);
         grid->AccumulateForce(grid_index, state_i.force);
+    }
     }
     }
     }
