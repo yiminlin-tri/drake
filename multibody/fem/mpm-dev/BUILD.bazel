@@ -170,9 +170,7 @@ drake_cc_library(
         "MPMParameters.h",
     ],
     deps = [
-        ":AnalyticLevelSet",
         "//common:essential",
-        "//math:geometric_transform",
     ],
 )
 
@@ -185,6 +183,7 @@ drake_cc_library(
         "MPMDriver.h",
     ],
     deps = [
+        ":AnalyticLevelSet",
         ":CorotatedModel",
         ":GravitationalForce",
         ":Grid",
@@ -194,6 +193,7 @@ drake_cc_library(
         ":particles_to_bgeo",
         ":poisson_disk_sampling",
         "//common:essential",
+        "//math:geometric_transform",
     ],
 )
 
