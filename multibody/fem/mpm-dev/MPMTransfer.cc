@@ -22,30 +22,29 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
     // For each batch of particles
     p_start = 0;
     for (const auto& [batch_index_flat, batch_index_3d] : grid->get_indices()) {
-        p_end = p_start + batch_sizes_[batch_index_flat];
+        if (batch_sizes_[batch_index_flat] != 0) {
+            p_end = p_start + batch_sizes_[batch_index_flat];
 
-        // Clear local scratch pad
-        for (auto& s : sum_local) { s.reset(); }
+            // Clear local scratch pad
+            for (auto& s : sum_local) { s.reset(); }
 
-        // For each particle in the batch (Assume particles are sorted with
-        // respect to the batch index), accmulate masses, momemtum, and forces
-        // into grid points affected by the particle.
-        for (int p = p_start; p < p_end; ++p) {
-            mass_p = particles.get_mass(p);
-            ref_volume_p = particles.get_reference_volume(p);
-            AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
-                                        mass_p*particles.get_velocity(p),
-                                        particles.get_kirchhoff_stress(p),
-                                        &sum_local);
-        }
+            // For each particle in the batch (Assume particles are sorted with
+            // respect to the batch index), accmulate masses, momemtum, and
+            // forces into grid points affected by the particle.
+            for (int p = p_start; p < p_end; ++p) {
+                mass_p = particles.get_mass(p);
+                ref_volume_p = particles.get_reference_volume(p);
+                AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
+                                            mass_p*particles.get_velocity(p),
+                                            particles.get_kirchhoff_stress(p),
+                                            &sum_local);
+            }
 
-        // Put sums of local scratch pads to grid if the current batch is
-        // nonempty
-        if (p_start != p_end) {
+            // Put sums of local scratch pads to grid
             WriteBatchStateToGrid(batch_index_3d, sum_local, grid);
-        }
 
-        p_start = p_end;
+            p_start = p_end;
+        }
     }
 
     // Calculate grid velocities v_i by (mv)_i / m_i

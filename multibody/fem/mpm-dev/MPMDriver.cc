@@ -9,7 +9,6 @@ MPMDriver::MPMDriver(MPMParameters param):
                                 grid_(param.solver_param.num_gridpt_1D,
                                       param.solver_param.h,
                                       param.solver_param.bottom_corner),
-                                mpm_transfer_(),
                                 gravitational_force_(param.physical_param.g) {
     DRAKE_DEMAND(param.solver_param.endtime >= 0.0);
     DRAKE_DEMAND(param.solver_param.dt > 0.0);
