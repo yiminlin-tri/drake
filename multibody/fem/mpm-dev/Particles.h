@@ -65,6 +65,8 @@ class Particles {
     // @pre new_order is a permutation of [0, ..., new_order.size()-1]
     void Reorder(const std::vector<size_t>& new_order);
 
+    // Add a particle with the given properties. The default corotated model is
+    // dough with Young's modulus E = 9e4 and Poisson ratio nu = 0.49.
     void AddParticle(const Vector3<double>& position,
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,

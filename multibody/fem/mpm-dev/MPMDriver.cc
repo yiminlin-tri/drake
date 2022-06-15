@@ -107,14 +107,12 @@ void MPMDriver::WriteParticlesToBgeo(int io_step) {
 }
 
 void MPMDriver::checkCFL(double dt) {
-    int p = 0;
     for (const auto& v : particles_.get_velocities()) {
         if (!(std::max({std::abs(dt*v(0)),
                         std::abs(dt*v(1)),
                         std::abs(dt*v(2))}) <= grid_.get_h())) {
             throw std::runtime_error("CFL condition violation");
         }
-        ++p;
     }
 }
 
