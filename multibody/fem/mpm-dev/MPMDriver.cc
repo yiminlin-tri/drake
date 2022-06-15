@@ -30,14 +30,14 @@ void MPMDriver::DoTimeStepping() {
         is_last_step = (endtime - t <= dt);
         // If at the final timestep, modify the timestep size to match endtime
         if (endtime - t < dt) {
-            dt = endtime - dt;
+            dt = endtime - t;
         }
         // Check the CFL condition
         checkCFL(dt);
         AdvanceOneTimeStep();
         step++;
         if ((t >= io_step*param_.io_param.write_interval) || (is_last_step)) {
-            std::cout << "==== MPM Step " << step <<
+            std::cout << "==== MPM Step " << step << " iostep " << io_step <<
                          ", at t = " << t+dt << std::endl;
             WriteParticlesToBgeo(io_step++);
         }
@@ -87,90 +87,62 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
     double reference_volume_p = level_set.get_volume()/num_particles;
     double init_m = m_param.density*reference_volume_p;
 
-    // Increase the size of particles_vec_ by 1
-    particles_vec_.resize(particles_vec_.size()+1);
-    Particles& particles = particles_vec_.back();
-
     // Add particles
     for (int p = 0; p < num_particles; ++p) {
         const Vector3<double>& xp = particles_positions[p];
-        particles.AddParticle(xp, init_v, init_m, reference_volume_p,
-                              Matrix3<double>::Identity(),
-                              Matrix3<double>::Identity());
+        particles_.AddParticle(xp, init_v, init_m, reference_volume_p,
+                               Matrix3<double>::Identity(),
+                               Matrix3<double>::Identity(),
+                               m_param.corotated_model);
     }
-
-    // Store material's parameters
-    m_param_vec_.emplace_back(std::move(m_param));
 }
 
 void MPMDriver::WriteParticlesToBgeo(int io_step) {
     std::string output_filename = param_.io_param.output_directory + "/"
                                 + param_.io_param.case_name
                                 + std::to_string(io_step) + ".bgeo";
-    std::vector<Vector3<double>> positions_output = {};
-    std::vector<Vector3<double>> velocities_output = {};
-    std::vector<double> masses_output = {};
-    for (const auto& particles : particles_vec_) {
-        const std::vector<Vector3<double>>& positions =
-                                            particles.get_positions();
-        const std::vector<Vector3<double>>& velocities =
-                                            particles.get_velocities();
-        const std::vector<double>& masses = particles.get_masses();
-        positions_output.insert(positions_output.end(),
-                                positions.begin(), positions.end());
-        velocities_output.insert(velocities_output.end(),
-                                 velocities.begin(), velocities.end());
-        masses_output.insert(masses_output.end(),
-                             masses.begin(), masses.end());
-    }
-    internal::WriteParticlesToBgeo(output_filename, positions_output,
-                                                    velocities_output,
-                                                    masses_output);
+    internal::WriteParticlesToBgeo(output_filename, particles_.get_positions(),
+                                                    particles_.get_velocities(),
+                                                    particles_.get_masses());
 }
 
 void MPMDriver::checkCFL(double dt) {
-    for (const auto& particles : particles_vec_) {
-        for (const auto& v : particles.get_velocities()) {
-            if (!(std::max({std::abs(dt*v(0)),
-                            std::abs(dt*v(1)),
-                            std::abs(dt*v(2))}) <= grid_.get_h())) {
-                throw std::runtime_error("CFL condition violation");
-            }
+    int p = 0;
+    for (const auto& v : particles_.get_velocities()) {
+        if (!(std::max({std::abs(dt*v(0)),
+                        std::abs(dt*v(1)),
+                        std::abs(dt*v(2))}) <= grid_.get_h())) {
+            throw std::runtime_error("CFL condition violation");
         }
+        ++p;
     }
 }
 
 void MPMDriver::AdvanceOneTimeStep() {
     double dt = param_.solver_param.dt;
 
-    // For each object (group of particles)
-    for (size_t i = 0; i < particles_vec_.size(); ++i) {
-        Particles& particles = particles_vec_[i];
-        MaterialParameters m_param = m_param_vec_[i];
+    // Update Stresses on particles
+    particles_.UpdateKirchhoffStresses();
 
-        // Update Stresses on particles
-        particles.UpdateKirchhoffStresses(m_param.corotated_model);
+    // Set up the transfer routines (Preallocations, sort the particles)
+    mpm_transfer_.SetUpTransfer(grid_, &particles_);
 
-        // Set up the transfer routines (Preallocations, sort the particles)
-        mpm_transfer_.SetUpTransfer(grid_, &particles);
+    // Main Algorithm:
+    // P2G
+    mpm_transfer_.TransferParticlesToGrid(particles_, &grid_);
 
-        // Main Algorithm:
-        // P2G
-        mpm_transfer_.TransferParticlesToGrid(particles, &grid_);
+    // Update grid velocity
+    grid_.UpdateVelocity(dt);
 
-        // Update grid velocity
-        grid_.UpdateVelocity(dt);
+    // Apply gravitational force and enforce boundary condition
+    gravitational_force_.ApplyGravitationalForces(dt, &grid_);
+    grid_.EnforceBoundaryCondition(boundary_condition_);
 
-        // Apply gravitational force and enforce boundary condition
-        gravitational_force_.ApplyGravitationalForces(dt, &grid_);
-        grid_.EnforceBoundaryCondition(boundary_condition_);
+    // G2P
+    mpm_transfer_.TransferGridToParticles(grid_, dt, &particles_);
 
-        // G2P
-        mpm_transfer_.TransferGridToParticles(grid_, dt, &particles);
-
-        // Advect particles
-        particles.AdvectParticles(dt);
-    }
+    // Advect particles
+    particles_.AdvectParticles(dt);
 }
 
 }  // namespace mpm

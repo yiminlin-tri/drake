@@ -77,8 +77,7 @@ class MPMDriver {
     void WriteParticlesToBgeo(int step);
 
     MPMParameters param_;
-    std::vector<MaterialParameters> m_param_vec_{};
-    std::vector<Particles> particles_vec_{};
+    Particles particles_;
     Grid grid_;
     MPMTransfer mpm_transfer_;
     GravitationalForce gravitational_force_;

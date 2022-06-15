@@ -24,7 +24,7 @@ int DoMain() {
     };
 
     MPMParameters::SolverParameters s_param {
-        5e-1,                                  // End time
+        1e-0,                                  // End time
         2e-4,                                  // Time step size
         0.01,                                  // Grid size
         Vector3<int>(23, 23, 23),              // Number of grid points in each
@@ -41,9 +41,8 @@ int DoMain() {
     MPMParameters param {p_param, s_param, io_param};
     auto driver = std::make_unique<MPMDriver>(std::move(param));
 
-    BoundaryCondition::Boundary b0 = {0.2, {{1, 0, 0}, {0, 0, 0}}};
-    BoundaryCondition::Boundary b1 = {0.1, {{-1, 0, std::sqrt(3)},
-                                            {0, 0, 0}}};
+    BoundaryCondition::Boundary b0 = {0.5, {{1, 0, 1}, {0.1, 0, 0}}};
+    BoundaryCondition::Boundary b1 = {0.1, {{-1, 0, 1}, {0.1, 0, 0}}};
     std::vector<BoundaryCondition::Boundary> boundaries = {b0, b1};
 
     // Initialize a box
@@ -63,7 +62,7 @@ int DoMain() {
     // Initialize a sphere
     double radius = 0.02;
     SphereLevelSet level_set_sphere = SphereLevelSet(radius);
-    Vector3<double> translation_sphere = {0.18, 0.03, 0.18};
+    Vector3<double> translation_sphere = {0.02, 0.1, 0.18};
     math::RigidTransform<double> pose_sphere =
                             math::RigidTransform<double>(translation_sphere);
     MPMDriver::MaterialParameters m_param_sphere { {8e1, 0.49},
@@ -73,8 +72,10 @@ int DoMain() {
                                                  };
 
     driver->InitializeBoundaryConditions(std::move(boundaries));
-    driver->InitializeParticles(level_set_box, pose_box, m_param_box);
-    driver->InitializeParticles(level_set_sphere, pose_sphere, m_param_sphere);
+    driver->InitializeParticles(level_set_box, pose_box,
+                                std::move(m_param_box));
+    driver->InitializeParticles(level_set_sphere, pose_sphere,
+                                std::move(m_param_sphere));
     driver->DoTimeStepping();
 
     return 0;
