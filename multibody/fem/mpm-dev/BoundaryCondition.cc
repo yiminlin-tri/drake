@@ -60,24 +60,9 @@ void BoundaryCondition::Apply(double t, const Vector3<double>& position,
         // boundary condition
         if (wall_boundary.boundary_space.CalcSignedDistance(position) <= 0) {
             // Normal vector of the boundary plane
-            const Vector3<double>& n_i = wall_boundary.boundary_space.normal();
-            // Normal and tangential components of the velocity
-            Vector3<double> vn = velocity->dot(n_i)*n_i;
-            Vector3<double> vt = *velocity - vn;
-            // Normal and tangential speed
-            double vn_norm = vn.norm();
-            double vt_norm = vt.norm();
-
-            // Limit the amount of friction to at most eliminating the
-            // tangential velocity
-            if (vt_norm <= wall_boundary.friction_coefficient*vn_norm) {
-                *velocity = Vector3<double>::Zero();
-            } else {
-                // If the tangential velocity is zero, the updated velocity is
-                // zero by above.
-                *velocity = vt - wall_boundary.friction_coefficient
-                                *vn_norm*vt/vt_norm;
-            }
+            UpdateVelocityCoulumbFriction(wall_boundary.boundary_space.normal(),
+                                          wall_boundary.friction_coefficient,
+                                          velocity);
         }
     }
 
@@ -87,37 +72,40 @@ void BoundaryCondition::Apply(double t, const Vector3<double>& position,
         Vector3<double> x_cyl = moving_cyl_boundary.pose.inverse()
                                *(position - t*moving_cyl_boundary.velocity);
         if (moving_cyl_boundary.level_set.InInterior(x_cyl)) {
-            Vector3<double> n_i = moving_cyl_boundary.level_set.Normal(x_cyl);
-            // particle's velocity in cylinder's reference frame
-            Vector3<double> v_ref =
-                            moving_cyl_boundary.pose.rotation().inverse()
-                           *(*velocity-moving_cyl_boundary.velocity);
-            // Normal and tangential components of the reference frame velocity
-            Vector3<double> vn = v_ref.dot(n_i)*n_i;
-            Vector3<double> vt = v_ref - vn;
-            // Normal and tangential speed
-            double vn_norm = vn.norm();
-            double vt_norm = vt.norm();
-            // Limit the amount of friction to at most eliminating the
-            // tangential velocity
-            Vector3<double> v_ref_new;
-            if (vt_norm <=
-                moving_cyl_boundary.friction_coefficient*vn_norm) {
-                v_ref_new = Vector3<double>::Zero();
-            } else {
-                // If the tangential velocity is zero, the updated velocity is
-                // zero by above.
-                v_ref_new = vt -
-                            moving_cyl_boundary.friction_coefficient
-                           *vn_norm*vt/vt_norm;
-            }
+            // transform particle's velocity to cylinder's reference frame
+            *velocity = moving_cyl_boundary.pose.rotation().inverse()
+                       *(*velocity-moving_cyl_boundary.velocity);
+            UpdateVelocityCoulumbFriction(
+                                    moving_cyl_boundary.level_set.Normal(x_cyl),
+                                    moving_cyl_boundary.friction_coefficient,
+                                    velocity);
             // Transform the reference velocity back to the physical frame
-            *velocity = moving_cyl_boundary.pose.rotation()*v_ref_new
+            *velocity = moving_cyl_boundary.pose.rotation()*(*velocity)
                       + moving_cyl_boundary.velocity;
         }
     }
 }
 
+void BoundaryCondition::UpdateVelocityCoulumbFriction(const Vector3<double>& n,
+                                            double mu,
+                                            Vector3<double>* velocity) const {
+    // Normal and tangential components of the velocity
+    Vector3<double> vn = velocity->dot(n)*n;
+    Vector3<double> vt = *velocity - vn;
+    // Normal and tangential speed
+    double vn_norm = vn.norm();
+    double vt_norm = vt.norm();
+
+    // Limit the amount of friction to at most eliminating the
+    // tangential velocity
+    if (vt_norm <= mu*vn_norm) {
+        *velocity = Vector3<double>::Zero();
+    } else {
+        // If the tangential velocity is zero, the updated velocity is
+        // zero by above.
+        *velocity = vt - mu*vn_norm*vt/vt_norm;
+    }
+}
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake

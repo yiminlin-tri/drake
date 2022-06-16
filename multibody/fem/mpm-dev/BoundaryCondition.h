@@ -74,6 +74,11 @@ class BoundaryCondition {
                          Vector3<double>* velocity) const;
 
  private:
+    // Given the normal vector and friction coefficient mu, update the input
+    // velocity using Coulumb friction law
+    void UpdateVelocityCoulumbFriction(const Vector3<double>& normal, double mu,
+                                       Vector3<double>* velocity) const;
+
     std::vector<WallBoundary> wall_boundaries_;
     std::vector<MovingCylindricalBoundary> moving_cylindrical_boundaries_;
 };  // class BoundaryCondition
