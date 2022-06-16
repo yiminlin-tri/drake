@@ -12,18 +12,13 @@ load(
 )
 load("//tools/lint:lint.bzl", "add_lint_tests")
 
-drake_cc_library(
+drake_cc_binary(
     name = "mpm",
     srcs = [
         "main.cpp",
     ],
     deps = [
-        ":BSpline",
-        ":CorotatedModel",
-        ":Grid",
-        ":MPMTransfer",
-        ":Particles",
-        ":particles_to_bgeo",
+        ":MPMDriver",
         "//common:essential",
         "//math:geometric_transform",
         "@partio",
@@ -115,6 +110,20 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "AnalyticLevelSet",
+    srcs = [
+        "AnalyticLevelSet.cc",
+    ],
+    hdrs = [
+        "AnalyticLevelSet.h",
+    ],
+    deps = [
+        "//common:essential",
+        "//math:geometric_transform",
+    ],
+)
+
+drake_cc_library(
     name = "MPMTransfer",
     srcs = [
         "MPMTransfer.cc",
@@ -155,10 +164,36 @@ drake_cc_library(
     ],
 )
 
-drake_cc_binary(
-    name = "run_mpm",
+drake_cc_library(
+    name = "MPMParameters",
+    hdrs = [
+        "MPMParameters.h",
+    ],
     deps = [
-        ":mpm",
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "MPMDriver",
+    srcs = [
+        "MPMDriver.cc",
+    ],
+    hdrs = [
+        "MPMDriver.h",
+    ],
+    deps = [
+        ":AnalyticLevelSet",
+        ":CorotatedModel",
+        ":GravitationalForce",
+        ":Grid",
+        ":MPMParameters",
+        ":MPMTransfer",
+        ":Particles",
+        ":particles_to_bgeo",
+        ":poisson_disk_sampling",
+        "//common:essential",
+        "//math:geometric_transform",
     ],
 )
 
@@ -221,6 +256,15 @@ drake_cc_googletest(
     name = "GravitationalForce_test",
     deps = [
         ":GravitationalForce",
+        "//common:essential",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "AnalyticLevelSet_test",
+    deps = [
+        ":AnalyticLevelSet",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
     ],

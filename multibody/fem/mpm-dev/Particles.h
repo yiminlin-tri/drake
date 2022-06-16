@@ -25,6 +25,7 @@ class Particles {
     const Matrix3<double>& get_deformation_gradient(int index) const;
     const Matrix3<double>& get_kirchhoff_stress(int index) const;
     const Matrix3<double>& get_affine_matrix(int index) const;
+    const CorotatedModel& get_corotated_model(int index) const;
 
     const std::vector<Vector3<double>>& get_positions() const;
     const std::vector<Vector3<double>>& get_velocities() const;
@@ -49,6 +50,7 @@ class Particles {
                               const Matrix3<double>& kirchhoff_stress);
     void set_affine_matrix(int index,
                            const Matrix3<double>& affine_matrix);
+    void set_corotated_model(int index, const CorotatedModel& corotated_model);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
     void set_velocities(const std::vector<Vector3<double>>& velocities);
@@ -69,16 +71,19 @@ class Particles {
     // @pre new_order is a permutation of [0, ..., new_order.size()-1]
     void Reorder(const std::vector<size_t>& new_order);
 
+    // Add a particle with the given properties. The default corotated model is
+    // dough with Young's modulus E = 9e4 and Poisson ratio nu = 0.49.
     void AddParticle(const Vector3<double>& position,
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,
                      const Matrix3<double>& deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
-                     const Matrix3<double>& affine_matrix);
+                     const Matrix3<double>& affine_matrix,
+                     const CorotatedModel& corotated_model);
 
     // Assume the deformation gradient is updated, update Kirchhoff stress tau
-    // given the constitutive relation
-    void UpdateKirchhoffStresses(const CorotatedModel& corotated_model);
+    // with the constitutive relation
+    void UpdateKirchhoffStresses();
 
     // Particle advection using the updated velocities, assuming they are
     // already updated in the member variables.
@@ -94,6 +99,7 @@ class Particles {
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> affine_matrices_{};
+    std::vector<CorotatedModel> corotated_models_{};
 };  // class Particles
 
 }  // namespace mpm
