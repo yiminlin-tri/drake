@@ -42,8 +42,10 @@ class MPMDriver {
     explicit MPMDriver(MPMParameters param);
 
     // Initialize the boundary condition by the boundaries information
-    void InitializeBoundaryConditions(std::vector<BoundaryCondition::Boundary>
-                                                                    boundaries);
+    void InitializeBoundaryConditions(
+            std::vector<BoundaryCondition::WallBoundary> wall_boundaries,
+            std::vector<BoundaryCondition::MovingCylindricalBoundary>
+                                                moving_cylindrical_boundaries);
 
     // Initialize particles' positions with Poisson disk sampling. The object's
     // level set in the physical frame is the given level set in the reference
@@ -70,7 +72,7 @@ class MPMDriver {
     // particles' state are at time n, a single time step involves a P2G
     // transfer, grid velocities update, a G2P transfer, and particles'
     // velocities update.
-    void AdvanceOneTimeStep();
+    void AdvanceOneTimeStep(double t, double dt);
 
     // For every write_interval, write particles' information to
     // output_directory/case_name($step).bgeo

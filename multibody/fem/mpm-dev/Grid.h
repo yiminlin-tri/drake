@@ -101,12 +101,14 @@ class Grid {
     // v^{n+1} = v^n + dt*f^n/m^n
     void UpdateVelocity(double dt);
 
-    // Enforce wall boundary conditions on the given half space. THe normal of
-    // the given half space is the outward pointing normal from the interior of
-    // the domain to the exterior of the domain. We strongly impose this
+    // Enforce wall boundary conditions on the given half space and moving
+    // boundary conditions on the given cylinders. THe normal of the given half
+    // space / given cylinder is the outward pointing normal from the interior
+    // of the domain to the exterior of the domain. We strongly impose this
     // Dirichlet boundary conditions given by boundary_condition to all grid
-    // points in the boundary half- spaces.
-    void EnforceBoundaryCondition(const BoundaryCondition& boundary_condition);
+    // points in the boundary half-spaces and cylinder.
+    void EnforceBoundaryCondition(double t,
+                                  const BoundaryCondition& boundary_condition);
 
  private:
     int num_gridpt_;

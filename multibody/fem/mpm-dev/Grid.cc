@@ -175,12 +175,12 @@ void Grid::UpdateVelocity(double dt) {
     }
 }
 
-void Grid::EnforceBoundaryCondition(const BoundaryCondition&
+void Grid::EnforceBoundaryCondition(double t, const BoundaryCondition&
                                                         boundary_condition) {
     // For all grid points, enforce frictional wall boundary condition
     for (const auto& [index_flat, index_3d] : indices_) {
-        boundary_condition.Apply(positions_[index_flat],
-                                &velocities_[index_flat]);
+        boundary_condition.Apply(t, positions_[index_flat],
+                                   &velocities_[index_flat]);
     }
 }
 

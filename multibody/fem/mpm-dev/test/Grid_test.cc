@@ -6,6 +6,8 @@
 
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/geometry/proximity/posed_half_space.h"
+#include "drake/math/roll_pitch_yaw.h"
+#include "drake/multibody/fem/mpm-dev/AnalyticLevelSet.h"
 
 namespace drake {
 namespace multibody {
@@ -297,12 +299,12 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     BoundaryCondition bc = BoundaryCondition();
 
     // Initialize the boundary spaces
-    bc.AddBoundary({mu, {{-1, 0, 0}, {9, 0, 0}}});
-    bc.AddBoundary({mu, {{1, 0, 0}, {0, 0, 0}}});
-    bc.AddBoundary({mu, {{0, -1, 0}, {0, 19, 0}}});
-    bc.AddBoundary({mu, {{0, 1, 0}, {0, 0, 0}}});
-    bc.AddBoundary({mu, {{0, 0, -1}, {0, 0, 29}}});
-    bc.AddBoundary({mu, {{0, 0, 1}, {0, 0, 0}}});
+    bc.AddWallBoundary({mu, {{-1, 0, 0}, {9, 0, 0}}});
+    bc.AddWallBoundary({mu, {{1, 0, 0}, {0, 0, 0}}});
+    bc.AddWallBoundary({mu, {{0, -1, 0}, {0, 19, 0}}});
+    bc.AddWallBoundary({mu, {{0, 1, 0}, {0, 0, 0}}});
+    bc.AddWallBoundary({mu, {{0, 0, -1}, {0, 0, 29}}});
+    bc.AddWallBoundary({mu, {{0, 0, 1}, {0, 0, 0}}});
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -315,7 +317,8 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     }
 
     // Enforce slip BC
-    grid.EnforceBoundaryCondition(bc);
+    double dummy_t = 0.0;
+    grid.EnforceBoundaryCondition(dummy_t, bc);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -346,10 +349,9 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
 }
 
 GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
-    // In this test case, we enforce frictional wall boundary condition to the
-    // plane on a 21x21x21 grid of the domain [0, 10]x[0, 10]x[0, 10]. The
-    // boundary plane has outward normal (1, 1, 1), contains the point (5, 5,
-    // 5).
+    // In this test case, we enforce moving cylindrical boundary condition to a
+    // 21x21x21 grid of the domain [0, 10]x[0, 10]x[0, 10]. The boundary plane
+    // has outward normal (1, 1, 1), contains the point (5, 5, 5).
     Vector3<int> num_gridpt_1D = {21, 21, 21};
     double h = 0.5;
     Vector3<int> bottom_corner  = {0, 0, 0};
@@ -360,7 +362,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     BoundaryCondition bc = BoundaryCondition();
 
     // Initialize the boundary spaces
-    bc.AddBoundary({mu, {{-1, -1, -1}, {5, 5, 5}}});
+    bc.AddWallBoundary({mu, {{-1, -1, -1}, {5, 5, 5}}});
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -373,7 +375,8 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     }
 
     // Enforce wall boundary condition
-    grid.EnforceBoundaryCondition(bc);
+    double dummy_t = 0.0;
+    grid.EnforceBoundaryCondition(dummy_t, bc);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -382,7 +385,8 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
         const Vector3<double>& position_i = grid.get_position(i, j, k);
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
         double dist =
-            bc.get_boundary(0).boundary_space.CalcSignedDistance(position_i);
+            bc.get_wall_boundary(0).boundary_space.CalcSignedDistance(
+                                                                    position_i);
         // If the grid point is not on/in the boundary, velocity shall be the
         // same
         if (dist > 0) {
@@ -395,6 +399,74 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
             EXPECT_TRUE(CompareMatrices(velocity_i,
                             (1.0-0.05*sqrt(6))*Vector3<double>(-1.0, 0.0, 1.0),
                             kEps));
+        }
+    }
+    }
+    }
+}
+
+GTEST_TEST(GridClassTest, TestMovingCylindricalBC) {
+    // In this test case, we enforce frictional wall boundary condition to the
+    // plane on a 11x11x11 grid of the domain [0, 10]x[0, 10]x[0, 10]. The
+    // moving cylindrical boundary has central axis parallel to x-axis, centered
+    // at (5.0, 5.0, 5.0), height 1.0, radius 0.5 and moving with velocity
+    // (1.0, 1.0, 1.0)
+    Vector3<int> num_gridpt_1D = {11, 11, 11};
+    double h = 1.0;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Vector3<double> velocity_grid = Vector3<double>(1.0, 2.0, 3.0);
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    BoundaryCondition bc = BoundaryCondition();
+
+    math::RollPitchYaw rpw_cylinder = {0.0, M_PI/2.0, 0.0};
+    CylinderLevelSet level_set_cylinder = CylinderLevelSet(1.0, 0.5);
+    Vector3<double> translation_cylinder = {5.0, 5.0, 5.0};
+    math::RigidTransform<double> pose_cylinder = {rpw_cylinder,
+                                                  translation_cylinder};
+    double mu = 0.1;
+    BoundaryCondition::MovingCylindricalBoundary mc0 = {mu,
+                                                        level_set_cylinder,
+                                                        pose_cylinder,
+                                                        {1.0, 1.0, 1.0}};
+
+    // Initialize the boundary spaces
+    bc.AddMovingCylindricalBoundary(mc0);
+
+    // Populate the grid with nonzero velocities
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        grid.set_velocity(i, j, k, velocity_grid);
+        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
+    }
+    }
+    }
+
+    // Cylinder move t = 1.1, so the cylinder contains exactly two grid points
+    // (6.0, 6.0, 6.0) and (7.0, 6.0, 6.0)
+    double t = 1.1;
+    // Enforce wall boundary condition
+    grid.EnforceBoundaryCondition(t, bc);
+
+    // Check velocity after enforcement, hardcode values for verification
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
+        if ((j == 6) && (k == 6) && ((i == 6) || (i == 7))) {
+            // In this case, the relative velocity of the grid point is
+            // (0, 1, 2), and the outward normal direction is
+            // 1/sqrt(2)*(0, -1, -1). Then
+            // vₙ = (v ⋅ n)n = (0, 3/2, 3/2), vₜ = v - vₙ = (0, -1/2, 1/2)
+            // v_new = vₜ - μ‖vₙ‖t = (0, -1/2, 1/2) - 0.1*(0, -3, 3)/2
+            // In physical frame, v_new = (1, 1, 1) + (0, -0.35, 0.35)
+            EXPECT_TRUE(CompareMatrices(velocity_i,
+                                    Vector3<double>{1.0, 0.65, 1.35}, kEps));
+        } else {
+            // If the grid point is not in the cylinder , velocity shall be the
+            // same
+            EXPECT_TRUE(CompareMatrices(velocity_i,
+                                    Vector3<double>{1.0, 2.0, 3.0}, kEps));
         }
     }
     }

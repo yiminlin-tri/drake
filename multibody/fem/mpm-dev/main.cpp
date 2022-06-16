@@ -12,6 +12,7 @@
 #include "drake/common/eigen_types.h"
 #include "drake/common/filesystem.h"
 #include "drake/common/temp_directory.h"
+#include "drake/math/roll_pitch_yaw.h"
 #include "drake/multibody/fem/mpm-dev/MPMDriver.h"
 
 namespace drake {
@@ -25,7 +26,7 @@ int DoMain() {
 
     MPMParameters::SolverParameters s_param {
         1e-0,                                  // End time
-        2e-4,                                  // Time step size
+        1e-4,                                  // Time step size
         0.01,                                  // Grid size
         Vector3<int>(23, 23, 23),              // Number of grid points in each
                                                // direction
@@ -41,39 +42,35 @@ int DoMain() {
     MPMParameters param {p_param, s_param, io_param};
     auto driver = std::make_unique<MPMDriver>(std::move(param));
 
-    BoundaryCondition::Boundary b0 = {0.5, {{1, 0, 1}, {0.1, 0, 0}}};
-    BoundaryCondition::Boundary b1 = {0.1, {{-1, 0, 1}, {0.1, 0, 0}}};
-    std::vector<BoundaryCondition::Boundary> boundaries = {b0, b1};
+    BoundaryCondition::WallBoundary b0 = {0.8, {{0, 0, 1}, {0.0, 0, 0}}};
+    std::vector<BoundaryCondition::WallBoundary> wall_boundaries = {b0};
 
-    // Initialize a box
-    Vector3<double> xscale = {0.02, 0.02, 0.02};
-    BoxLevelSet level_set_box = BoxLevelSet(xscale);
-    Vector3<double> translation_box = {0.18, 0.1, 0.18};
-    math::RigidTransform<double> pose_box =
-                            math::RigidTransform<double>(translation_box);
-    MPMDriver::MaterialParameters m_param_box { {8e4, 0.49},      // Corotated
-                                                1272,             // Density
-                                                {0.0, 0.0, 0.0},  // Velocity
-                                                1,                // min number
-                                                                  // particles
-                                                                  // per cell
-                                              };
+    math::RollPitchYaw rpw_cylinder = {M_PI/2.0, 0.0, 0.0};
+    CylinderLevelSet level_set_cylinder = CylinderLevelSet(0.2, 0.04);
+    Vector3<double> translation_cylinder = {0.25, 0.1, 0.05};
+    math::RigidTransform<double> pose_cylinder = {rpw_cylinder,
+                                                  translation_cylinder};
+    BoundaryCondition::MovingCylindricalBoundary mc0 = {0.8,
+                                                        level_set_cylinder,
+                                                        pose_cylinder,
+                                                        {-0.1, 0.0, 0.0}};
+    std::vector<BoundaryCondition::MovingCylindricalBoundary>
+                                        moving_cylindrical_boundaries = {mc0};
 
     // Initialize a sphere
     double radius = 0.02;
     SphereLevelSet level_set_sphere = SphereLevelSet(radius);
-    Vector3<double> translation_sphere = {0.02, 0.1, 0.18};
+    Vector3<double> translation_sphere = {0.18, 0.1, 0.03};
     math::RigidTransform<double> pose_sphere =
                             math::RigidTransform<double>(translation_sphere);
-    MPMDriver::MaterialParameters m_param_sphere { {8e1, 0.49},
+    MPMDriver::MaterialParameters m_param_sphere { {8e4, 0.49},
                                                    800,
                                                    {0.0, 0.0, 0.0},
                                                    1
                                                  };
 
-    driver->InitializeBoundaryConditions(std::move(boundaries));
-    driver->InitializeParticles(level_set_box, pose_box,
-                                std::move(m_param_box));
+    driver->InitializeBoundaryConditions(std::move(wall_boundaries),
+                                    std::move(moving_cylindrical_boundaries));
     driver->InitializeParticles(level_set_sphere, pose_sphere,
                                 std::move(m_param_sphere));
     driver->DoTimeStepping();

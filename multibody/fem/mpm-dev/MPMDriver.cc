@@ -15,8 +15,11 @@ MPMDriver::MPMDriver(MPMParameters param):
 }
 
 void MPMDriver::InitializeBoundaryConditions(
-                        std::vector<BoundaryCondition::Boundary> boundaries) {
-    boundary_condition_ = BoundaryCondition(std::move(boundaries));
+            std::vector<BoundaryCondition::WallBoundary> wall_boundaries,
+            std::vector<BoundaryCondition::MovingCylindricalBoundary>
+                                                moving_cylindrical_boundaries) {
+    boundary_condition_ = BoundaryCondition(std::move(wall_boundaries),
+                                    std::move(moving_cylindrical_boundaries));
 }
 
 void MPMDriver::DoTimeStepping() {
@@ -34,7 +37,7 @@ void MPMDriver::DoTimeStepping() {
         }
         // Check the CFL condition
         checkCFL(dt);
-        AdvanceOneTimeStep();
+        AdvanceOneTimeStep(t, dt);
         step++;
         if ((t >= io_step*param_.io_param.write_interval) || (is_last_step)) {
             std::cout << "==== MPM Step " << step << " iostep " << io_step <<
@@ -116,9 +119,7 @@ void MPMDriver::checkCFL(double dt) {
     }
 }
 
-void MPMDriver::AdvanceOneTimeStep() {
-    double dt = param_.solver_param.dt;
-
+void MPMDriver::AdvanceOneTimeStep(double t, double dt) {
     // Update Stresses on particles
     particles_.UpdateKirchhoffStresses();
 
@@ -134,7 +135,7 @@ void MPMDriver::AdvanceOneTimeStep() {
 
     // Apply gravitational force and enforce boundary condition
     gravitational_force_.ApplyGravitationalForces(dt, &grid_);
-    grid_.EnforceBoundaryCondition(boundary_condition_);
+    grid_.EnforceBoundaryCondition(t+dt, boundary_condition_);
 
     // G2P
     mpm_transfer_.TransferGridToParticles(grid_, dt, &particles_);

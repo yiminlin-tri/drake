@@ -90,8 +90,10 @@ drake_cc_library(
         "BoundaryCondition.h",
     ],
     deps = [
+        ":AnalyticLevelSet",
         "//common:essential",
         "//geometry/proximity:posed_half_space",
+        "//math:geometric_transform",
     ],
 )
 
@@ -227,9 +229,11 @@ drake_cc_googletest(
 drake_cc_googletest(
     name = "Grid_test",
     deps = [
+        ":AnalyticLevelSet",
         ":Grid",
         "//common/test_utilities:eigen_matrix_compare",
         "//geometry/proximity:posed_half_space",
+        "//math:geometric_transform",
     ],
 )
 
@@ -246,9 +250,12 @@ drake_cc_googletest(
 drake_cc_googletest(
     name = "BoundaryCondition_test",
     deps = [
+        ":AnalyticLevelSet",
         ":BoundaryCondition",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
+        "//geometry/proximity:posed_half_space",
+        "//math:geometric_transform",
     ],
 )
 
