@@ -36,7 +36,8 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
                 mass_p = particles.get_mass(p);
                 ref_volume_p = particles.get_reference_volume(p);
                 AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
-                                            mass_p*particles.get_velocity(p),
+                                            particles.get_velocity(p),
+                                            particles.get_affine_matrix(p),
                                             particles.get_kirchhoff_stress(p),
                                             &sum_local);
             }
