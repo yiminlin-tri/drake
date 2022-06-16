@@ -52,6 +52,11 @@ class MPMTransfer {
         }
     };
 
+    struct BatchState {
+        Vector3<double> position;
+        Vector3<double> velocity;
+    };
+
     // Sort the particles according to the batch number, in increasing order.
     // As below shown, o denotes the grid points, $ denotes the batch centered
     // around the grid point. # of batch = # of grid points
@@ -106,7 +111,8 @@ class MPMTransfer {
     // we will scale the momentum with the updated mass to get the velocities.
     void AccumulateGridStatesOnBatch(int p, double mass_p,
                                      double reference_volume_p,
-                                     const Vector3<double>& momentum_p,
+                                     const Vector3<double>& velocity_p,
+                                     const Matrix3<double>& B_p,
                                      const Matrix3<double>& tau_p,
                                      std::array<GridState, 27>* sum_local);
 
@@ -115,8 +121,7 @@ class MPMTransfer {
                                Grid* grid);
 
     // Update particle states F_p^{n+1} and v_p^{n+1}
-    void UpdateParticleStates(const std::array<Vector3<double>, 27>&
-                                                            batch_velocities,
+    void UpdateParticleStates(const std::array<BatchState, 27>& batch_states,
                               double dt, int p,
                               Particles* particles);
 
