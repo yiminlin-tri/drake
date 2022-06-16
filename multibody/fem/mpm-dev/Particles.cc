@@ -13,7 +13,7 @@ Particles::Particles(int num_particles): num_particles_(num_particles),
                                          reference_volumes_(num_particles),
                                          deformation_gradients_(num_particles),
                                          kirchhoff_stresses_(num_particles),
-                                         affine_matrices_(num_particles)
+                                         affine_matrices_(num_particles),
                                          corotated_models_(num_particles) {
     DRAKE_ASSERT(num_particles >= 0);
 }
@@ -199,6 +199,7 @@ void Particles::AddParticle(const Vector3<double>& position,
     deformation_gradients_.emplace_back(deformation_gradient);
     kirchhoff_stresses_.emplace_back(kirchhoff_stress);
     affine_matrices_.emplace_back(affine_matrix);
+    corotated_models_.emplace_back(corotated_model);
     num_particles_++;
 }
 

@@ -93,6 +93,7 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
         particles_.AddParticle(xp, init_v, init_m, reference_volume_p,
                                Matrix3<double>::Identity(),
                                Matrix3<double>::Identity(),
+                               Matrix3<double>::Zero(),
                                m_param.corotated_model);
     }
 }
