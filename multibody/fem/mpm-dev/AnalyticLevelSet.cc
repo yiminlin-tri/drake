@@ -28,13 +28,13 @@ HalfSpaceLevelSet::HalfSpaceLevelSet(const Vector3<double>& normal):
 }
 
 bool HalfSpaceLevelSet::InInterior(const Vector3<double>& position) const {
-    return (position.dot(normal_) >= 0.0);
+    return (position.dot(normal_) <= 0.0);
 }
 
 Vector3<double> HalfSpaceLevelSet::Normal(const Vector3<double>& position)
                                                                         const {
     if (InInterior(position)) {
-        return -normal_;
+        return normal_;
     } else {
         throw std::logic_error("Normal outside of the level set is unavaiable");
     }

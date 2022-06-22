@@ -22,23 +22,23 @@ GTEST_TEST(AnalyticLevelSetTest, HalfSpaceTest) {
     // Check InInterior
     HalfSpaceLevelSet half_space = HalfSpaceLevelSet(normal);
     EXPECT_EQ(half_space.get_volume(), std::numeric_limits<double>::infinity());
-    EXPECT_TRUE(half_space.InInterior({3.0, 2.0, 1.0}));
-    EXPECT_TRUE(half_space.InInterior({1.0, 2.0, 3.0}));
     EXPECT_TRUE(half_space.InInterior({0.0, 0.0, 0.0}));
-    EXPECT_FALSE(half_space.InInterior({-2.5, -1.5, 0.0}));
-    EXPECT_FALSE(half_space.InInterior({-3.0, -2.0, -1.0}));
+    EXPECT_TRUE(half_space.InInterior({-2.5, -1.5, 0.0}));
+    EXPECT_TRUE(half_space.InInterior({-3.0, -2.0, -1.0}));
+    EXPECT_FALSE(half_space.InInterior({3.0, 2.0, 1.0}));
+    EXPECT_FALSE(half_space.InInterior({1.0, 2.0, 3.0}));
 
     // Check Normal
-    Vector3<double> normal_outward = {-3.0/sqrt(14),
-                                      -2.0/sqrt(14),
-                                      -1.0/sqrt(14)};
-    EXPECT_TRUE(CompareMatrices(half_space.Normal({0.0, 0.0, 0.1}),
+    Vector3<double> normal_outward = {3.0/sqrt(14),
+                                      2.0/sqrt(14),
+                                      1.0/sqrt(14)};
+    EXPECT_TRUE(CompareMatrices(half_space.Normal({0.0, 0.0, -0.1}),
                                            normal_outward,
                                            TOLERANCE));
     EXPECT_TRUE(CompareMatrices(half_space.Normal({0.0, 0.0, 0.0}),
                                            normal_outward,
                                            TOLERANCE));
-    EXPECT_THROW(half_space.Normal({-4.0, -3.0, -3.0}), std::exception);
+    EXPECT_THROW(half_space.Normal({4.0, 3.0, 3.0}), std::exception);
 
     // Check Bounding Box
     const std::array<Vector3<double>, 2>& bounding_box =
