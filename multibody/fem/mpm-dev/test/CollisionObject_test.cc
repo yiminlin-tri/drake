@@ -72,6 +72,26 @@ class CollisionObjectTest : public ::testing::Test {
                                                     std::move(sphere_state),
                                                     sphere_mu);
 
+        // Construct a moving and rotating sphere with radius 1, centered at (0,
+        // 0, 0) with angular velocity (pi, 0, 0) and translational velocity (1,
+        // 0, 0)
+        double moving_sphere_mu = 0.2;
+        double moving_sphere_radius = 1.0;
+        Vector3<double> moving_sphere_translation = Vector3<double>(0, 0, 0);
+        math::RigidTransform<double> moving_sphere_pose
+                    = math::RigidTransform<double>(moving_sphere_translation);
+        multibody::SpatialVelocity<double> moving_sphere_v;
+        moving_sphere_v.translational() = Vector3<double>{1.0, 0.0, 0.0};
+        moving_sphere_v.rotational() = Vector3<double>{M_PI, 0.0, 0.0};
+        std::unique_ptr<SphereLevelSet> moving_sphere_level_set =
+                        std::make_unique<SphereLevelSet>(moving_sphere_radius);
+        CollisionObject::CollisionObjectState moving_sphere_state =
+                                        {moving_sphere_pose, moving_sphere_v};
+        moving_sphere_ = std::make_unique<CollisionObject>(
+                                        std::move(moving_sphere_level_set),
+                                        std::move(moving_sphere_state),
+                                        moving_sphere_mu);
+
         // Construct a moving cylindrical boundary with central axis parallel to
         // y-axis, centered at (0.0, 2.0, 3.0), and moving with velocity (1, 0,
         // 0). The height and radius of the cylinder are 2 and 1.
@@ -133,7 +153,7 @@ class CollisionObjectTest : public ::testing::Test {
         double dt = 1.0;
         moving_cylinder_->AdvanceOneTimeStep(dt);
 
-        // After the time step, the box should move with velocity (1, 0, 0)
+        // After the time step, the cylinder should move with velocity (1, 0, 0)
         ASSERT_TRUE(CompareMatrices(moving_cylinder_->state_.pose.translation(),
                                     Vector3<double>{1, 2, 3},
                                     TOLERANCE));
@@ -226,6 +246,38 @@ class CollisionObjectTest : public ::testing::Test {
                                          TOLERANCE));
     }
 
+    void TestMovingSphereBC() {
+        // Test the wall boundary condition using moving_sphere_ defined in the
+        // SetUp routine.
+        // First consider a point outside the sphere, no boundary condition
+        // shall be enforced.
+        Vector3<double> pos0 = {3.0, 3.0, 3.0};
+        Vector3<double> vel0 = {1.0, -1.0, 0.8};
+        moving_sphere_->ApplyBoundaryCondition(pos0, &vel0);
+        ASSERT_TRUE(CompareMatrices(vel0, Vector3<double>{1.0, -1.0, 0.8},
+                                                                    TOLERANCE));
+
+        // Next consider a point on the sphere, boundary condition
+        // shall be enforced, the translational velocity of the sphere at this
+        // point is given by ω×r = (0, -pi, pi)/sqrt(3)+(1, 0, 0)
+        // Then the relative velocity of the point is v = (-1, 0, 0), and the
+        // ourward normal direction is (1.0, 1.0, 1.0). By algebra:
+        // vₙ = (v ⋅ n)n = -1/3*(1, 1, 1), vₜ = v - vₙ = (-2/3, 1/3, 1/3)
+        // v_new = vₜ - μ‖vₙ‖t = (2/3, -1/3, -1/3) - 0.2*sqrt(3)/6*(2, -1, -1)
+        // In physical frame, v_new = (1, -pi, pi)/sqrt(3) + v_new
+        Vector3<double> pos1 = {1.0/sqrt(3), 1.0/sqrt(3), 1.0/sqrt(3)};
+        Vector3<double> vel1 = {0.0, -M_PI/sqrt(3), M_PI/sqrt(3)};
+        moving_sphere_->ApplyBoundaryCondition(pos1, &vel1);
+        ASSERT_TRUE(CompareMatrices(vel1, (1.0-0.2*sqrt(2)/2)
+                                         *Vector3<double>{-2.0/3.0,
+                                                          1.0/3.0,
+                                                          1.0/3.0}
+                                         +Vector3<double>{1.0,
+                                                         -M_PI/sqrt(3),
+                                                         M_PI/sqrt(3)},
+                                         TOLERANCE));
+    }
+
     void TestMovingCylindrical() {
         // First consider a particle with zero initial velocity not in the
         // cylinder, no boundary condition should be enforced.
@@ -234,13 +286,16 @@ class CollisionObjectTest : public ::testing::Test {
         moving_cylinder_->ApplyBoundaryCondition(pos0, &vel0);
         ASSERT_TRUE(CompareMatrices(vel0, Vector3<double>::Zero(), TOLERANCE));
 
-        // After the cylinder move by dt=1.5, the point will lie in the cylinder
+        // After the cylinder move by dt=2.5, the point will lie in the cylinder
         // In this case, the relative velocity of the grid point is (-1, 0, 0),
         // vₙ = (v ⋅ n)n = (-1/2, 0, -1/2), vₜ = v - vₙ = (1/2, 0, -1/2)
         // v_new = vₜ - μ‖vₙ‖t = (1/2, 0, -1/2) - 0.1*(1, 0, -1)/2
         // In physical frame, v_new = (1, 0, 0) + (-0.45, 0, -0.45)
-        double dt = 1.5;
+        double dt = 2.5;
         moving_cylinder_->AdvanceOneTimeStep(dt);
+        ASSERT_TRUE(CompareMatrices(moving_cylinder_->state_.pose.translation(),
+                                    Vector3<double>{2.5, 2, 3},
+                                    TOLERANCE));
         moving_cylinder_->ApplyBoundaryCondition(pos0, &vel0);
         ASSERT_TRUE(CompareMatrices(vel0, Vector3<double>{0.55, 0.0, -0.45},
                                     TOLERANCE));
@@ -250,6 +305,7 @@ class CollisionObjectTest : public ::testing::Test {
     std::unique_ptr<CollisionObject> box_;
     std::unique_ptr<CollisionObject> sphere_;
     std::unique_ptr<CollisionObject> moving_cylinder_;
+    std::unique_ptr<CollisionObject> moving_sphere_;
 };
 
 namespace {
@@ -262,6 +318,8 @@ TEST_F(CollisionObjectTest, TestAdvanceOneTimeStep) {
 TEST_F(CollisionObjectTest, TestApplyBC) {
     TestWallBC();
     TestSphereBC();
+    TestMovingSphereBC();
+    TestMovingCylindrical();
 }
 
 }  // namespace
