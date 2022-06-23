@@ -1,11 +1,14 @@
 #include "drake/multibody/fem/mpm-dev/Grid.h"
 
 #include <cmath>
+#include <memory>
+#include <utility>
 
 #include <gtest/gtest.h>
 
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/geometry/proximity/posed_half_space.h"
+#include "drake/math/rigid_transform.h"
 #include "drake/math/roll_pitch_yaw.h"
 #include "drake/multibody/fem/mpm-dev/AnalyticLevelSet.h"
 
@@ -287,7 +290,7 @@ GTEST_TEST(GridClassTest, TestUpdateVelocity) {
     }
 }
 
-GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
+GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithHalfSpace) {
     // In this test case, we enforce slip wall boundary condition to the
     // boundary of a 10x20x30 grid.
     Vector3<int> num_gridpt_1D = {10, 20, 30};
@@ -296,15 +299,60 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
     // We assume an ideal slip boundary condition
     double mu = 0.0;
-    BoundaryCondition bc = BoundaryCondition();
+    KinematicCollisionObjects objects = KinematicCollisionObjects();
 
-    // Initialize the boundary spaces
-    bc.AddWallBoundary({mu, {{-1, 0, 0}, {9, 0, 0}}});
-    bc.AddWallBoundary({mu, {{1, 0, 0}, {0, 0, 0}}});
-    bc.AddWallBoundary({mu, {{0, -1, 0}, {0, 19, 0}}});
-    bc.AddWallBoundary({mu, {{0, 1, 0}, {0, 0, 0}}});
-    bc.AddWallBoundary({mu, {{0, 0, -1}, {0, 0, 29}}});
-    bc.AddWallBoundary({mu, {{0, 0, 1}, {0, 0, 0}}});
+    // Initialize the "wall" by halfspaces with suitable normals
+    multibody::SpatialVelocity<double> zero_velocity;
+    zero_velocity.SetZero();
+    Vector3<double> right_wall_n  = {-1.0,  0.0,  0.0};
+    Vector3<double> left_wall_n   = { 1.0,  0.0,  0.0};
+    Vector3<double> front_wall_n  = { 0.0,  1.0,  0.0};
+    Vector3<double> back_wall_n   = { 0.0, -1.0,  0.0};
+    Vector3<double> top_wall_n    = { 0.0,  0.0, -1.0};
+    Vector3<double> bottom_wall_n = { 0.0,  0.0,  1.0};
+    std::unique_ptr<AnalyticLevelSet> right_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(right_wall_n);
+    std::unique_ptr<AnalyticLevelSet> left_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(left_wall_n);
+    std::unique_ptr<AnalyticLevelSet> front_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(front_wall_n);
+    std::unique_ptr<AnalyticLevelSet> back_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(back_wall_n);
+    std::unique_ptr<AnalyticLevelSet> top_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(top_wall_n);
+    std::unique_ptr<AnalyticLevelSet> bottom_wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(bottom_wall_n);
+    Vector3<double> right_wall_translation  = {9.0,  0.0,  0.0};
+    Vector3<double> left_wall_translation   = {0.0,  0.0,  0.0};
+    Vector3<double> front_wall_translation  = {0.0,  0.0,  0.0};
+    Vector3<double> back_wall_translation   = {0.0, 19.0,  0.0};
+    Vector3<double> top_wall_translation    = {0.0,  0.0, 29.0};
+    Vector3<double> bottom_wall_translation = {0.0,  0.0,  0.0};
+    math::RigidTransform<double> right_wall_pose =
+                        math::RigidTransform<double>(right_wall_translation);
+    math::RigidTransform<double> left_wall_pose =
+                        math::RigidTransform<double>(left_wall_translation);
+    math::RigidTransform<double> front_wall_pose =
+                        math::RigidTransform<double>(front_wall_translation);
+    math::RigidTransform<double> back_wall_pose =
+                        math::RigidTransform<double>(back_wall_translation);
+    math::RigidTransform<double> top_wall_pose =
+                        math::RigidTransform<double>(top_wall_translation);
+    math::RigidTransform<double> bottom_wall_pose =
+                        math::RigidTransform<double>(bottom_wall_translation);
+
+    objects.AddCollisionObject(std::move(right_wall_level_set),
+                               right_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(left_wall_level_set),
+                               left_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(front_wall_level_set),
+                               front_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(back_wall_level_set),
+                               back_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(top_wall_level_set),
+                               top_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(bottom_wall_level_set),
+                               bottom_wall_pose, zero_velocity, mu);
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -317,8 +365,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
     }
 
     // Enforce slip BC
-    double dummy_t = 0.0;
-    grid.EnforceBoundaryCondition(dummy_t, bc);
+    grid.EnforceBoundaryCondition(objects);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -327,31 +374,136 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition1) {
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
         if (i == bottom_corner(0)
          || i == bottom_corner(0)+num_gridpt_1D(0)-1) {
-            EXPECT_EQ(velocity_i(0), 0);
+            EXPECT_NEAR(velocity_i(0), 0, kEps);
         } else {
-            EXPECT_EQ(velocity_i(0), 1);
+            EXPECT_NEAR(velocity_i(0), 1, kEps);
         }
         if (j == bottom_corner(1)
          || j == bottom_corner(1)+num_gridpt_1D(1)-1) {
-            EXPECT_EQ(velocity_i(1), 0);
+            EXPECT_NEAR(velocity_i(1), 0, kEps);
         } else {
-            EXPECT_EQ(velocity_i(1), 1);
+            EXPECT_NEAR(velocity_i(1), 1, kEps);
         }
         if (k == bottom_corner(2)
          || k == bottom_corner(2)+num_gridpt_1D(2)-1) {
-            EXPECT_EQ(velocity_i(2), 0);
+            EXPECT_NEAR(velocity_i(2), 0, kEps);
         } else {
-            EXPECT_EQ(velocity_i(2), 1);
+            EXPECT_NEAR(velocity_i(2), 1, kEps);
         }
     }
     }
     }
 }
 
-GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
-    // In this test case, we enforce moving cylindrical boundary condition to a
-    // 21x21x21 grid of the domain [0, 10]x[0, 10]x[0, 10]. The boundary plane
-    // has outward normal (1, 1, 1), contains the point (5, 5, 5).
+GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithBox) {
+    // In this test case, we enforce slip wall boundary condition to the
+    // boundary of a 10x20x30 grid.
+    Vector3<int> num_gridpt_1D = {10, 20, 30};
+    double h = 1.0;
+    Vector3<int> bottom_corner  = {0, 0, 0};
+    Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    // We assume an ideal slip boundary condition
+    double mu = 0.0;
+    KinematicCollisionObjects objects = KinematicCollisionObjects();
+
+    // Initialize the "wall" by boxes with suitable sizes
+    multibody::SpatialVelocity<double> zero_velocity;
+    zero_velocity.SetZero();
+    Vector3<double> right_wall_scale  = {1.0, 10.0, 15.0};
+    Vector3<double> left_wall_scale   = {1.0, 10.0, 15.0};
+    Vector3<double> front_wall_scale  = {5.0,  1.0, 15.0};
+    Vector3<double> back_wall_scale   = {5.0,  1.0, 15.0};
+    Vector3<double> top_wall_scale    = {5.0, 10.0, 1.0};
+    Vector3<double> bottom_wall_scale = {5.0, 10.0, 1.0};
+    std::unique_ptr<AnalyticLevelSet> right_wall_level_set =
+                            std::make_unique<BoxLevelSet>(right_wall_scale);
+    std::unique_ptr<AnalyticLevelSet> left_wall_level_set =
+                            std::make_unique<BoxLevelSet>(left_wall_scale);
+    std::unique_ptr<AnalyticLevelSet> front_wall_level_set =
+                            std::make_unique<BoxLevelSet>(front_wall_scale);
+    std::unique_ptr<AnalyticLevelSet> back_wall_level_set =
+                            std::make_unique<BoxLevelSet>(back_wall_scale);
+    std::unique_ptr<AnalyticLevelSet> top_wall_level_set =
+                            std::make_unique<BoxLevelSet>(top_wall_scale);
+    std::unique_ptr<AnalyticLevelSet> bottom_wall_level_set =
+                            std::make_unique<BoxLevelSet>(bottom_wall_scale);
+    Vector3<double> right_wall_translation  = {-1.0,  9.5, 14.5};
+    Vector3<double> left_wall_translation   = {10.0,  9.5, 14.5};
+    Vector3<double> front_wall_translation  = { 4.5, -1.0, 14.5};
+    Vector3<double> back_wall_translation   = { 4.5, 20.0, 14.5};
+    Vector3<double> top_wall_translation    = { 4.5,  9.5, -1.0};
+    Vector3<double> bottom_wall_translation = { 4.5,  9.5, 30.0};
+    math::RigidTransform<double> right_wall_pose =
+                        math::RigidTransform<double>(right_wall_translation);
+    math::RigidTransform<double> left_wall_pose =
+                        math::RigidTransform<double>(left_wall_translation);
+    math::RigidTransform<double> front_wall_pose =
+                        math::RigidTransform<double>(front_wall_translation);
+    math::RigidTransform<double> back_wall_pose =
+                        math::RigidTransform<double>(back_wall_translation);
+    math::RigidTransform<double> top_wall_pose =
+                        math::RigidTransform<double>(top_wall_translation);
+    math::RigidTransform<double> bottom_wall_pose =
+                        math::RigidTransform<double>(bottom_wall_translation);
+
+    objects.AddCollisionObject(std::move(right_wall_level_set),
+                               right_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(left_wall_level_set),
+                               left_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(front_wall_level_set),
+                               front_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(back_wall_level_set),
+                               back_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(top_wall_level_set),
+                               top_wall_pose, zero_velocity, mu);
+    objects.AddCollisionObject(std::move(bottom_wall_level_set),
+                               bottom_wall_pose, zero_velocity, mu);
+
+    // Populate the grid with nonzero velocities
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
+        EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
+    }
+    }
+    }
+
+    // Enforce slip BC
+    grid.EnforceBoundaryCondition(objects);
+
+    // Check velocity after enforcement, hardcode values for verification
+    for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
+    for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
+    for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
+        const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
+        if (i == bottom_corner(0)
+         || i == bottom_corner(0)+num_gridpt_1D(0)-1) {
+            EXPECT_NEAR(velocity_i(0), 0, kEps);
+        } else {
+            EXPECT_NEAR(velocity_i(0), 1, kEps);
+        }
+        if (j == bottom_corner(1)
+         || j == bottom_corner(1)+num_gridpt_1D(1)-1) {
+            EXPECT_NEAR(velocity_i(1), 0, kEps);
+        } else {
+            EXPECT_NEAR(velocity_i(1), 1, kEps);
+        }
+        if (k == bottom_corner(2)
+         || k == bottom_corner(2)+num_gridpt_1D(2)-1) {
+            EXPECT_NEAR(velocity_i(2), 0, kEps);
+        } else {
+            EXPECT_NEAR(velocity_i(2), 1, kEps);
+        }
+    }
+    }
+    }
+}
+
+GTEST_TEST(GridClassTest, TestRotatedPlaneBC) {
+    // In this test case, we enforce wall boundary condition to a 21x21x21 grid
+    // of the domain [0, 10]x[0, 10]x[0, 10]. The boundary plane has normal (1,
+    // 1, 1), contains the point (5, 5, 5).
     Vector3<int> num_gridpt_1D = {21, 21, 21};
     double h = 0.5;
     Vector3<int> bottom_corner  = {0, 0, 0};
@@ -359,10 +511,24 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
     // Friction coefficient
     double mu = 0.05;
-    BoundaryCondition bc = BoundaryCondition();
 
-    // Initialize the boundary spaces
-    bc.AddWallBoundary({mu, {{-1, -1, -1}, {5, 5, 5}}});
+    // Initialize the boundary spaces for testing
+    geometry::internal::PosedHalfSpace<double> wall_half_space =
+                                                    {{1, 1, 1}, {5, 5, 5}};
+
+    // Initialize the collision object
+    KinematicCollisionObjects objects = KinematicCollisionObjects();
+
+    multibody::SpatialVelocity<double> zero_velocity;
+    zero_velocity.SetZero();
+    Vector3<double> wall_normal = {1.0, 1.0, 1.0};
+    std::unique_ptr<AnalyticLevelSet> wall_level_set =
+                            std::make_unique<HalfSpaceLevelSet>(wall_normal);
+    Vector3<double> wall_translation  = {5.0, 5.0, 5.0};
+    math::RigidTransform<double> wall_pose =
+                        math::RigidTransform<double>(wall_translation);
+    objects.AddCollisionObject(std::move(wall_level_set), wall_pose,
+                               zero_velocity, mu);
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -375,8 +541,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     }
 
     // Enforce wall boundary condition
-    double dummy_t = 0.0;
-    grid.EnforceBoundaryCondition(dummy_t, bc);
+    grid.EnforceBoundaryCondition(objects);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -384,15 +549,15 @@ GTEST_TEST(GridClassTest, TestWallBoundaryCondition2) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& position_i = grid.get_position(i, j, k);
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        double dist =
-            bc.get_wall_boundary(0).boundary_space.CalcSignedDistance(
-                                                                    position_i);
+        double dist = wall_half_space.CalcSignedDistance(position_i);
         // If the grid point is not on/in the boundary, velocity shall be the
         // same
-        if (dist > 0) {
+        if (dist > 1e-6) {
             EXPECT_TRUE(CompareMatrices(velocity_i,
                                         Vector3<double>{1.0, 2.0, 3.0}, kEps));
-        } else {
+        }
+        // If the grid point is on/in the boundary, velocity shall be the same
+        if (dist < -1e-6) {
             // Given v_i = (1, 2, 3), n = 1/sqrt(3)*(-1, -1, -1)
             // Then v_t = (-1, 0, 1), vn = 6/sqrt(3)
             // v = vt - \mu v_n vt/\|vt\| = (1-0.05\sqrt(6)) (-1, 0, 1)
@@ -416,21 +581,25 @@ GTEST_TEST(GridClassTest, TestMovingCylindricalBC) {
     Vector3<int> bottom_corner  = {0, 0, 0};
     Vector3<double> velocity_grid = Vector3<double>(1.0, 2.0, 3.0);
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
-    BoundaryCondition bc = BoundaryCondition();
 
-    math::RollPitchYaw rpw_cylinder = {0.0, M_PI/2.0, 0.0};
-    CylinderLevelSet level_set_cylinder = CylinderLevelSet(1.0, 0.5);
-    Vector3<double> translation_cylinder = {5.0, 5.0, 5.0};
-    math::RigidTransform<double> pose_cylinder = {rpw_cylinder,
-                                                  translation_cylinder};
-    double mu = 0.1;
-    BoundaryCondition::MovingCylindricalBoundary mc0 = {mu,
-                                                        level_set_cylinder,
-                                                        pose_cylinder,
-                                                        {1.0, 1.0, 1.0}};
+    // Initialize the collision object
+    KinematicCollisionObjects objects = KinematicCollisionObjects();
 
-    // Initialize the boundary spaces
-    bc.AddMovingCylindricalBoundary(mc0);
+    multibody::SpatialVelocity<double> cylinder_velocity;
+    cylinder_velocity.translational() = Vector3<double>(1.0, 1.0, 1.0);
+    cylinder_velocity.rotational() = Vector3<double>::Zero();
+    double cylinder_height = 1.0;
+    double cylinder_radius = 0.5;
+    double cylinder_mu     = 0.1;
+    std::unique_ptr<AnalyticLevelSet> cylinder_level_set =
+                            std::make_unique<CylinderLevelSet>(cylinder_height,
+                                                               cylinder_radius);
+    Vector3<double> cylinder_translation = {5.0, 5.0, 5.0};
+    math::RollPitchYaw cylinder_rpw = {0.0, M_PI/2.0, 0.0};
+    math::RigidTransform<double> cylinder_pose = {cylinder_rpw,
+                                                  cylinder_translation};
+    objects.AddCollisionObject(std::move(cylinder_level_set), cylinder_pose,
+                               cylinder_velocity, cylinder_mu);
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -444,9 +613,10 @@ GTEST_TEST(GridClassTest, TestMovingCylindricalBC) {
 
     // Cylinder move t = 1.1, so the cylinder contains exactly two grid points
     // (6.0, 6.0, 6.0) and (7.0, 6.0, 6.0)
-    double t = 1.1;
+    double dt = 1.1;
+    objects.AdvanceOneTimeStep(dt);
     // Enforce wall boundary condition
-    grid.EnforceBoundaryCondition(t, bc);
+    grid.EnforceBoundaryCondition(objects);
 
     // Check velocity after enforcement, hardcode values for verification
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {

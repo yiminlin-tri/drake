@@ -75,25 +75,40 @@ drake_cc_library(
         "Grid.h",
     ],
     deps = [
-        ":BoundaryCondition",
+        ":KinematicCollisionObjects",
         "//common:essential",
         "//geometry/proximity:posed_half_space",
     ],
 )
 
 drake_cc_library(
-    name = "BoundaryCondition",
+    name = "CollisionObject",
     srcs = [
-        "BoundaryCondition.cc",
+        "CollisionObject.cc",
     ],
     hdrs = [
-        "BoundaryCondition.h",
+        "CollisionObject.h",
     ],
     deps = [
         ":AnalyticLevelSet",
         "//common:essential",
-        "//geometry/proximity:posed_half_space",
         "//math:geometric_transform",
+        "//multibody/fem:matrix_utilities",
+        "//multibody/math:spatial_algebra",
+    ],
+)
+
+drake_cc_library(
+    name = "KinematicCollisionObjects",
+    srcs = [
+        "KinematicCollisionObjects.cc",
+    ],
+    hdrs = [
+        "KinematicCollisionObjects.h",
+    ],
+    deps = [
+        ":CollisionObject",
+        "//common:essential",
     ],
 )
 
@@ -248,10 +263,9 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
-    name = "BoundaryCondition_test",
+    name = "CollisionObject_test",
     deps = [
-        ":AnalyticLevelSet",
-        ":BoundaryCondition",
+        ":CollisionObject",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
         "//geometry/proximity:posed_half_space",
