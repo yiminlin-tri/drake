@@ -72,8 +72,12 @@ void CollisionObject::ApplyBoundaryCondition(
 void CollisionObject::UpdateVelocityCoulumbFriction(
                                             const Vector3<double>& n,
                                             Vector3<double>* velocity) const {
+    // If the velocity is moving out from the object, we don't apply the
+    // friction
+    double vdotn = velocity->dot(n);
+    if (vdotn > 0)  return;
     // Normal and tangential components of the velocity
-    Vector3<double> vn = velocity->dot(n)*n;
+    Vector3<double> vn = vdotn*n;
     Vector3<double> vt = *velocity - vn;
     // Normal and tangential speed
     double vn_norm = vn.norm();

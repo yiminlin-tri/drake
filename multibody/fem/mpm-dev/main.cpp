@@ -27,8 +27,8 @@ int DoMain() {
 
     MPMParameters::SolverParameters s_param {
         3e-0,                                  // End time
-        1e-4,                                  // Time step size
-        0.01,                                  // Grid size
+        5e-4,                                  // Time step size
+        0.1,                                   // Grid size
         Vector3<int>(23, 23, 23),              // Number of grid points in each
                                                // direction
         Vector3<int>(-1, -1, -1),              // Bottom corner of the grid
@@ -60,28 +60,28 @@ int DoMain() {
 
     // Initialize the cylinder
     multibody::SpatialVelocity<double> cylinder_velocity;
-    cylinder_velocity.translational() = Vector3<double>(-0.1, 0.0, 0.0);
+    cylinder_velocity.translational() = Vector3<double>(-1.0, 0.0, 0.0);
     cylinder_velocity.rotational() = Vector3<double>(0.0, -M_PI/2, 0.0);
     double cylinder_mu = 0.4;
-    double cylinder_height = 0.2;
-    double cylinder_radius = 0.04;
+    double cylinder_height = 2;
+    double cylinder_radius = 0.4;
     std::unique_ptr<AnalyticLevelSet> cylinder_level_set =
                             std::make_unique<CylinderLevelSet>(cylinder_height,
                                                                cylinder_radius);
     math::RollPitchYaw cylinder_rpw = {M_PI/2.0, 0.0, 0.0};
-    Vector3<double> cylinder_translation = {0.25, 0.1, 0.06};
+    Vector3<double> cylinder_translation = {2.5, 1.0, 0.6};
     math::RigidTransform<double> cylinder_pose =
             math::RigidTransform<double>(cylinder_rpw, cylinder_translation);
     objects.AddCollisionObject(std::move(cylinder_level_set), cylinder_pose,
                                cylinder_velocity, cylinder_mu);
 
     // Initialize a sphere
-    double radius = 0.02;
+    double radius = 0.2;
     SphereLevelSet level_set_sphere = SphereLevelSet(radius);
-    Vector3<double> translation_sphere = {0.18, 0.1, 0.05};
+    Vector3<double> translation_sphere = {1.8, 1.0, 0.5};
     math::RigidTransform<double> pose_sphere =
                             math::RigidTransform<double>(translation_sphere);
-    MPMDriver::MaterialParameters m_param_sphere { {8e4, 0.49},
+    MPMDriver::MaterialParameters m_param_sphere { {8e4, 0.4},
                                                    800,
                                                    {0.0, 0.0, 0.0},
                                                    1

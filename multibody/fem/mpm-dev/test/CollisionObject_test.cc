@@ -155,30 +155,42 @@ class CollisionObjectTest : public ::testing::Test {
                                                                     TOLERANCE));
 
         // Next consider a point on the boundary half plane, boundary condition
-        // shall be enforced, the velocity is in the normal direction, so the
-        // new velocity should be zero.
+        // shall not be enforced, since the velocity is in the normal direction
         Vector3<double> pos1 = {2.0, 2.0, 2.0};
         Vector3<double> vel1 = {10.0, 10.0, 10.0};
         half_space_->ApplyBoundaryCondition(pos1, &vel1);
-        ASSERT_TRUE(CompareMatrices(vel1, Vector3<double>::Zero(), TOLERANCE));
+        ASSERT_TRUE(CompareMatrices(vel1, Vector3<double>{10.0, 10.0, 10.0},
+                                    TOLERANCE));
+
+        // Next consider a point on the boundary half plane, boundary condition
+        // shall be enforced, since the velocity is in the opposite normal
+        // direction, so the new velocity should be zero.
+        Vector3<double> pos2 = {2.0, 2.0, 2.0};
+        Vector3<double> vel2 = {-10.0, -10.0, -10.0};
+        half_space_->ApplyBoundaryCondition(pos2, &vel2);
+        ASSERT_TRUE(CompareMatrices(vel2, Vector3<double>::Zero(), TOLERANCE));
 
         // Next consider a point on the boundary half plane. The velocity is in
         // not the normal direction, but the normal impulse and the consequent
         // friction is so large that only the tangential velocity is left after
         // hitting the boundary.
-        Vector3<double> pos2 = {2.0, 2.0, 2.0};
-        Vector3<double> vel2 = {11.0, 10.0, 10.0};
-        half_space_->ApplyBoundaryCondition(pos2, &vel2);
-        ASSERT_TRUE(CompareMatrices(vel2, Vector3<double>::Zero(), TOLERANCE));
+        Vector3<double> pos3 = {2.0, 2.0, 2.0};
+        Vector3<double> vel3 = {-11.0, -10.0, -10.0};
+        half_space_->ApplyBoundaryCondition(pos3, &vel3);
+        ASSERT_TRUE(CompareMatrices(vel3, Vector3<double>::Zero(), TOLERANCE));
 
         // Finally test the frictional wall boundary condition enforcement using
         // a different velocity such that the friction will not be too large
-        Vector3<double> pos3 = {2.0, 2.0, 2.0};
-        Vector3<double> vel3 = {2.0, 1.0, 1.0};
-        half_space_->ApplyBoundaryCondition(pos3, &vel3);
-        ASSERT_TRUE(CompareMatrices(vel3,
-                                (1-half_space_->friction_coeff_*4.0/sqrt(2))/3.0
-                                *Vector3<double>{2.0, -1.0, -1.0},
+        // The relative velocity of the point is v = (-2, -1, -1), and the
+        // ourward normal direction is (1.0, 1.0, 1.0). By algebra:
+        // vₙ = (v ⋅ n)n = 4/3*(1, 1, 1), vₜ = v - vₙ = (-2/3, 1/3, 1/3)
+        // v_new = vₜ - μ‖vₙ‖t = (1-0.2sqrt(2))*(-2/3, 1/3, 1/3)
+        Vector3<double> pos4 = {2.0, 2.0, 2.0};
+        Vector3<double> vel4 = {-2.0, -1.0, -1.0};
+        half_space_->ApplyBoundaryCondition(pos4, &vel4);
+        ASSERT_TRUE(CompareMatrices(vel4,
+                                (1-half_space_->friction_coeff_*2.0*sqrt(2))/3.0
+                                *Vector3<double>{-2.0, 1.0, 1.0},
                                 TOLERANCE));
     }
 
@@ -196,18 +208,18 @@ class CollisionObjectTest : public ::testing::Test {
         // Next consider a point on the sphere, boundary condition
         // shall be enforced, the translational velocity of the sphere at this
         // point is given by ω×r = (0, -pi, pi)/sqrt(3)
-        // Then the relative velocity of the point is v = (1, 0, 0), and the
+        // Then the relative velocity of the point is v = (-1, 0, 0), and the
         // ourward normal direction is (1.0, 1.0, 1.0). By algebra:
-        // vₙ = (v ⋅ n)n = 1/3*(1, 1, 1), vₜ = v - vₙ = (2/3, -1/3, -1/3)
+        // vₙ = (v ⋅ n)n = -1/3*(1, 1, 1), vₜ = v - vₙ = (-2/3, 1/3, 1/3)
         // v_new = vₜ - μ‖vₙ‖t = (2/3, -1/3, -1/3) - 0.2*sqrt(3)/6*(2, -1, -1)
         // In physical frame, v_new = (0, -pi, pi)/sqrt(3) + v_new
         Vector3<double> pos1 = {1.0/sqrt(3), 1.0/sqrt(3), 1.0/sqrt(3)};
-        Vector3<double> vel1 = {1.0, -M_PI/sqrt(3), M_PI/sqrt(3)};
+        Vector3<double> vel1 = {-1.0, -M_PI/sqrt(3), M_PI/sqrt(3)};
         sphere_->ApplyBoundaryCondition(pos1, &vel1);
         ASSERT_TRUE(CompareMatrices(vel1, (1.0-0.2*sqrt(2)/2)
-                                         *Vector3<double>{2.0/3.0,
-                                                         -1.0/3.0,
-                                                         -1.0/3.0}
+                                         *Vector3<double>{-2.0/3.0,
+                                                          1.0/3.0,
+                                                          1.0/3.0}
                                          +Vector3<double>{0.0,
                                                          -M_PI/sqrt(3),
                                                          M_PI/sqrt(3)},

@@ -297,6 +297,8 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithHalfSpace) {
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    // Velocity of all grid points in the domain
+    Vector3<double> velocity_grid = {1.0, 1.0, 1.0};
     // We assume an ideal slip boundary condition
     double mu = 0.0;
     KinematicCollisionObjects objects = KinematicCollisionObjects();
@@ -358,7 +360,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithHalfSpace) {
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
+        grid.set_velocity(i, j, k, velocity_grid);
         EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
     }
     }
@@ -372,23 +374,38 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithHalfSpace) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        if (i == bottom_corner(0)
-         || i == bottom_corner(0)+num_gridpt_1D(0)-1) {
+        bool on_right_wall = i == bottom_corner(0)+num_gridpt_1D(0)-1;
+        bool on_back_wall  = j == bottom_corner(1)+num_gridpt_1D(1)-1;
+        bool on_top_wall   = k == bottom_corner(2)+num_gridpt_1D(2)-1;
+        // If on the right, top, or back wall, the velocity will hit the wall,
+        // so boundary condition is enforced.
+        // Right wall
+        if (on_right_wall) {
             EXPECT_NEAR(velocity_i(0), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(0), 1, kEps);
         }
-        if (j == bottom_corner(1)
-         || j == bottom_corner(1)+num_gridpt_1D(1)-1) {
+        // Back wall
+        if (on_back_wall) {
             EXPECT_NEAR(velocity_i(1), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(1), 1, kEps);
         }
-        if (k == bottom_corner(2)
-         || k == bottom_corner(2)+num_gridpt_1D(2)-1) {
+        // Top wall
+        if (on_top_wall) {
             EXPECT_NEAR(velocity_i(2), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(2), 1, kEps);
+        }
+
+        // If on the left, bottom, or front wall, the velocity is in the same
+        // direction as wall's outward normal, so no boundary condition shall
+        // be enforced. (We ignore the edges and corners with other three walls,
+        // since the behavior at singularities is not well-defined)
+        if (!on_right_wall && !on_back_wall && !on_top_wall) {
+            if (i == bottom_corner(0)) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
+            if (j == bottom_corner(1)) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
+            if (k == bottom_corner(2)) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
         }
     }
     }
@@ -402,6 +419,8 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithBox) {
     double h = 1.0;
     Vector3<int> bottom_corner  = {0, 0, 0};
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
+    // Velocity of all grid points in the domain
+    Vector3<double> velocity_grid = Vector3<double>(-1.0, -1.0, -1.0);
     // We assume an ideal slip boundary condition
     double mu = 0.0;
     KinematicCollisionObjects objects = KinematicCollisionObjects();
@@ -463,7 +482,7 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithBox) {
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-        grid.set_velocity(i, j, k, Vector3<double>(1.0, 1.0, 1.0));
+        grid.set_velocity(i, j, k, velocity_grid);
         EXPECT_TRUE(!grid.get_velocity(i, j, k).isZero());
     }
     }
@@ -477,23 +496,38 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithBox) {
     for (int j = bottom_corner(1); j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
     for (int i = bottom_corner(0); i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
         const Vector3<double>& velocity_i = grid.get_velocity(i, j, k);
-        if (i == bottom_corner(0)
-         || i == bottom_corner(0)+num_gridpt_1D(0)-1) {
+        bool on_left_wall   = i == bottom_corner(0);
+        bool on_front_wall  = j == bottom_corner(1);
+        bool on_bottom_wall = k == bottom_corner(2);
+        // If on the right, top, or back wall, the velocity will hit the wall,
+        // so boundary condition is enforced.
+        // Left wall
+        if (on_left_wall) {
             EXPECT_NEAR(velocity_i(0), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(0), 1, kEps);
         }
-        if (j == bottom_corner(1)
-         || j == bottom_corner(1)+num_gridpt_1D(1)-1) {
+        // Front wall
+        if (on_front_wall) {
             EXPECT_NEAR(velocity_i(1), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(1), 1, kEps);
         }
-        if (k == bottom_corner(2)
-         || k == bottom_corner(2)+num_gridpt_1D(2)-1) {
+        // Bottom wall
+        if (on_bottom_wall) {
             EXPECT_NEAR(velocity_i(2), 0, kEps);
-        } else {
-            EXPECT_NEAR(velocity_i(2), 1, kEps);
+        }
+
+        // If on the right, back, or top wall, the velocity is in the same
+        // direction as wall's outward normal, so no boundary condition shall
+        // be enforced. (We ignore the edges and corners with other three walls,
+        // since the behavior at singularities is not well-defined)
+        if (!on_left_wall && !on_front_wall && !on_bottom_wall) {
+            if (i == bottom_corner(0)+num_gridpt_1D(0)-1) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
+            if (j == bottom_corner(1)+num_gridpt_1D(1)-1) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
+            if (k == bottom_corner(2)+num_gridpt_1D(2)-1) {
+                EXPECT_TRUE(CompareMatrices(velocity_i, velocity_grid, kEps));
+            }
         }
     }
     }
@@ -507,7 +541,7 @@ GTEST_TEST(GridClassTest, TestRotatedPlaneBC) {
     Vector3<int> num_gridpt_1D = {21, 21, 21};
     double h = 0.5;
     Vector3<int> bottom_corner  = {0, 0, 0};
-    Vector3<double> velocity_grid = Vector3<double>(1.0, 2.0, 3.0);
+    Vector3<double> velocity_grid = Vector3<double>(-1.0, -2.0, -3.0);
     Grid grid = Grid(num_gridpt_1D, h, bottom_corner);
     // Friction coefficient
     double mu = 0.05;
@@ -554,15 +588,15 @@ GTEST_TEST(GridClassTest, TestRotatedPlaneBC) {
         // same
         if (dist > 1e-6) {
             EXPECT_TRUE(CompareMatrices(velocity_i,
-                                        Vector3<double>{1.0, 2.0, 3.0}, kEps));
+                                    Vector3<double>{-1.0, -2.0, -3.0}, kEps));
         }
         // If the grid point is on/in the boundary, velocity shall be the same
         if (dist < -1e-6) {
-            // Given v_i = (1, 2, 3), n = 1/sqrt(3)*(-1, -1, -1)
-            // Then v_t = (-1, 0, 1), vn = 6/sqrt(3)
-            // v = vt - \mu v_n vt/\|vt\| = (1-0.05\sqrt(6)) (-1, 0, 1)
+            // Given v_i = (-1, -2, -3), n = 1/sqrt(3)*(-1, -1, -1)
+            // vₙ = (v ⋅ n)n = (-2, -2, -2), vₜ = v - vₙ = (1, 0, -1)
+            // v_new = vₜ - μ‖vₙ‖t = (1-0.05*sqrt(6))*(1, 0, -1)
             EXPECT_TRUE(CompareMatrices(velocity_i,
-                            (1.0-0.05*sqrt(6))*Vector3<double>(-1.0, 0.0, 1.0),
+                            (1.0-0.05*sqrt(6))*Vector3<double>(1.0, 0.0, -1.0),
                             kEps));
         }
     }
