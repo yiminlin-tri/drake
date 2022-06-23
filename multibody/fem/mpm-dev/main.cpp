@@ -55,7 +55,7 @@ int DoMain() {
     Vector3<double> wall_translation = {0.0, 0.0, 0.0};
     math::RigidTransform<double> wall_pose =
                             math::RigidTransform<double>(wall_translation);
-    objects.AddCollisionObject(std::move(wall_level_set), wall_pose,
+    objects.AddCollisionObject(std::move(wall_level_set), std::move(wall_pose),
                                wall_velocity, wall_mu);
 
     // Initialize the cylinder
@@ -72,7 +72,8 @@ int DoMain() {
     Vector3<double> cylinder_translation = {2.5, 1.0, 0.6};
     math::RigidTransform<double> cylinder_pose =
             math::RigidTransform<double>(cylinder_rpw, cylinder_translation);
-    objects.AddCollisionObject(std::move(cylinder_level_set), cylinder_pose,
+    objects.AddCollisionObject(std::move(cylinder_level_set),
+                               std::move(cylinder_pose),
                                cylinder_velocity, cylinder_mu);
 
     // Initialize a sphere

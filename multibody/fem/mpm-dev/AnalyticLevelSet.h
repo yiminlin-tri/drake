@@ -45,7 +45,7 @@ class AnalyticLevelSet {
     std::array<Vector3<double>, 2> bounding_box_{};
 };  // class AnalyticLevelSet
 
-// An analytic level set class for half space with normal normal_ and center
+// An analytic level set class for half space with the given `normal` and center
 // (0, 0, 0)
 class HalfSpaceLevelSet : public AnalyticLevelSet {
  public:

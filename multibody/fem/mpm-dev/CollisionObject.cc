@@ -6,19 +6,20 @@ namespace mpm {
 
 CollisionObject::CollisionObject(std::unique_ptr<AnalyticLevelSet> level_set,
                     CollisionObject::CollisionObjectState initial_state,
-                    double friction_coeff): state_(initial_state),
+                    double friction_coeff): state_(std::move(initial_state)),
                                             level_set_(std::move(level_set)),
                                             friction_coeff_(friction_coeff) {}
 
 void CollisionObject::AdvanceOneTimeStep(double dt) {
+    // Updated translation velocity
+    Vector3<double> translation_new = state_.pose.translation()
+                                  +dt*state_.spatial_velocity.translational();
     // Angular velocity
     const Vector3<double>& omega = state_.spatial_velocity.rotational();
     Matrix3<double> angular_velocity_matrix, R_new, S;
     angular_velocity_matrix <<       0.0, -omega(2),  omega(1),
                                 omega(2),       0.0, -omega(0),
                                -omega(1),  omega(0),       0.0;
-    Vector3<double> translation_new = state_.pose.translation()
-                                  +dt*state_.spatial_velocity.translational();
     Matrix3<double> R = state_.pose.rotation()
                        *(Matrix3<double>::Identity()
                        +dt*angular_velocity_matrix);
@@ -46,8 +47,19 @@ void CollisionObject::ApplyBoundaryCondition(
     const math::RigidTransform<double>& X_WR = state_.pose;
     const multibody::SpatialVelocity<double>& V_WR = state_.spatial_velocity;
 
-    // Compute the spatial velocity at Rq for the collision object.
+    // Rotation matrix from world to the collision object
+    const math::RotationMatrix<double> Rot_RW = X_WR.rotation().inverse();
+
+    // Express the relative position in the world frame W
     const Vector3<double> p_RoRq_W = p_WQ - X_WR.translation();
+
+    // Express the relative position in the collision object's frame R.
+    const Vector3<double> p_RoRq_R = Rot_RW * p_RoRq_W;
+
+    // Don't apply BC if the input grid point is not in the collision object
+    if (!level_set_->InInterior(p_RoRq_R)) return;
+
+    // Compute the spatial velocity at Rq for the collision object.
     const multibody::SpatialVelocity<double> V_WRq = V_WR.Shift(p_RoRq_W);
 
     // Compute the relative (translational) velocity of grid node
@@ -55,12 +67,8 @@ void CollisionObject::ApplyBoundaryCondition(
     Vector3<double> v_RqQ_W = v_WQ - V_WRq.translational();
 
     // Express the relative velocity in the collision object's frame R.
-    Vector3<double> v_RqQ_R = X_WR.rotation().inverse() * v_RqQ_W;
+    Vector3<double> v_RqQ_R = Rot_RW * v_RqQ_W;
 
-    // Express the relative position in the collision object's frame R.
-    const Vector3<double> p_RoRq_R = X_WR.rotation().inverse() * p_RoRq_W;
-
-    if (!level_set_->InInterior(p_RoRq_R)) return;
     UpdateVelocityCoulumbFriction(level_set_->Normal(p_RoRq_R), &v_RqQ_R);
 
     // Transform the velocity back to the world frame.

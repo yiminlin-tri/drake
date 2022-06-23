@@ -42,13 +42,12 @@ class CollisionObject {
     // its normal and tangential components by vₙ = (v ⋅ n)n, vₜ = v - vₙ,
     // the impulse of colliding with the wall is given by j = -m vₙ. The
     // Coulumb friction law states the amount of friction imposed is at most
-    // μ ‖j‖, where \mu is the friction coefficient of the wall.
+    // μ ‖j‖, where \mu is the friction coefficient of the wall. If the normal
+    // magnitude (v ⋅ n) of velocity is positive, i.e., the point is leaving
+    // the object, we don't apply boundary condition. Otherwise,
     // If ‖vₜ‖ <= μ‖vₙ‖,   v_new = 0.0
     // Otherwise    ,   v_new = vₜ - μ‖vₙ‖t, t - tangential direction
     // Then we overwrite the passed in velocity with v_new.
-    // For a grid point locates on multiple boundaries, we impose each
-    // boundary condition, ordered as in boundaries_, to this grid point.
-    // TODO(yiminlin.tri): May cause unexpected behavior at sharp corners
     void ApplyBoundaryCondition(const Vector3<double>& position,
                                 Vector3<double>* velocity) const;
 

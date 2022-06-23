@@ -19,7 +19,7 @@ class KinematicCollisionObjects {
 
     // Add a new collision object with the given intial conditions
     void AddCollisionObject(std::unique_ptr<AnalyticLevelSet> level_set,
-                            const math::RigidTransform<double>& pose,
+                            math::RigidTransform<double> pose,
                             const multibody::SpatialVelocity<double>&
                                                             spatial_velocity,
                             double friction_coeff);
@@ -30,7 +30,11 @@ class KinematicCollisionObjects {
     void AdvanceOneTimeStep(double dt);
 
     // Apply the boundary condition prescribed by all collision objects to a
-    // point in the space with the given postion and velocity.
+    // point in the space with the given postion and velocity. For a grid point
+    // locates in multiple collision objects, we impose boundary conditions
+    // of every collision object, ordered as in collision_objects_, to this grid
+    // point.
+    // TODO(yiminlin.tri): May cause unexpected behavior at sharp corners
     void ApplyBoundaryConditions(const Vector3<double>& position,
                                  Vector3<double>* velocity) const;
 

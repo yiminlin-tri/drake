@@ -6,13 +6,14 @@ namespace mpm {
 
 void KinematicCollisionObjects::AddCollisionObject(
                     std::unique_ptr<AnalyticLevelSet> level_set,
-                    const math::RigidTransform<double>& pose,
+                    math::RigidTransform<double> pose,
                     const multibody::SpatialVelocity<double>& spatial_velocity,
                     double friction_coeff) {
-    CollisionObject::CollisionObjectState state = {pose, spatial_velocity};
+    CollisionObject::CollisionObjectState state = {std::move(pose),
+                                                   spatial_velocity};
     collision_objects_.emplace_back(
                         std::make_unique<CollisionObject>(std::move(level_set),
-                                                          state,
+                                                          std::move(state),
                                                           friction_coeff));
 }
 
@@ -21,7 +22,7 @@ int KinematicCollisionObjects::get_num_collision_objects() const {
 }
 
 void KinematicCollisionObjects::AdvanceOneTimeStep(double dt) {
-    for (const auto& obj : collision_objects_) {
+    for (auto& obj : collision_objects_) {
         obj->AdvanceOneTimeStep(dt);
     }
 }

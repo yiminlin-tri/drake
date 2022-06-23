@@ -344,17 +344,17 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithHalfSpace) {
                         math::RigidTransform<double>(bottom_wall_translation);
 
     objects.AddCollisionObject(std::move(right_wall_level_set),
-                               right_wall_pose, zero_velocity, mu);
+                               std::move(right_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(left_wall_level_set),
-                               left_wall_pose, zero_velocity, mu);
+                               std::move(left_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(front_wall_level_set),
-                               front_wall_pose, zero_velocity, mu);
+                               std::move(front_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(back_wall_level_set),
-                               back_wall_pose, zero_velocity, mu);
+                               std::move(back_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(top_wall_level_set),
-                               top_wall_pose, zero_velocity, mu);
+                               std::move(top_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(bottom_wall_level_set),
-                               bottom_wall_pose, zero_velocity, mu);
+                               std::move(bottom_wall_pose), zero_velocity, mu);
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -466,17 +466,17 @@ GTEST_TEST(GridClassTest, TestWallBoundaryConditionWithBox) {
                         math::RigidTransform<double>(bottom_wall_translation);
 
     objects.AddCollisionObject(std::move(right_wall_level_set),
-                               right_wall_pose, zero_velocity, mu);
+                               std::move(right_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(left_wall_level_set),
-                               left_wall_pose, zero_velocity, mu);
+                               std::move(left_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(front_wall_level_set),
-                               front_wall_pose, zero_velocity, mu);
+                               std::move(front_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(back_wall_level_set),
-                               back_wall_pose, zero_velocity, mu);
+                               std::move(back_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(top_wall_level_set),
-                               top_wall_pose, zero_velocity, mu);
+                               std::move(top_wall_pose), zero_velocity, mu);
     objects.AddCollisionObject(std::move(bottom_wall_level_set),
-                               bottom_wall_pose, zero_velocity, mu);
+                               std::move(bottom_wall_pose), zero_velocity, mu);
 
     // Populate the grid with nonzero velocities
     for (int k = bottom_corner(2); k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
@@ -561,7 +561,7 @@ GTEST_TEST(GridClassTest, TestRotatedPlaneBC) {
     Vector3<double> wall_translation  = {5.0, 5.0, 5.0};
     math::RigidTransform<double> wall_pose =
                         math::RigidTransform<double>(wall_translation);
-    objects.AddCollisionObject(std::move(wall_level_set), wall_pose,
+    objects.AddCollisionObject(std::move(wall_level_set), std::move(wall_pose),
                                zero_velocity, mu);
 
     // Populate the grid with nonzero velocities
@@ -632,7 +632,8 @@ GTEST_TEST(GridClassTest, TestMovingCylindricalBC) {
     math::RollPitchYaw cylinder_rpw = {0.0, M_PI/2.0, 0.0};
     math::RigidTransform<double> cylinder_pose = {cylinder_rpw,
                                                   cylinder_translation};
-    objects.AddCollisionObject(std::move(cylinder_level_set), cylinder_pose,
+    objects.AddCollisionObject(std::move(cylinder_level_set),
+                               std::move(cylinder_pose),
                                cylinder_velocity, cylinder_mu);
 
     // Populate the grid with nonzero velocities

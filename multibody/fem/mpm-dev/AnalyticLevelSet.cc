@@ -22,9 +22,9 @@ HalfSpaceLevelSet::HalfSpaceLevelSet(const Vector3<double>& normal):
                                  {{-std::numeric_limits<double>::infinity()
                                     *Vector3<double>::Ones(),
                                     std::numeric_limits<double>::infinity()
-                                    *Vector3<double>::Ones()}}),
-                normal_(normal.normalized()) {
+                                    *Vector3<double>::Ones()}}) {
     DRAKE_DEMAND(!(normal(0) == 0 && normal(1) == 0 && normal(2) == 0));
+    normal_ = normal.normalized();
 }
 
 bool HalfSpaceLevelSet::InInterior(const Vector3<double>& position) const {
@@ -36,7 +36,8 @@ Vector3<double> HalfSpaceLevelSet::Normal(const Vector3<double>& position)
     if (InInterior(position)) {
         return normal_;
     } else {
-        throw std::logic_error("Normal outside of the level set is unavaiable");
+        throw
+            std::logic_error("Normal outside of the level set is unavailable");
     }
 }
 
@@ -59,7 +60,8 @@ Vector3<double> SphereLevelSet::Normal(const Vector3<double>& position) const {
         }
         return position.normalized();
     } else {
-        throw std::logic_error("Normal outside of the level set is unavaiable");
+        throw
+            std::logic_error("Normal outside of the level set is unavailable");
     }
 }
 
@@ -103,7 +105,8 @@ Vector3<double> BoxLevelSet::Normal(const Vector3<double>& position) const {
                             { return Vector3<double>{0.0, 0.0, 1.0}; }
         DRAKE_UNREACHABLE();
     } else {
-        throw std::logic_error("Normal outside of the level set is unavaiable");
+        throw
+            std::logic_error("Normal outside of the level set is unavailable");
     }
 }
 
@@ -131,7 +134,8 @@ Vector3<double> CylinderLevelSet::Normal(const Vector3<double>& position)
         }
         return projection_xy.normalized();
     } else {
-        throw std::logic_error("Normal outside of the level set is unavaiable");
+        throw
+            std::logic_error("Normal outside of the level set is unavailable");
     }
 }
 

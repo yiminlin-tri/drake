@@ -35,7 +35,7 @@ class CollisionObjectTest : public ::testing::Test {
                                                              half_space_v};
         half_space_ = std::make_unique<CollisionObject>(
                                             std::move(half_space_level_set),
-                                            half_space_state,
+                                            std::move(half_space_state),
                                             half_space_mu);
 
         // Construct a moving box with size (1, 1, 1), and centered at (2, 2, 2)
@@ -52,7 +52,7 @@ class CollisionObjectTest : public ::testing::Test {
                                 std::make_unique<BoxLevelSet>(box_xscale);
         CollisionObject::CollisionObjectState box_state = {box_pose, box_v};
         box_ = std::make_unique<CollisionObject>(std::move(box_level_set),
-                                                 box_state, box_mu);
+                                                 std::move(box_state), box_mu);
 
         // Construct a rotating sphere with radius 1, centered at (0, 0, 0)
         // with angular velocity (pi, 0, 0)
@@ -69,7 +69,7 @@ class CollisionObjectTest : public ::testing::Test {
         CollisionObject::CollisionObjectState sphere_state =
                                                     {sphere_pose, sphere_v};
         sphere_ = std::make_unique<CollisionObject>(std::move(sphere_level_set),
-                                                    sphere_state,
+                                                    std::move(sphere_state),
                                                     sphere_mu);
 
         // Construct a moving cylindrical boundary with central axis parallel to
@@ -94,7 +94,7 @@ class CollisionObjectTest : public ::testing::Test {
                                                          moving_cylinder_v};
         moving_cylinder_ = std::make_unique<CollisionObject>(
                                         std::move(moving_cylinder_level_set),
-                                        cylinder_state,
+                                        std::move(cylinder_state),
                                         moving_cylinder_mu);
     }
 
