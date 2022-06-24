@@ -163,6 +163,41 @@ class CollisionObjectTest : public ::testing::Test {
                             TOLERANCE));
     }
 
+    void TestSphereAdvanceOneTimeStep() {
+        // Check the current pose of the sphere
+        ASSERT_TRUE(CompareMatrices(sphere_->state_.pose.translation(),
+                                    Vector3<double>{0, 0, 0},
+                                    TOLERANCE));
+        ASSERT_TRUE(CompareMatrices(sphere_->state_.pose.rotation().matrix(),
+                                    Matrix3<double>::Identity(),
+                                    TOLERANCE));
+
+        double dt = 1.0;
+        sphere_->AdvanceOneTimeStep(dt);
+
+        // After the time step, the sphere should have a different pose with
+        // the same translation but a different rotation. In particular,
+        // by the formula dR/dt = [ω]R, where w is the angular momentum matrix,
+        // Since the angular momentum w is constant, the new rotation matrix
+        // after a time step should be R_new = (I + [w])R,
+        // [w] = [0   0   0
+        //        0   0  -π
+        //        0   π   0] in this case. After normalizing to the closest
+        // rotation matrix, the new rotation matrix should be
+        // R_new = [1           0           0
+        //          0   1/(√1+π²)  -π/(√1+π²)
+        //          0   π/(√1+π²)   1/(√1+π²)]
+        Matrix3<double> R_new;
+        R_new << 1.0,                      0.0,                       0.0,
+                 0.0,  1.0/sqrt(1 + M_PI*M_PI), -M_PI/sqrt(1 + M_PI*M_PI),
+                 0.0, M_PI/sqrt(1 + M_PI*M_PI),   1.0/sqrt(1 + M_PI*M_PI);
+        ASSERT_TRUE(CompareMatrices(sphere_->state_.pose.translation(),
+                                    Vector3<double>{0, 0, 0},
+                                    TOLERANCE));
+        ASSERT_TRUE(CompareMatrices(sphere_->state_.pose.rotation().matrix(),
+                                    R_new, TOLERANCE));
+    }
+
     void TestWallBC() {
         // Test the wall boundary condition using half_space_ defined in the
         // SetUp routine.
@@ -313,6 +348,7 @@ namespace {
 TEST_F(CollisionObjectTest, TestAdvanceOneTimeStep) {
     TestBoxAdvanceOneTimeStep();
     TestCylinderAdvanceOneTimeStep();
+    TestSphereAdvanceOneTimeStep();
 }
 
 TEST_F(CollisionObjectTest, TestApplyBC) {
