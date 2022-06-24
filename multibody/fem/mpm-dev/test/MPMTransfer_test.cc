@@ -716,7 +716,6 @@ class MPMTransferTest : public ::testing::Test {
                                     TOLERANCE));
     }
 
-/*
     void checkG2PDeformationGrad() {
         // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
         // at the center
@@ -780,7 +779,9 @@ class MPMTransferTest : public ::testing::Test {
 
     void checkG2PMassVelocity1() {
         double sum_mass_particle, sum_mass_grid;
-        Vector3<double> sum_momentum_particle, sum_momentum_grid;
+        Vector3<double> sum_momentum_particle, sum_momentum_grid,
+                        sum_angular_momentum_particle,
+                        sum_angular_momentum_grid;
         double dt = 0.1;
 
         // First setup particles and grid using P2G
@@ -789,43 +790,58 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<int> num_gridpt_1D = grid_->get_num_gridpt_1D();
         int num_particles = particles_->get_num_particles();
 
-        // Then we do a grid to particle transfer
-        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
-
-        // Particles' sum of mass and momentum
-        sum_mass_particle = 0.0;
-        sum_momentum_particle = {0.0, 0.0, 0.0};
-        for (int p = 0; p < num_particles; ++p) {
-            sum_mass_particle += particles_->get_mass(p);
-            sum_momentum_particle += particles_->get_mass(p)
-                            *particles_->get_velocity(p);
-        }
-
         // Grid's sum of mass and momentum
         sum_mass_grid = 0.0;
         sum_momentum_grid = {0.0, 0.0, 0.0};
+        sum_angular_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass_grid += grid_->get_mass(i, j, k);
-            sum_momentum_grid += grid_->get_mass(i, j, k)
-                            *grid_->get_velocity(i, j, k);
+            double mi = grid_->get_mass(i, j, k);
+            const Vector3<double> vi = grid_->get_velocity(i, j, k);
+            const Vector3<double> xi = grid_->get_position(i, j, k);
+            sum_mass_grid += mi;
+            sum_momentum_grid += mi*vi;
+            sum_angular_momentum_grid += mi*xi.cross(vi);
         }
         }
+        }
+
+        // Then we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
+
+        // Particles' sum of mass and momentum
+        sum_mass_particle = 0.0;
+        sum_momentum_particle = {0.0, 0.0, 0.0};
+        sum_angular_momentum_particle = {0.0, 0.0, 0.0};
+        for (int p = 0; p < num_particles; ++p) {
+            double mp = particles_->get_mass(p);
+            const Vector3<double> vp = particles_->get_velocity(p);
+            const Vector3<double> xp = particles_->get_position(p);
+            const Matrix3<double> Bp = particles_->get_affine_matrix(p);
+            sum_mass_particle += mp;
+            sum_momentum_particle += mp*vp;
+            sum_angular_momentum_particle += mp*(xp.cross(vp)
+                                           + PermutationA(Bp.transpose()));
         }
 
         // Verify the conservation of mass and momentum
         EXPECT_NEAR(sum_mass_particle, sum_mass_grid, TOLERANCE);
         EXPECT_TRUE(CompareMatrices(sum_momentum_particle, sum_momentum_grid,
                                     TOLERANCE));
+        EXPECT_TRUE(CompareMatrices(sum_angular_momentum_particle,
+                                    sum_angular_momentum_grid,
+                                    TOLERANCE));
     }
 
     void checkG2PMassVelocity2() {
         double sum_mass_particle, sum_mass_grid;
-        Vector3<double> sum_momentum_particle, sum_momentum_grid;
+        Vector3<double> sum_momentum_particle, sum_momentum_grid,
+                        sum_angular_momentum_particle,
+                        sum_angular_momentum_grid;
         double dt = 0.1;
 
         // First setup particles and grid using P2G
@@ -834,40 +850,80 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<int> num_gridpt_1D = grid_->get_num_gridpt_1D();
         int num_particles = particles_->get_num_particles();
 
-        // Then we do a grid to particle transfer
-        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
-
-        // Particles' sum of mass and momentum
-        sum_mass_particle = 0.0;
-        sum_momentum_particle = {0.0, 0.0, 0.0};
-        for (int p = 0; p < num_particles; ++p) {
-            sum_mass_particle += particles_->get_mass(p);
-            sum_momentum_particle += particles_->get_mass(p)
-                            *particles_->get_velocity(p);
-        }
-
         // Grid's sum of mass and momentum
         sum_mass_grid = 0.0;
         sum_momentum_grid = {0.0, 0.0, 0.0};
+        sum_angular_momentum_grid = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
                  j < bottom_corner(1)+num_gridpt_1D(1); ++j) {
         for (int i = bottom_corner(0);
                  i < bottom_corner(0)+num_gridpt_1D(0); ++i) {
-            sum_mass_grid += grid_->get_mass(i, j, k);
-            sum_momentum_grid += grid_->get_mass(i, j, k)
-                            *grid_->get_velocity(i, j, k);
+            double mi = grid_->get_mass(i, j, k);
+            const Vector3<double> vi = grid_->get_velocity(i, j, k);
+            const Vector3<double> xi = grid_->get_position(i, j, k);
+            sum_mass_grid += mi;
+            sum_momentum_grid += mi*vi;
+            sum_angular_momentum_grid += mi*xi.cross(vi);
         }
         }
+        }
+
+        // Then we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
+
+        // Particles' sum of mass and momentum
+        sum_mass_particle = 0.0;
+        sum_momentum_particle = {0.0, 0.0, 0.0};
+        sum_angular_momentum_particle = {0.0, 0.0, 0.0};
+        for (int p = 0; p < num_particles; ++p) {
+            double mp = particles_->get_mass(p);
+            const Vector3<double> vp = particles_->get_velocity(p);
+            const Vector3<double> xp = particles_->get_position(p);
+            const Matrix3<double> Bp = particles_->get_affine_matrix(p);
+            sum_mass_particle += mp;
+            sum_momentum_particle += mp*vp;
+            sum_angular_momentum_particle += mp*(xp.cross(vp)
+                                           + PermutationA(Bp.transpose()));
         }
 
         // Verify the conservation of mass and momentum
         EXPECT_NEAR(sum_mass_particle, sum_mass_grid, TOLERANCE);
         EXPECT_TRUE(CompareMatrices(sum_momentum_particle, sum_momentum_grid,
                                     TOLERANCE));
+        EXPECT_TRUE(CompareMatrices(sum_angular_momentum_particle,
+                                    sum_angular_momentum_grid,
+                                    TOLERANCE));
     }
-*/
+
+    // (i, j, k)th entry of the third order permutation tensor
+    double LeviCivita(int i, int j, int k) {
+        // Even permutation
+        if ((i == 0 && j == 1 && k == 2) || (i == 1 && j == 2 && k == 0)
+         || (i == 2 && j == 0 && k == 1)) {
+            return 1.0;
+        }
+        // Odd permutation
+        if ((i == 2 && j == 1 && k == 0) || (i == 0 && j == 2 && k == 1)
+         || (i == 1 && j == 0 && k == 2)) {
+            return -1.0;
+        }
+        return 0.0;
+    }
+
+    // Calculate A:ε
+    Vector3<double> PermutationA(const Matrix3<double>& A) {
+        Vector3<double> A_dot_eps = {0.0, 0.0, 0.0};
+        for (int k = 0; k < 3; ++k) {
+        for (int j = 0; j < 3; ++j) {
+        for (int i = 0; i < 3; ++i) {
+            A_dot_eps(k) += A(i, j)*LeviCivita(i, j, k);
+        }
+        }
+        }
+        return A_dot_eps;
+    }
 
     std::unique_ptr<Particles> particles_;
     std::unique_ptr<Grid> grid_;
@@ -893,11 +949,11 @@ TEST_F(MPMTransferTest, P2GTest) {
     checkP2GMassVelocity2();
 }
 
-// TEST_F(MPMTransferTest, G2PTest) {
-//     checkG2PDeformationGrad();
-//     checkG2PMassVelocity1();
-//     checkG2PMassVelocity2();
-// }
+TEST_F(MPMTransferTest, G2PTest) {
+    checkG2PDeformationGrad();
+    checkG2PMassVelocity1();
+    checkG2PMassVelocity2();
+}
 
 }  // namespace
 }  // namespace mpm
