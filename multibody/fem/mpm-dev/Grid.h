@@ -46,6 +46,13 @@ class Grid {
     Grid(const Vector3<int>& num_gridpt_1D, double h,
          const Vector3<int>& bottom_corner);
 
+    // Store the sum of mass, momentum and angular momentum of the grid
+    struct GridSumState {
+        double sum_mass;
+        Vector3<double> sum_momentum;
+        Vector3<double> sum_angular_momentum;
+    };
+
     int get_num_gridpt() const;
     const Vector3<int>& get_num_gridpt_1D() const;
     double get_h() const;
@@ -59,7 +66,6 @@ class Grid {
     const Vector3<double>& get_force(int i, int j, int k) const;
     const std::vector<std::pair<int, Vector3<int>>>& get_indices() const;
 
-    void set_position(int i, int j, int k, const Vector3<double>& position);
     void set_velocity(int i, int j, int k, const Vector3<double>& velocity);
     void set_mass(int i, int j, int k, double mass);
     void set_force(int i, int j, int k, const Vector3<double>& force);
@@ -105,6 +111,9 @@ class Grid {
     // normal from the interior of the object to the exterior of the object. We
     // strongly impose this Dirichlet boundary conditions.
     void EnforceBoundaryCondition(const KinematicCollisionObjects& objects);
+
+    // Return the sum of mass, momentum and angular momentum of all grid points
+    GridSumState GetGridSumState() const;
 
  private:
     int num_gridpt_;
