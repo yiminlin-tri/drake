@@ -403,6 +403,50 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
                                 Matrix3<double>::Zero(), TOLERANCE));
 }
 
+GTEST_TEST(GridClassTest, TestGridSumState) {
+    // In this test case, we construct a 2x2x2 grid
+    Vector3<double> pos0 = {1.0, 2.0, 3.0};
+    Vector3<double> vel0 = {-1.0, -1.0, -1.0};
+    double mass0 = 1.0;
+    double vol0  = 1.0;
+    Matrix3<double> F0 = pos0.asDiagonal();
+    Matrix3<double> stress0 = vel0.asDiagonal();
+    Matrix3<double> B0 = vel0.asDiagonal();
+    CorotatedModel cmodel0 = CorotatedModel(10.0, 0.1);
+
+    Vector3<double> pos1 = {4.0, 5.0, 6.0};
+    Vector3<double> vel1 = {-2.0, -2.0, -2.0};
+    double mass1 = 2.0;
+    double vol1  = 2.0;
+    Matrix3<double> F1 = pos1.asDiagonal();
+    Matrix3<double> stress1 = vel1.asDiagonal();
+    Matrix3<double> B1 = 2.0*vel1.asDiagonal();
+    CorotatedModel cmodel1 = CorotatedModel(10.0, 0.1);
+
+    Vector3<double> pos2 = {7.0, 8.0, 9.0};
+    Vector3<double> vel2 = {-3.0, -3.0, -3.0};
+    double mass2 = 3.0;
+    double vol2  = 3.0;
+    Matrix3<double> F2 = pos2.asDiagonal();
+    Matrix3<double> stress2 = vel2.asDiagonal();
+    Matrix3<double> B2 = 3.0*vel2.asDiagonal();
+    CorotatedModel cmodel2 = CorotatedModel(20.0, 0.2);
+
+    Particles particles = Particles();
+    particles.AddParticle(pos0, vel0, mass0, vol0, F0, stress0, B0, cmodel0);
+    particles.AddParticle(pos1, vel1, mass1, vol1, F1, stress1, B1, cmodel1);
+    particles.AddParticle(pos2, vel2, mass2, vol2, F2, stress2, B2, cmodel2);
+
+    Particles::ParticlesSumState sum_state = particles.GetParticlesSumState();
+
+    // Check the sums
+    EXPECT_EQ(sum_state.sum_mass, 6.0);
+    EXPECT_TRUE(CompareMatrices(sum_state.sum_momentum,
+                                Vector3<double>(-14.0, -14.0, -14.0), kEps));
+    EXPECT_TRUE(CompareMatrices(sum_state.sum_angular_momentum,
+                                Vector3<double>(14.0, -28.0, 14.0), kEps));
+}
+
 }  // namespace
 }  // namespace internal
 }  // namespace mpm

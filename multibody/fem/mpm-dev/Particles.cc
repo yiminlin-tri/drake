@@ -216,6 +216,25 @@ void Particles::AdvectParticles(double dt) {
     }
 }
 
+Particles::ParticlesSumState Particles::GetParticlesSumState() const {
+    ParticlesSumState sum_particles_state;
+    // Particles' sum of mass and momentum
+    sum_particles_state.sum_mass             = 0.0;
+    sum_particles_state.sum_momentum         = {0.0, 0.0, 0.0};
+    sum_particles_state.sum_angular_momentum = {0.0, 0.0, 0.0};
+    for (int p = 0; p < num_particles_; ++p) {
+        double mp = masses_[p];
+        const Vector3<double>& vp = velocities_[p];
+        const Vector3<double>& xp = positions_[p];
+        const Matrix3<double>& Bp = affine_matrices_[p];
+        sum_particles_state.sum_mass             += mp;
+        sum_particles_state.sum_momentum         += mp*vp;
+        sum_particles_state.sum_angular_momentum += mp*(xp.cross(vp)
+                                + MathUtils::APermutation(Bp.transpose()));
+    }
+    return sum_particles_state;
+}
+
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake

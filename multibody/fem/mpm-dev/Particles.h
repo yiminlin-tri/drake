@@ -4,6 +4,7 @@
 
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/MathUtils.h"
 
 namespace drake {
 namespace multibody {
@@ -14,6 +15,13 @@ class Particles {
  public:
     Particles();
     explicit Particles(int num_particles);
+
+    // Store the sum of mass, momentum and angular momentum of the grid
+    struct ParticlesSumState {
+        double sum_mass;
+        Vector3<double> sum_momentum;
+        Vector3<double> sum_angular_momentum;
+    };
 
     int get_num_particles() const;
     // Note that we didn't overload get_position: get_positions for getting
@@ -88,6 +96,10 @@ class Particles {
     // Particle advection using the updated velocities, assuming they are
     // already updated in the member variables.
     void AdvectParticles(double dt);
+
+    // Return the sum of mass, momentum and angular momentum of all particles.
+    // The sum of particles' angular momentums is ∑ mp xp×vp + Bp^T:ϵ
+    ParticlesSumState GetParticlesSumState() const;
 
  private:
     int num_particles_;

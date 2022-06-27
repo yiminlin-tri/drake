@@ -506,8 +506,6 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |   |   |
         // o - o - o - o - o
         int pc;
-        double sum_mass_particles;
-        Vector3<double> sum_momentum_particles;
         int h = 1.0;
         Vector3<int> num_gridpt_1D = { 5,  5,  5};
         Vector3<int> bottom_corner = {-2, -2, -2};
@@ -521,8 +519,6 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<double> dummy_velocity, dummy_momentum;
         Matrix3<double> dummy_tau, dummy_B;
         pc = num_particles;
-        sum_mass_particles = 0.0;
-        sum_momentum_particles = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2)+1;
                  k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
         for (int j = bottom_corner(1)+1;
@@ -538,15 +534,16 @@ class MPMTransferTest : public ::testing::Test {
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
             particles_->set_mass(pc, dummy_mass);
-            sum_mass_particles += dummy_mass;
             particles_->set_reference_volume(pc, dummy_reference_volume);
             particles_->set_velocity(pc, dummy_velocity);
-            sum_momentum_particles += dummy_momentum;
             particles_->set_kirchhoff_stress(pc, dummy_tau);
             particles_->set_affine_matrix(pc, dummy_B);
         }
         }
         }
+
+        Particles::ParticlesSumState sum_particles_state
+                                        = particles_->GetParticlesSumState();
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -558,9 +555,7 @@ class MPMTransferTest : public ::testing::Test {
         Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
 
         // Verify the conservation of mass and momentum
-        EXPECT_NEAR(sum_mass_particles, sum_grid_state.sum_mass, TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum_particles,
-                                    sum_grid_state.sum_momentum, TOLERANCE));
+        ExpectConservation(sum_grid_state, sum_particles_state);
     }
 
     void checkP2GMassVelocity2() {
@@ -586,8 +581,6 @@ class MPMTransferTest : public ::testing::Test {
         // |   |   |   |   |
         // o - o - o - o - o
         int pc;
-        double sum_mass_particles;
-        Vector3<double> sum_momentum_particles;
         int h = 1.0;
         Vector3<int> num_gridpt_1D = { 5,  5,  5};
         Vector3<int> bottom_corner = {-2, -2, -2};
@@ -601,8 +594,6 @@ class MPMTransferTest : public ::testing::Test {
         Vector3<double> dummy_velocity, dummy_momentum;
         Matrix3<double> dummy_tau, dummy_B;
         pc = num_particles;
-        sum_mass_particles = 0.0;
-        sum_momentum_particles = {0.0, 0.0, 0.0};
         for (int k = bottom_corner(2)+1;
                  k < bottom_corner(2)+num_gridpt_1D(2)-1; ++k) {
         for (int j = bottom_corner(1)+1;
@@ -618,10 +609,8 @@ class MPMTransferTest : public ::testing::Test {
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
             particles_->set_mass(pc, dummy_mass);
-            sum_mass_particles += dummy_mass;
             particles_->set_reference_volume(pc, dummy_reference_volume);
             particles_->set_velocity(pc, dummy_velocity);
-            sum_momentum_particles += dummy_momentum;
             particles_->set_kirchhoff_stress(pc, dummy_tau);
             particles_->set_affine_matrix(pc, dummy_B);
         }
@@ -664,8 +653,8 @@ class MPMTransferTest : public ::testing::Test {
                                 stress3, B3, cmodel3);
 
         num_particles = particles_->get_num_particles();
-        sum_mass_particles += (mass1 + mass2 + mass3);
-        sum_momentum_particles += (mass1*vel1 + mass2*vel2 + mass3*vel3);
+        Particles::ParticlesSumState sum_particles_state
+                                        = particles_->GetParticlesSumState();
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -677,10 +666,7 @@ class MPMTransferTest : public ::testing::Test {
         Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
 
         // Verify the conservation of mass and momentum
-        EXPECT_NEAR(sum_mass_particles, sum_grid_state.sum_mass, TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum_particles,
-                                    sum_grid_state.sum_momentum,
-                                    TOLERANCE));
+        ExpectConservation(sum_grid_state, sum_particles_state);
     }
 
     void checkG2PDeformationGrad() {
@@ -745,81 +731,77 @@ class MPMTransferTest : public ::testing::Test {
     }
 
     void checkG2PMassVelocity1() {
-        double sum_mass_particle;
-        Vector3<double> sum_momentum_particle, sum_angular_momentum_particle;
         double dt = 0.1;
 
         // First setup particles and grid using P2G
         checkP2GMassVelocity1();
-        int num_particles = particles_->get_num_particles();
 
         // Grid's sum of mass and momentum
-        Grid::GridSumState grid_sum_state = grid_->GetGridSumState();
+        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
 
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        sum_mass_particle = 0.0;
-        sum_momentum_particle = {0.0, 0.0, 0.0};
-        sum_angular_momentum_particle = {0.0, 0.0, 0.0};
-        for (int p = 0; p < num_particles; ++p) {
-            double mp = particles_->get_mass(p);
-            const Vector3<double> vp = particles_->get_velocity(p);
-            const Vector3<double> xp = particles_->get_position(p);
-            const Matrix3<double> Bp = particles_->get_affine_matrix(p);
-            sum_mass_particle += mp;
-            sum_momentum_particle += mp*vp;
-            sum_angular_momentum_particle += mp*(xp.cross(vp)
-                                    + MathUtils::APermutation(Bp.transpose()));
-        }
+        Particles::ParticlesSumState sum_particles_state
+                                        = particles_->GetParticlesSumState();
 
-        // Verify the conservation of mass and momentum
-        EXPECT_NEAR(sum_mass_particle, grid_sum_state.sum_mass, TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum_particle,
-                                    grid_sum_state.sum_momentum,
-                                    TOLERANCE));
-        EXPECT_TRUE(CompareMatrices(sum_angular_momentum_particle,
-                                    grid_sum_state.sum_angular_momentum,
-                                    TOLERANCE));
+        ExpectConservation(sum_grid_state, sum_particles_state);
     }
 
     void checkG2PMassVelocity2() {
-        double sum_mass_particle;
-        Vector3<double> sum_momentum_particle, sum_angular_momentum_particle;
         double dt = 0.1;
 
         // First setup particles and grid using P2G
         checkP2GMassVelocity2();
-        int num_particles = particles_->get_num_particles();
 
         // Grid's sum of mass and momentum
-       Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
 
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        sum_mass_particle = 0.0;
-        sum_momentum_particle = {0.0, 0.0, 0.0};
-        sum_angular_momentum_particle = {0.0, 0.0, 0.0};
-        for (int p = 0; p < num_particles; ++p) {
-            double mp = particles_->get_mass(p);
-            const Vector3<double> vp = particles_->get_velocity(p);
-            const Vector3<double> xp = particles_->get_position(p);
-            const Matrix3<double> Bp = particles_->get_affine_matrix(p);
-            sum_mass_particle += mp;
-            sum_momentum_particle += mp*vp;
-            sum_angular_momentum_particle += mp*(xp.cross(vp)
-                                    + MathUtils::APermutation(Bp.transpose()));
-        }
+        Particles::ParticlesSumState sum_particles_state
+                                        = particles_->GetParticlesSumState();
 
+        ExpectConservation(sum_grid_state, sum_particles_state);
+    }
+
+    void checkRoundTrip() {
+        double dummy_dt = 0.1;
+
+        // First setup particles and grid using P2G
+        checkP2GMassVelocity2();
+
+        // Grid's sum of mass and momentum
+        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+
+        // Then we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
+                                               particles_.get());
+        // Transfer particles' information to grid
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
+        // Finally we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
+                                               particles_.get());
+
+        // Particles' sum of mass and momentum
+        Particles::ParticlesSumState sum_particles_state
+                                        = particles_->GetParticlesSumState();
+
+        ExpectConservation(sum_grid_state, sum_particles_state);
+    }
+
+    void ExpectConservation(Grid::GridSumState sum_grid_state,
+                            Particles::ParticlesSumState sum_particles_state) {
         // Verify the conservation of mass and momentum
-        EXPECT_NEAR(sum_mass_particle, sum_grid_state.sum_mass, TOLERANCE);
-        EXPECT_TRUE(CompareMatrices(sum_momentum_particle,
+        EXPECT_NEAR(sum_particles_state.sum_mass,
+                    sum_grid_state.sum_mass, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_particles_state.sum_momentum,
                                     sum_grid_state.sum_momentum,
                                     TOLERANCE));
-        EXPECT_TRUE(CompareMatrices(sum_angular_momentum_particle,
+        EXPECT_TRUE(CompareMatrices(sum_particles_state.sum_angular_momentum,
                                     sum_grid_state.sum_angular_momentum,
                                     TOLERANCE));
     }
