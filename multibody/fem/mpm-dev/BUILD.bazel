@@ -39,6 +39,19 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "MathUtils",
+    srcs = [
+        "MathUtils.cc",
+    ],
+    hdrs = [
+        "MathUtils.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
     name = "CorotatedModel",
     srcs = [
         "CorotatedModel.cc",
@@ -62,6 +75,7 @@ drake_cc_library(
     ],
     deps = [
         ":CorotatedModel",
+        ":MathUtils",
         "//common:essential",
     ],
 )
@@ -228,6 +242,14 @@ drake_cc_googletest(
     name = "BSpline_test",
     deps = [
         ":BSpline",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "MathUtils_test",
+    deps = [
+        ":MathUtils",
         "//common/test_utilities:eigen_matrix_compare",
     ],
 )
