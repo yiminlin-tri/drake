@@ -55,9 +55,9 @@ class MPMTransfer {
     };
 
     // A struct holding information in a batch when transferring from grid to
-    // particles. We use the position of a grid point to update the affine
-    // matrix of a particle, and we use the velocity of a grid point to update
-    // the velocities and gradients of velocities of particles.
+    // particles. We use the position of a grid point to update the B matrix of
+    // a particle, and we use the velocity of a grid point to update the
+    // velocities and gradients of velocities of particles.
     struct BatchState {
         Vector3<double> position;
         Vector3<double> velocity;
@@ -121,13 +121,15 @@ class MPMTransfer {
     // v_i = v_p + C_p (x_i - x_p) = v_p + B_p D_p^-1 (x_i - x_p),
     // B_p is a 3x3 matrix stored in Particles and D_p^-1 is a constant depends
     // on the grid size. D_p^-1 is stored in the class as a member variable.
+    // We refer C_p as the affine matrix.
     void AccumulateGridStatesOnBatch(int p, double mass_p,
                                      double reference_volume_p,
                                      const Vector3<double>& position_p,
                                      const Vector3<double>& velocity_p,
-                                     const Matrix3<double>& B_p,
+                                     const Matrix3<double>& affine_matrix_p,
                                      const Matrix3<double>& tau_p,
-                                     const Vector3<double>& position_i,
+                                     const std::array<Vector3<double>, 27>&
+                                                            batch_positions,
                                      std::array<GridState, 27>* sum_local);
 
     void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,

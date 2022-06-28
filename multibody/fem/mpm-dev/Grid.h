@@ -47,6 +47,7 @@ class Grid {
          const Vector3<int>& bottom_corner);
 
     // Store the sum of mass, momentum and angular momentum of the grid
+    // The angular momentum is about the origin in the world frame
     struct GridSumState {
         double sum_mass;
         Vector3<double> sum_momentum;

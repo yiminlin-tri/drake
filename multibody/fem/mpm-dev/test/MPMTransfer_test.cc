@@ -440,7 +440,7 @@ class MPMTransferTest : public ::testing::Test {
         particles_->set_reference_volume(0, reference_volume_p);
         particles_->set_velocity(0, momentum_p/mass_p);
         particles_->set_kirchhoff_stress(0, tau_p);
-        particles_->set_affine_matrix(0, B_p);
+        particles_->set_B_matrix(0, B_p);
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -537,7 +537,7 @@ class MPMTransferTest : public ::testing::Test {
             particles_->set_reference_volume(pc, dummy_reference_volume);
             particles_->set_velocity(pc, dummy_velocity);
             particles_->set_kirchhoff_stress(pc, dummy_tau);
-            particles_->set_affine_matrix(pc, dummy_B);
+            particles_->set_B_matrix(pc, dummy_B);
         }
         }
         }
@@ -612,7 +612,7 @@ class MPMTransferTest : public ::testing::Test {
             particles_->set_reference_volume(pc, dummy_reference_volume);
             particles_->set_velocity(pc, dummy_velocity);
             particles_->set_kirchhoff_stress(pc, dummy_tau);
-            particles_->set_affine_matrix(pc, dummy_B);
+            particles_->set_B_matrix(pc, dummy_B);
         }
         }
         }
@@ -780,17 +780,47 @@ class MPMTransferTest : public ::testing::Test {
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
                                                particles_.get());
-        // Transfer particles' information to grid
-        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
-        // Finally we do a grid to particle transfer
-        mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
-                                               particles_.get());
 
         // Particles' sum of mass and momentum
         Particles::ParticlesSumState sum_particles_state
                                         = particles_->GetParticlesSumState();
 
-        ExpectConservation(sum_grid_state, sum_particles_state);
+        // Transfer particles' information to grid
+        mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
+
+        // Grid's sum of mass and momentum
+        Grid::GridSumState sum_grid_state2 = grid_->GetGridSumState();
+
+        // Finally we do a grid to particle transfer
+        mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
+                                               particles_.get());
+
+        // Particles' sum of mass and momentum
+        Particles::ParticlesSumState sum_particles_state2
+                                        = particles_->GetParticlesSumState();
+
+        // Check the sum of grid states are the same
+        EXPECT_NEAR(sum_grid_state.sum_mass,
+                    sum_grid_state2.sum_mass, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_grid_state2.sum_momentum,
+                                    sum_grid_state.sum_momentum,
+                                    TOLERANCE));
+        EXPECT_TRUE(CompareMatrices(sum_grid_state2.sum_angular_momentum,
+                                    sum_grid_state.sum_angular_momentum,
+                                    TOLERANCE));
+
+        // Check the sum of particle states are the same
+        EXPECT_NEAR(sum_particles_state.sum_mass,
+                    sum_particles_state2.sum_mass, TOLERANCE);
+        EXPECT_TRUE(CompareMatrices(sum_particles_state2.sum_momentum,
+                                    sum_particles_state.sum_momentum,
+                                    TOLERANCE));
+        EXPECT_TRUE(CompareMatrices(sum_particles_state2.sum_angular_momentum,
+                                    sum_particles_state.sum_angular_momentum,
+                                    TOLERANCE));
+
+        // Check the sum of grid and particle states are the same
+        ExpectConservation(sum_grid_state, sum_particles_state2);
     }
 
     void ExpectConservation(Grid::GridSumState sum_grid_state,
@@ -834,6 +864,10 @@ TEST_F(MPMTransferTest, G2PTest) {
     checkG2PDeformationGrad();
     checkG2PMassVelocity1();
     checkG2PMassVelocity2();
+}
+
+TEST_F(MPMTransferTest, RoundTripTest) {
+    checkRoundTrip();
 }
 
 }  // namespace

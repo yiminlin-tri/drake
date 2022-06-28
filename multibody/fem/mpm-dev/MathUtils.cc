@@ -3,8 +3,9 @@
 namespace drake {
 namespace multibody {
 namespace mpm {
+namespace mathutils {
 
-double MathUtils::LeviCivita(int i, int j, int k) {
+double LeviCivita(int i, int j, int k) {
     // Even permutation
     if ((i == 0 && j == 1 && k == 2) || (i == 1 && j == 2 && k == 0)
         || (i == 2 && j == 0 && k == 1)) {
@@ -18,7 +19,7 @@ double MathUtils::LeviCivita(int i, int j, int k) {
     return 0.0;
 }
 
-Vector3<double> MathUtils::APermutation(const Matrix3<double>& A) {
+Vector3<double> ContractionWithLeviCivita(const Matrix3<double>& A) {
     Vector3<double> A_dot_eps = {0.0, 0.0, 0.0};
     for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
@@ -30,8 +31,7 @@ Vector3<double> MathUtils::APermutation(const Matrix3<double>& A) {
     return A_dot_eps;
 }
 
-
-
+}  // namespace mathutils
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake

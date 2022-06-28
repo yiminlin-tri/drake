@@ -24,7 +24,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     std::vector<double> reference_volumes;
     std::vector<Matrix3<double>> deformation_gradients;
     std::vector<Matrix3<double>> kirchhoff_stresses;
-    std::vector<Matrix3<double>> affine_matrices;
+    std::vector<Matrix3<double>> B_matrices;
     std::vector<CorotatedModel> corotated_models;
 
     Vector3<double> pos1 = {1.0, 2.0, 3.0};
@@ -63,7 +63,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(0), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
                 std::numeric_limits<double>::epsilon()));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(1), pos2,
@@ -76,7 +76,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(1), B2,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 std::numeric_limits<double>::epsilon()));
 
     // Test get vectors
@@ -86,7 +86,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     reference_volumes     = particles.get_reference_volumes();
     deformation_gradients = particles.get_deformation_gradients();
     kirchhoff_stresses    = particles.get_kirchhoff_stresses();
-    affine_matrices       = particles.get_affine_matrices();
+    B_matrices            = particles.get_B_matrices();
     EXPECT_TRUE(CompareMatrices(positions[0], pos1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(velocities[0], vel1,
@@ -97,7 +97,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(kirchhoff_stresses[0], stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(affine_matrices[0], B1,
+    EXPECT_TRUE(CompareMatrices(B_matrices[0], B1,
                 std::numeric_limits<double>::epsilon()));
 
     EXPECT_TRUE(CompareMatrices(positions[1], pos2,
@@ -110,7 +110,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(kirchhoff_stresses[1], stress2,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(affine_matrices[1], B2,
+    EXPECT_TRUE(CompareMatrices(B_matrices[1], B2,
                 std::numeric_limits<double>::epsilon()));
 
     // Test set individual element
@@ -122,14 +122,14 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     particles.set_reference_volume(0, vol1);
     particles.set_deformation_gradient(0, F1);
     particles.set_kirchhoff_stress(0, stress1);
-    particles.set_affine_matrix(0, B1);
+    particles.set_B_matrix(0, B1);
     particles.set_position(1, pos2);
     particles.set_velocity(1, vel2);
     particles.set_mass(1, mass2);
     particles.set_reference_volume(1, vol2);
     particles.set_deformation_gradient(1, F2);
     particles.set_kirchhoff_stress(1, stress2);
-    particles.set_affine_matrix(1, B2);
+    particles.set_B_matrix(1, B2);
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(0), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -141,7 +141,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(0), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
                 std::numeric_limits<double>::epsilon()));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(1), pos2,
@@ -154,7 +154,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(1), B2,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 std::numeric_limits<double>::epsilon()));
 
     particles.AddParticle(pos1, vel1, mass1, vol1, F1, stress1, B1, cmodel1);
@@ -169,7 +169,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(2), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B1,
                 std::numeric_limits<double>::epsilon()));
 
     // Test set vector
@@ -181,7 +181,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     particles.set_reference_volumes(reference_volumes);
     particles.set_deformation_gradients(deformation_gradients);
     particles.set_kirchhoff_stresses(kirchhoff_stresses);
-    particles.set_affine_matrices(affine_matrices);
+    particles.set_B_matrices(B_matrices);
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(0), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -193,7 +193,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(0), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
                 std::numeric_limits<double>::epsilon()));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(1), pos2,
@@ -206,7 +206,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(1), B2,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 std::numeric_limits<double>::epsilon()));
 
     particles.AddParticle(pos1, vel1, mass1, vol1, F1, stress1, B1, cmodel1);
@@ -221,7 +221,7 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress1,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(2), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B1,
                 std::numeric_limits<double>::epsilon()));
 }
 
@@ -274,7 +274,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(0), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
                 kEps));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(1), pos2,
@@ -287,7 +287,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(1), B2,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 kEps));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos3,
@@ -300,7 +300,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress3,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(2), B3,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B3,
                 kEps));
 
     std::vector<size_t> new_order{2, 0, 1};
@@ -315,7 +315,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress3,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(0), B3,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B3,
                 kEps));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(1), pos1,
@@ -328,7 +328,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress1,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(1), B1,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B1,
                 kEps));
 
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos2,
@@ -341,7 +341,7 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress2,
                 kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_affine_matrix(2), B2,
+    EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B2,
                 kEps));
 }
 

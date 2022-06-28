@@ -190,7 +190,6 @@ Grid::GridSumState Grid::GetGridSumState() const {
     for (int i = bottom_corner_(0);
                 i < bottom_corner_(0)+num_gridpt_1D_(0); ++i) {
         double mi = get_mass(i, j, k);
-        // std::cout << mi << std::endl;
         const Vector3<double> vi = get_velocity(i, j, k);
         const Vector3<double> xi = get_position(i, j, k);
         sum_state.sum_mass             += mi;

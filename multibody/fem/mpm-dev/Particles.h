@@ -17,6 +17,7 @@ class Particles {
     explicit Particles(int num_particles);
 
     // Store the sum of mass, momentum and angular momentum of the grid
+    // The angular momentum is about the origin in the world frame
     struct ParticlesSumState {
         double sum_mass;
         Vector3<double> sum_momentum;
@@ -32,7 +33,7 @@ class Particles {
     const double& get_reference_volume(int index) const;
     const Matrix3<double>& get_deformation_gradient(int index) const;
     const Matrix3<double>& get_kirchhoff_stress(int index) const;
-    const Matrix3<double>& get_affine_matrix(int index) const;
+    const Matrix3<double>& get_B_matrix(int index) const;
     const CorotatedModel& get_corotated_model(int index) const;
 
     const std::vector<Vector3<double>>& get_positions() const;
@@ -41,7 +42,7 @@ class Particles {
     const std::vector<double>& get_reference_volumes() const;
     const std::vector<Matrix3<double>>& get_deformation_gradients() const;
     const std::vector<Matrix3<double>>& get_kirchhoff_stresses() const;
-    const std::vector<Matrix3<double>>& get_affine_matrices() const;
+    const std::vector<Matrix3<double>>& get_B_matrices() const;
 
     // TODO(yiminlin.tri): To this point, the encapsulation seems useless here,
     // Maybe directly make Particles as a struct and remove setters and getters?
@@ -56,8 +57,7 @@ class Particles {
                                  const Matrix3<double>& deformation_gradient);
     void set_kirchhoff_stress(int index,
                               const Matrix3<double>& kirchhoff_stress);
-    void set_affine_matrix(int index,
-                           const Matrix3<double>& affine_matrix);
+    void set_B_matrix(int index, const Matrix3<double>& B_matrix);
     void set_corotated_model(int index, const CorotatedModel& corotated_model);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
@@ -68,8 +68,7 @@ class Particles {
                                    deformation_gradients);
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
-    void set_affine_matrices(const std::vector<Matrix3<double>>&
-                             affine_matrices);
+    void set_B_matrices(const std::vector<Matrix3<double>>& B_matrices);
 
     // TODO(yiminlin.tri): in place sorting
     // Permute all states in the Particles with respect to the index set
@@ -86,7 +85,7 @@ class Particles {
                      double mass, double reference_volume,
                      const Matrix3<double>& deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
-                     const Matrix3<double>& affine_matrix,
+                     const Matrix3<double>& B_matrix,
                      const CorotatedModel& corotated_model);
 
     // Assume the deformation gradient is updated, update Kirchhoff stress tau
@@ -99,6 +98,7 @@ class Particles {
 
     // Return the sum of mass, momentum and angular momentum of all particles.
     // The sum of particles' angular momentums is ∑ mp xp×vp + Bp^T:ϵ
+    // by https://www.math.ucla.edu/~jteran/papers/JST17.pdf section 5.3.1
     ParticlesSumState GetParticlesSumState() const;
 
  private:
@@ -110,7 +110,7 @@ class Particles {
     std::vector<Matrix3<double>> deformation_gradients_{};
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
-    std::vector<Matrix3<double>> affine_matrices_{};
+    std::vector<Matrix3<double>> B_matrices_{};
     std::vector<CorotatedModel> corotated_models_{};
 };  // class Particles
 

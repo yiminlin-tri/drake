@@ -7,15 +7,20 @@ namespace mpm {
 void MPMTransfer::SetUpTransfer(const Grid& grid, Particles* particles) {
     SortParticles(grid, particles);
     UpdateBasisAndGradientParticles(grid, *particles);
+    // TODO(yiminlin.tri): Dp_inv_ is hardcoded for quadratic B-Spline
+    // The values of Dp_inv_ are different for different B-Spline bases
+    // https://www.math.ucla.edu/~jteran/papers/JSSTS15.pdf
     Dp_inv_ = 4.0/(grid.get_h()*grid.get_h());
 }
 
 void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
                                           Grid* grid) {
-    int p_start, p_end;
+    int p_start, p_end, bi, bj, bk, idx_local;
     double mass_p, ref_volume_p;
     // Local sum of states m_i v_i f_i on the grid points
     std::array<GridState, 27> sum_local;
+    // Positions of grid points in the batch
+    std::array<Vector3<double>, 27> batch_positions;
 
     // Clear grid states
     grid->ResetStates();
@@ -26,6 +31,21 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
         if (batch_sizes_[batch_index_flat] != 0) {
             p_end = p_start + batch_sizes_[batch_index_flat];
 
+            // Preallocate positions at grid points in the current batch on a
+            // local array
+            bi = batch_index_3d[0];
+            bj = batch_index_3d[1];
+            bk = batch_index_3d[2];
+            for (int a = -1; a <= 1; ++a) {
+            for (int b = -1; b <= 1; ++b) {
+            for (int c = -1; c <= 1; ++c) {
+                idx_local = (a+1) + 3*(b+1) + 9*(c+1);
+                batch_positions[idx_local] =
+                                        grid->get_position(bi+a, bj+b, bk+c);
+            }
+            }
+            }
+
             // Clear local scratch pad
             for (auto& s : sum_local) { s.reset(); }
 
@@ -35,16 +55,14 @@ void MPMTransfer::TransferParticlesToGrid(const Particles& particles,
             for (int p = p_start; p < p_end; ++p) {
                 mass_p = particles.get_mass(p);
                 ref_volume_p = particles.get_reference_volume(p);
+                // The affine matrix Cp = Bp * Dp^-1
+                const Matrix3<double> C_p = particles.get_B_matrix(p)*Dp_inv_;
                 AccumulateGridStatesOnBatch(p, mass_p, ref_volume_p,
                                             particles.get_position(p),
                                             particles.get_velocity(p),
-                                            particles.get_affine_matrix(p),
+                                            C_p,
                                             particles.get_kirchhoff_stress(p),
-                                            grid->get_position(
-                                                            batch_index_3d(0),
-                                                            batch_index_3d(1),
-                                                            batch_index_3d(2)),
-                                            &sum_local);
+                                            batch_positions, &sum_local);
             }
 
             // Put sums of local scratch pads to grid
@@ -217,9 +235,10 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
                                 double reference_volume_p,
                                 const Vector3<double>& x_p,
                                 const Vector3<double>& v_p,
-                                const Matrix3<double>& B_p,
+                                const Matrix3<double>& C_p,
                                 const Matrix3<double>& tau_p,
-                                const Vector3<double>& x_i,
+                                const std::array<Vector3<double>, 27>&
+                                                    batch_positions,
                                 std::array<GridState, 27>* sum_local) {
     int idx_local;
     double Ni_p;
@@ -230,13 +249,21 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
     for (int c = -1; c <= 1; ++c) {
         idx_local = (a+1) + 3*(b+1) + 9*(c+1);
         Ni_p = bases_val_particles_[p][idx_local];
-        Vector3<double>& gradNi_p = bases_grad_particles_[p][idx_local];
+        const Vector3<double>& x_i = batch_positions[idx_local];
+        Vector3<double>& gradNi_p  = bases_grad_particles_[p][idx_local];
         // For each particle in the batch (Assume particles are sorted with
         // respect to the batch index), update basis evaluations
         GridState& state_i = (*sum_local)[idx_local];
         double m_ip = m_p*Ni_p;
         state_i.mass += m_ip;
-        state_i.velocity += m_ip*(v_p+B_p*Dp_inv_*(x_i-x_p));
+        // PIC update:
+        // state_i.velocity += m_ip*v_p;
+        // TODO(yiminlin.tri): This also conserves angular momentum, but is
+        //                     using a incorrect linearization. May want to
+        //                     look at it further?
+        // state_i.velocity += m_ip*v_p+m_p*B_p*gradNi_p;
+        // APIC update:
+        state_i.velocity += m_ip*(v_p+C_p*(x_i-x_p));
         state_i.force += -reference_volume_p*tau_p*gradNi_p;
     }
     }
@@ -310,7 +337,7 @@ void MPMTransfer::UpdateParticleStates(const std::array<BatchState, 27>&
                         (Matrix3<double>::Identity() + dt*grad_vp_new)
                         *particles->get_deformation_gradient(p));
     particles->set_velocity(p, vp_new);
-    particles->set_affine_matrix(p, Bp_new);
+    particles->set_B_matrix(p, Bp_new);
 }
 
 Vector3<int> MPMTransfer::CalcBatchIndex(const Vector3<double>& xp, double h)
