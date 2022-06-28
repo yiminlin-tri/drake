@@ -275,7 +275,7 @@ void MPMTransfer::UpdateParticleStates(const std::array<BatchState, 27>&
                                        Particles* particles) {
     int idx_local;
     double Ni_p;
-    // vp_new_i = v_p^{n+1} * N_i(x_p)
+    // vp_new_i = v_i^{n+1} * N_i(x_p)
     Vector3<double> vp_new_i;
     Vector3<double> xp = particles->get_position(p);
 
