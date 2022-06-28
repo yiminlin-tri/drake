@@ -40,6 +40,8 @@ class MPMTransfer {
  private:
     friend class MPMTransferTest;
 
+    // A struct holding the accmulated grid state on a batch when transferring
+    // from particles to grid.
     struct GridState {
         double mass;
         Vector3<double> velocity;
@@ -52,6 +54,10 @@ class MPMTransfer {
         }
     };
 
+    // A struct holding information in a batch when transferring from grid to
+    // particles. We use the position of a grid point to update the affine
+    // matrix of a particle, and we use the velocity of a grid point to update
+    // the velocities and gradients of velocities of particles.
     struct BatchState {
         Vector3<double> position;
         Vector3<double> velocity;
@@ -109,11 +115,19 @@ class MPMTransfer {
     // particle states (m, mv, tau) to (m, mv, f). Note that we temporarily
     // store the momentum into particles' velocities, in TransferParticlesToGrid
     // we will scale the momentum with the updated mass to get the velocities.
+    // We update the velocity according to affine particle-in-cell methods,
+    // where we can approximate the velocity field at a grid point with an
+    // affine approximation around the particle:
+    // v_i = v_p + C_p (x_i - x_p) = v_p + B_p D_p^-1 (x_i - x_p),
+    // B_p is a 3x3 matrix stored in Particles and D_p^-1 is a constant depends
+    // on the grid size. D_p^-1 is stored in the class as a member variable.
     void AccumulateGridStatesOnBatch(int p, double mass_p,
                                      double reference_volume_p,
+                                     const Vector3<double>& position_p,
                                      const Vector3<double>& velocity_p,
                                      const Matrix3<double>& B_p,
                                      const Matrix3<double>& tau_p,
+                                     const Vector3<double>& position_i,
                                      std::array<GridState, 27>* sum_local);
 
     void WriteBatchStateToGrid(const Vector3<int>& batch_index_3d,
@@ -128,6 +142,9 @@ class MPMTransfer {
     // Given the position of a particle xp, calculate the index of the batch
     // this particle is in.
     Vector3<int> CalcBatchIndex(const Vector3<double>& xp, double h) const;
+
+    // The inverse value of diagonal entries of the matrix D_p in APIC
+    double Dp_inv_;
 
     // Evaluations and gradients of BSpline bases on each particle
     // i.e. N_i(x_p), \nabla N_i(x_p)

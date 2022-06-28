@@ -90,11 +90,12 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
     // Add particles
     for (int p = 0; p < num_particles; ++p) {
         const Vector3<double>& xp = particles_positions[p];
+        Matrix3<double> deformation_grad_p = Matrix3<double>::Identity();
+        Matrix3<double> kirchhoff_stress_p = Matrix3<double>::Identity();
+        Matrix3<double> affine_matrix_p    = Matrix3<double>::Zero();
         particles_.AddParticle(xp, init_v, init_m, reference_volume_p,
-                               Matrix3<double>::Identity(),
-                               Matrix3<double>::Identity(),
-                               Matrix3<double>::Zero(),
-                               m_param.corotated_model);
+                               deformation_grad_p, kirchhoff_stress_p,
+                               affine_matrix_p, m_param.corotated_model);
     }
 }
 
