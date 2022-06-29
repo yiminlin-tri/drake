@@ -24,6 +24,7 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
+// TODO(yiminlin.tri): Not tested.
 class MPMDriver {
  public:
     // Struct containing parameters describing the objects to be modelled in MPM

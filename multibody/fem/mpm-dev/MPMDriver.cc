@@ -44,6 +44,7 @@ void MPMDriver::DoTimeStepping() {
     }
 }
 
+// TODO(yiminlin.tri): Not tested.
 void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
                                     const math::RigidTransform<double>& pose,
                                     MaterialParameters m_param) {
@@ -99,6 +100,8 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
 
         // If the particle is in the level set
         if (level_set.InInterior(p_BoBp_B)) {
+            // TODO(yiminlin.tri): Initialize the affine matrix C_p using
+            //                     V_WBp.rotational() ?
             particles_velocities.emplace_back(V_WBp.translational());
             // Place the particle's position in world frame
             particles_positions.emplace_back(X_WB*p_BoBp_B);
