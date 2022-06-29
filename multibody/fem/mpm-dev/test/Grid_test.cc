@@ -320,7 +320,7 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     }
     }
 
-    Grid::GridSumState sum_state = grid.GetGridSumState();
+    TotalMassAndMomentum sum_state = grid.GetTotalMassAndMomentum();
     // Sum of mass shall be ∑ i, i = 1 ... 8 = 36, as a result
     // Sum of momentum shall be (36, 36, 36)
     // mi ∑ xi.cross(vi) = (∑ mi xi).cross(vi) = (20 22 26) cross (1, 1, 1)

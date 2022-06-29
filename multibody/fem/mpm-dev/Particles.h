@@ -5,6 +5,7 @@
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
 #include "drake/multibody/fem/mpm-dev/MathUtils.h"
+#include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
 
 namespace drake {
 namespace multibody {
@@ -15,14 +16,6 @@ class Particles {
  public:
     Particles();
     explicit Particles(int num_particles);
-
-    // Store the sum of mass, momentum and angular momentum of the grid
-    // The angular momentum is about the origin in the world frame
-    struct ParticlesSumState {
-        double sum_mass;
-        Vector3<double> sum_momentum;
-        Vector3<double> sum_angular_momentum;
-    };
 
     int get_num_particles() const;
     // Note that we didn't overload get_position: get_positions for getting
@@ -42,6 +35,8 @@ class Particles {
     const std::vector<double>& get_reference_volumes() const;
     const std::vector<Matrix3<double>>& get_deformation_gradients() const;
     const std::vector<Matrix3<double>>& get_kirchhoff_stresses() const;
+    // Get the matrix B_p, who composes the affine matrix C_p in APIC:
+    // v_i = v_p + C_p (x_i - x_p) = v_p + B_p D_p^-1 (x_i - x_p),
     const std::vector<Matrix3<double>>& get_B_matrices() const;
 
     // TODO(yiminlin.tri): To this point, the encapsulation seems useless here,
@@ -68,6 +63,8 @@ class Particles {
                                    deformation_gradients);
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
+    // Set the matrix B_p, who composes the affine matrix C_p in APIC:
+    // v_i = v_p + C_p (x_i - x_p) = v_p + B_p D_p^-1 (x_i - x_p),
     void set_B_matrices(const std::vector<Matrix3<double>>& B_matrices);
 
     // TODO(yiminlin.tri): in place sorting
@@ -80,6 +77,8 @@ class Particles {
 
     // Add a particle with the given properties. The default corotated model is
     // dough with Young's modulus E = 9e4 and Poisson ratio nu = 0.49.
+    // B_matrix denotes matrix B_p, who composes the affine matrix C_p in APIC:
+    // v_i = v_p + C_p (x_i - x_p) = v_p + B_p D_p^-1 (x_i - x_p),
     void AddParticle(const Vector3<double>& position,
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,
@@ -99,7 +98,7 @@ class Particles {
     // Return the sum of mass, momentum and angular momentum of all particles.
     // The sum of particles' angular momentums is ∑ mp xp×vp + Bp^T:ϵ
     // by https://www.math.ucla.edu/~jteran/papers/JST17.pdf section 5.3.1
-    ParticlesSumState GetParticlesSumState() const;
+    TotalMassAndMomentum GetTotalMassAndMomentum() const;
 
  private:
     int num_particles_;

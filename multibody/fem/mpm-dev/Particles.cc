@@ -214,8 +214,8 @@ void Particles::AdvectParticles(double dt) {
     }
 }
 
-Particles::ParticlesSumState Particles::GetParticlesSumState() const {
-    ParticlesSumState sum_particles_state;
+TotalMassAndMomentum Particles::GetTotalMassAndMomentum() const {
+    TotalMassAndMomentum sum_particles_state;
     // Particles' sum of mass and momentum
     sum_particles_state.sum_mass             = 0.0;
     sum_particles_state.sum_momentum         = {0.0, 0.0, 0.0};

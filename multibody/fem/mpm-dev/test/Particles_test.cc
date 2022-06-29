@@ -6,6 +6,7 @@
 #include "drake/math/roll_pitch_yaw.h"
 #include "drake/math/rotation_matrix.h"
 #include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
 
 namespace drake {
 namespace multibody {
@@ -437,7 +438,7 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     particles.AddParticle(pos1, vel1, mass1, vol1, F1, stress1, B1, cmodel1);
     particles.AddParticle(pos2, vel2, mass2, vol2, F2, stress2, B2, cmodel2);
 
-    Particles::ParticlesSumState sum_state = particles.GetParticlesSumState();
+    TotalMassAndMomentum sum_state = particles.GetTotalMassAndMomentum();
 
     // Check the sums
     EXPECT_EQ(sum_state.sum_mass, 6.0);

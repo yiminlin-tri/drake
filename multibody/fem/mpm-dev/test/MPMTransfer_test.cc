@@ -5,6 +5,7 @@
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
 #include "drake/multibody/fem/mpm-dev/MathUtils.h"
+#include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
 
 namespace drake {
 namespace multibody {
@@ -433,7 +434,7 @@ class MPMTransferTest : public ::testing::Test {
         mass_p = 2.0;
         reference_volume_p = 0.1;
         tau_p = 3.0*Matrix3<double>::Identity();
-        B_p = Matrix3<double>::Zero();
+        B_p = Matrix3<double>::Ones();
         momentum_p = {0.2, -0.4, 0.6};
         particles_->set_position(0, grid_->get_position(0, 0, 0));
         particles_->set_mass(0, mass_p);
@@ -449,7 +450,7 @@ class MPMTransferTest : public ::testing::Test {
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
 
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Verify the conservation of mass and momentum
         EXPECT_NEAR(mass_p, sum_grid_state.sum_mass, TOLERANCE);
@@ -530,7 +531,8 @@ class MPMTransferTest : public ::testing::Test {
             dummy_velocity = Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
             dummy_momentum = dummy_mass*dummy_velocity;
             dummy_tau = pc*Matrix3<double>::Identity();
-            dummy_B = Matrix3<double>::Zero();
+            dummy_B = pc*Matrix3<double>::Ones();
+            dummy_B(0, 1) = 0.0;
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
             particles_->set_mass(pc, dummy_mass);
@@ -542,8 +544,8 @@ class MPMTransferTest : public ::testing::Test {
         }
         }
 
-        Particles::ParticlesSumState sum_particles_state
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state
+                                        = particles_->GetTotalMassAndMomentum();
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -552,7 +554,7 @@ class MPMTransferTest : public ::testing::Test {
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
 
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Verify the conservation of mass and momentum
         ExpectConservation(sum_grid_state, sum_particles_state);
@@ -605,7 +607,8 @@ class MPMTransferTest : public ::testing::Test {
             dummy_velocity = Vector3<double>(1.1*pc, 1.2*pc, 1.3*pc);
             dummy_momentum = dummy_mass*dummy_velocity;
             dummy_tau = pc*Matrix3<double>::Identity();
-            dummy_B = Matrix3<double>::Zero();
+            dummy_B = pc*Matrix3<double>::Ones();
+            dummy_B(0, 1) = 0.0;
             --pc;
             particles_->set_position(pc, grid_->get_position(i, j, k));
             particles_->set_mass(pc, dummy_mass);
@@ -653,8 +656,8 @@ class MPMTransferTest : public ::testing::Test {
                                 stress3, B3, cmodel3);
 
         num_particles = particles_->get_num_particles();
-        Particles::ParticlesSumState sum_particles_state
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state
+                                        = particles_->GetTotalMassAndMomentum();
 
         // Sort the particles and set up the batches and preallocate basis
         // evaluations
@@ -663,7 +666,7 @@ class MPMTransferTest : public ::testing::Test {
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
 
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Verify the conservation of mass and momentum
         ExpectConservation(sum_grid_state, sum_particles_state);
@@ -737,14 +740,14 @@ class MPMTransferTest : public ::testing::Test {
         checkP2GMassVelocity1();
 
         // Grid's sum of mass and momentum
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        Particles::ParticlesSumState sum_particles_state
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state
+                                        = particles_->GetTotalMassAndMomentum();
 
         ExpectConservation(sum_grid_state, sum_particles_state);
     }
@@ -756,14 +759,14 @@ class MPMTransferTest : public ::testing::Test {
         checkP2GMassVelocity2();
 
         // Grid's sum of mass and momentum
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
         // Particles' sum of mass and momentum
-        Particles::ParticlesSumState sum_particles_state
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state
+                                        = particles_->GetTotalMassAndMomentum();
 
         ExpectConservation(sum_grid_state, sum_particles_state);
     }
@@ -775,29 +778,29 @@ class MPMTransferTest : public ::testing::Test {
         checkP2GMassVelocity2();
 
         // Grid's sum of mass and momentum
-        Grid::GridSumState sum_grid_state = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state = grid_->GetTotalMassAndMomentum();
 
         // Then we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
                                                particles_.get());
 
         // Particles' sum of mass and momentum
-        Particles::ParticlesSumState sum_particles_state
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state
+                                        = particles_->GetTotalMassAndMomentum();
 
         // Transfer particles' information to grid
         mpm_transfer_->TransferParticlesToGrid(*particles_, grid_.get());
 
         // Grid's sum of mass and momentum
-        Grid::GridSumState sum_grid_state2 = grid_->GetGridSumState();
+        TotalMassAndMomentum sum_grid_state2 = grid_->GetTotalMassAndMomentum();
 
         // Finally we do a grid to particle transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dummy_dt,
                                                particles_.get());
 
         // Particles' sum of mass and momentum
-        Particles::ParticlesSumState sum_particles_state2
-                                        = particles_->GetParticlesSumState();
+        TotalMassAndMomentum sum_particles_state2
+                                        = particles_->GetTotalMassAndMomentum();
 
         // Check the sum of grid states are the same
         EXPECT_NEAR(sum_grid_state.sum_mass,
@@ -823,8 +826,8 @@ class MPMTransferTest : public ::testing::Test {
         ExpectConservation(sum_grid_state, sum_particles_state2);
     }
 
-    void ExpectConservation(Grid::GridSumState sum_grid_state,
-                            Particles::ParticlesSumState sum_particles_state) {
+    void ExpectConservation(TotalMassAndMomentum sum_grid_state,
+                            TotalMassAndMomentum sum_particles_state) {
         // Verify the conservation of mass and momentum
         EXPECT_NEAR(sum_particles_state.sum_mass,
                     sum_grid_state.sum_mass, TOLERANCE);

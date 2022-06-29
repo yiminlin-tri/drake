@@ -6,6 +6,7 @@
 
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/mpm-dev/KinematicCollisionObjects.h"
+#include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
 
 namespace drake {
 namespace multibody {
@@ -46,14 +47,6 @@ class Grid {
     Grid(const Vector3<int>& num_gridpt_1D, double h,
          const Vector3<int>& bottom_corner);
 
-    // Store the sum of mass, momentum and angular momentum of the grid
-    // The angular momentum is about the origin in the world frame
-    struct GridSumState {
-        double sum_mass;
-        Vector3<double> sum_momentum;
-        Vector3<double> sum_angular_momentum;
-    };
-
     int get_num_gridpt() const;
     const Vector3<int>& get_num_gridpt_1D() const;
     double get_h() const;
@@ -61,7 +54,7 @@ class Grid {
 
     // For below (i, j, k), we expect users pass in the coordinate in the
     // index space as documented above.
-    const Vector3<double>& get_position(int i, int j, int k) const;
+    Vector3<double> get_position(int i, int j, int k) const;
     const Vector3<double>& get_velocity(int i, int j, int k) const;
     double get_mass(int i, int j, int k) const;
     const Vector3<double>& get_force(int i, int j, int k) const;
@@ -114,7 +107,7 @@ class Grid {
     void EnforceBoundaryCondition(const KinematicCollisionObjects& objects);
 
     // Return the sum of mass, momentum and angular momentum of all grid points
-    GridSumState GetGridSumState() const;
+    TotalMassAndMomentum GetTotalMassAndMomentum() const;
 
  private:
     int num_gridpt_;
@@ -125,7 +118,6 @@ class Grid {
 
     // The vector of 1D and 3D indices of grid points, ordered lexiographically
     std::vector<std::pair<int, Vector3<int>>> indices_{};
-    std::vector<Vector3<double>> positions_{};
     std::vector<Vector3<double>> velocities_{};
     std::vector<double> masses_{};
     std::vector<Vector3<double>> forces_{};
