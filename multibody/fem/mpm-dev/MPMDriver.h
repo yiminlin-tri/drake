@@ -18,6 +18,7 @@
 #include "drake/multibody/fem/mpm-dev/Particles.h"
 #include "drake/multibody/fem/mpm-dev/particles_to_bgeo.h"
 #include "drake/multibody/fem/mpm-dev/poisson_disk_sampling.h"
+#include "drake/multibody/math/spatial_algebra.h"
 
 namespace drake {
 namespace multibody {
@@ -33,7 +34,7 @@ class MPMDriver {
         // Density and the initial velocity of the object, we assume the object
         // has uniform density and velocity.
         double density;
-        Vector3<double> initial_velocity;
+        multibody::SpatialVelocity<double> initial_velocity;
         // User defined parameter to control the minimum number of particles per
         // grid cell.
         int min_num_particles_per_cell;

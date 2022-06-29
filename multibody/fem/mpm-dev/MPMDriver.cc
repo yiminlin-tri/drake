@@ -61,7 +61,7 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
     // min_num_particles_per_cell particles in a cell with size h.
     double sample_r =
             h/(std::cbrt(m_param.min_num_particles_per_cell)+1);
-    Vector3<double> init_v = m_param.initial_velocity;
+    multibody::SpatialVelocity<double> init_v = m_param.initial_velocity;
     std::array<double, 3> xmin = {bounding_box[0][0], bounding_box[0][1],
                                   bounding_box[0][2]};
     std::array<double, 3> xmax = {bounding_box[1][0], bounding_box[1][1],
@@ -74,10 +74,13 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
 
     // Pick out sampled particles that are in the object
     int num_samples = particles_sample_positions.size();
-    std::vector<Vector3<double>> particles_positions;
+    std::vector<Vector3<double>> particles_positions, particles_velocities;
     for (int p = 0; p < num_samples; ++p) {
         const Vector3<double>& xp_ref = particles_sample_positions[p];
+        SpatialVelocity<double> v_ref = init_v.Shift(xp_ref);
         if (level_set.InInterior(xp_ref)) {
+            particles_velocities.emplace_back(pose.rotation()
+                                             *v_ref.translational());
             particles_positions.emplace_back(pose*xp_ref);
         }
     }
@@ -90,10 +93,11 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
     // Add particles
     for (int p = 0; p < num_particles; ++p) {
         const Vector3<double>& xp = particles_positions[p];
+        const Vector3<double>& vp = particles_velocities[p];
         Matrix3<double> deformation_grad_p = Matrix3<double>::Identity();
         Matrix3<double> kirchhoff_stress_p = Matrix3<double>::Identity();
         Matrix3<double> B_p                = Matrix3<double>::Zero();
-        particles_.AddParticle(xp, init_v, init_m, reference_volume_p,
+        particles_.AddParticle(xp, vp, init_m, reference_volume_p,
                                deformation_grad_p, kirchhoff_stress_p,
                                B_p, m_param.corotated_model);
     }
