@@ -34,6 +34,8 @@ class MPMDriver {
         // Density and the initial velocity of the object, we assume the object
         // has uniform density and velocity.
         double density;
+        // V_WB, The object B's spatial velocity measured and expressed in the
+        // world frame W.
         multibody::SpatialVelocity<double> initial_velocity;
         // User defined parameter to control the minimum number of particles per
         // grid cell.

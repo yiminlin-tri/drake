@@ -76,12 +76,32 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
     int num_samples = particles_sample_positions.size();
     std::vector<Vector3<double>> particles_positions, particles_velocities;
     for (int p = 0; p < num_samples; ++p) {
-        const Vector3<double>& xp_ref = particles_sample_positions[p];
-        SpatialVelocity<double> v_ref = init_v.Shift(xp_ref);
-        if (level_set.InInterior(xp_ref)) {
-            particles_velocities.emplace_back(pose.rotation()
-                                             *v_ref.translational());
-            particles_positions.emplace_back(pose*xp_ref);
+        // Denote the particle by P, the object by B, the frame centered at the
+        // origin of the object by Bo, and the frame of the particle by Bp.
+
+        // The pose and spatial velocity of the object in the world frame
+        const math::RigidTransform<double>& X_WB       = pose;
+        const multibody::SpatialVelocity<double>& V_WB = init_v;
+
+        // Rotation matrix from the object to the world
+        const math::RotationMatrix<double>& Rot_WB     = X_WB.rotation();
+
+        // Sample particles and get the position of the particle with respect to
+        // the object in the object's frame
+        const Vector3<double>& p_BoBp_B = particles_sample_positions[p];
+
+        // Express the relative position of the particle with respect to the
+        // object in the world frame
+        const Vector3<double>& p_BoBp_W = Rot_WB*p_BoBp_B;
+
+        // Compute the spatial velocity of the particle
+        SpatialVelocity<double> V_WBp   = V_WB.Shift(p_BoBp_W);
+
+        // If the particle is in the level set
+        if (level_set.InInterior(p_BoBp_B)) {
+            particles_velocities.emplace_back(V_WBp.translational());
+            // Place the particle's position in world frame
+            particles_positions.emplace_back(X_WB*p_BoBp_B);
         }
     }
 
