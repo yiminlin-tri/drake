@@ -89,10 +89,6 @@ int DoMain() {
     velocity_sphere.rotational() = Vector3<double>{0.0, 0.0, 0.0};
     std::shared_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
             = std::make_shared<SaintVenantKirchhoffWithHenckyModel>(8e4, 0.4);
-    /*
-    std::shared_ptr<CorotatedModel> constitutive_model
-            = std::make_shared<CorotatedModel>(8e4, 0.4);
-    */
     MPMDriver::MaterialParameters m_param_sphere { constitutive_model,
                                                    1200,
                                                    velocity_sphere,
