@@ -675,7 +675,7 @@ class MPMTransferTest : public ::testing::Test {
         ExpectConservation(sum_grid_state, sum_particles_state);
     }
 
-    void checkG2PDeformationGrad() {
+    void checkG2PElasticDeformationGrad() {
         // Construct a grid of 3x3x3 on [-2,2]^3, and place 1 particles
         // at the center
         //        -2   0   2
@@ -705,10 +705,10 @@ class MPMTransferTest : public ::testing::Test {
         F_p   = 2.0*Matrix3<double>::Identity();
         particles_->set_position(0, grid_->get_position(0, 0, 0));
         particles_->set_mass(0, mass_p);
-        particles_->set_deformation_gradient(0, F_p);
+        particles_->set_elastic_deformation_gradient(0, F_p);
 
         // Initialize the grid velocity field. We assume it is constant,
-        // so the deformation gradient would not change
+        // so the elastic deformation gradient would not change
         for (int k = bottom_corner(2);
                  k < bottom_corner(2)+num_gridpt_1D(2); ++k) {
         for (int j = bottom_corner(1);
@@ -727,11 +727,11 @@ class MPMTransferTest : public ::testing::Test {
         // Grid to particles transfer
         mpm_transfer_->TransferGridToParticles(*grid_, dt, particles_.get());
 
-        // Since the velocity field is constant, the deformation gradient
-        // doesn't change with respect to time
+        // Since the velocity field is constant, the elastic deformation
+        // gradient doesn't change with respect to time
         EXPECT_TRUE(CompareMatrices(F_p,
-                                    particles_->get_deformation_gradient(0),
-                                    TOLERANCE));
+                                particles_->get_elastic_deformation_gradient(0),
+                                TOLERANCE));
         EXPECT_TRUE(CompareMatrices(velocity_i, particles_->get_velocity(0),
                                     TOLERANCE));
     }
@@ -867,7 +867,7 @@ TEST_F(MPMTransferTest, P2GTest) {
 }
 
 TEST_F(MPMTransferTest, G2PTest) {
-    checkG2PDeformationGrad();
+    checkG2PElasticDeformationGrad();
     checkG2PMassVelocity1();
     checkG2PMassVelocity2();
 }
