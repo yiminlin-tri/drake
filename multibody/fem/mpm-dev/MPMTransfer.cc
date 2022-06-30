@@ -265,7 +265,6 @@ void MPMTransfer::AccumulateGridStatesOnBatch(int p, double m_p,
         // APIC update:
         state_i.velocity += m_ip*(v_p+C_p*(x_i-x_p));
         state_i.force += -reference_volume_p*tau_p*gradNi_p;
-        // std::cout << "tau_p: " << tau_p << std::endl;
     }
     }
     }
