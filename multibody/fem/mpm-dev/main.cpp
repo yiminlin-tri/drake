@@ -87,7 +87,13 @@ int DoMain() {
     multibody::SpatialVelocity<double> velocity_sphere;
     velocity_sphere.translational() = Vector3<double>::Zero();
     velocity_sphere.rotational() = Vector3<double>{0.0, 0.0, 0.0};
-    MPMDriver::MaterialParameters m_param_sphere { {8e4, 0.4},
+    std::shared_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
+            = std::make_shared<SaintVenantKirchhoffWithHenckyModel>(8e4, 0.4);
+    /*
+    std::shared_ptr<CorotatedModel> constitutive_model
+            = std::make_shared<CorotatedModel>(8e4, 0.4);
+    */
+    MPMDriver::MaterialParameters m_param_sphere { constitutive_model,
                                                    1200,
                                                    velocity_sphere,
                                                    1

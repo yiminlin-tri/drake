@@ -52,12 +52,12 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "CorotatedModel",
+    name = "ConstitutiveModel",
     srcs = [
-        "CorotatedModel.cc",
+        "ConstitutiveModel.cc",
     ],
     hdrs = [
-        "CorotatedModel.h",
+        "ConstitutiveModel.h",
     ],
     deps = [
         "//common:essential",
@@ -74,7 +74,7 @@ drake_cc_library(
         "Particles.h",
     ],
     deps = [
-        ":CorotatedModel",
+        ":ConstitutiveModel",
         ":MathUtils",
         ":TotalMassAndMomentum",
         "//common:essential",
@@ -227,7 +227,7 @@ drake_cc_library(
     ],
     deps = [
         ":AnalyticLevelSet",
-        ":CorotatedModel",
+        ":ConstitutiveModel",
         ":GravitationalForce",
         ":Grid",
         ":MPMParameters",
@@ -290,9 +290,9 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
-    name = "CorotatedModel_test",
+    name = "ConstitutiveModel_test",
     deps = [
-        ":CorotatedModel",
+        ":ConstitutiveModel",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
         "//math:geometric_transform",

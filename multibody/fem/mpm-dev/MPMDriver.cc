@@ -122,7 +122,7 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
         Matrix3<double> B_p                = Matrix3<double>::Zero();
         particles_.AddParticle(xp, vp, init_m, reference_volume_p,
                                deformation_grad_p, kirchhoff_stress_p,
-                               B_p, m_param.corotated_model);
+                               B_p, m_param.constitutive_model);
     }
 }
 
