@@ -8,6 +8,7 @@
 #include "drake/multibody/fem/mpm-dev/ConstitutiveModel.h"
 #include "drake/multibody/fem/mpm-dev/MathUtils.h"
 #include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
+#include "drake/multibody/fem/mpm-dev/VonMisesPlasticityModel.h"
 
 namespace drake {
 namespace multibody {
@@ -96,7 +97,8 @@ class Particles {
                      const Matrix3<double>& plastic_deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
                      const Matrix3<double>& B_matrix,
-                     std::shared_ptr<ConstitutiveModel> constitutive_model);
+                     std::shared_ptr<ConstitutiveModel> constitutive_model,
+                     std::shared_ptr<VonMisesPlasticityModel> plasticity_model);
 
     // Assume the elastic deformation gradient is updated in the G2P transfer,
     // update the elastic and plastic deformation gradients by projecting the
@@ -128,6 +130,7 @@ class Particles {
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> B_matrices_{};
     std::vector<std::shared_ptr<ConstitutiveModel>> constitutive_models_{};
+    std::vector<std::shared_ptr<VonMisesPlasticityModel>> plasticity_models_{};
 };  // class Particles
 
 }  // namespace mpm

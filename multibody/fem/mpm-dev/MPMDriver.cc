@@ -126,7 +126,8 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
         particles_.AddParticle(xp, vp, init_m, reference_volume_p,
                                elastic_deformation_grad_p,
                                plastic_deformation_grad_p, kirchhoff_stress_p,
-                               B_p, m_param.constitutive_model);
+                               B_p, m_param.constitutive_model,
+                                    m_param.plasticity_model);
     }
 }
 
@@ -171,6 +172,9 @@ void MPMDriver::AdvanceOneTimeStep(double dt) {
 
     // G2P
     mpm_transfer_.TransferGridToParticles(grid_, dt, &particles_);
+
+    // Apply plasticity
+    particles_.ApplyPlasticity();
 
     // Advect particles
     particles_.AdvectParticles(dt);

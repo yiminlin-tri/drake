@@ -221,7 +221,8 @@ void Particles::AddParticle(const Vector3<double>& position,
                             const Matrix3<double>& plastic_deformation_gradient,
                             const Matrix3<double>& kirchhoff_stress,
                             const Matrix3<double>& B_matrix,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model) {
+                    std::shared_ptr<ConstitutiveModel> constitutive_model,
+                    std::shared_ptr<VonMisesPlasticityModel> plasticity_model) {
     positions_.emplace_back(position);
     velocities_.emplace_back(velocity);
     masses_.emplace_back(mass);
@@ -231,7 +232,18 @@ void Particles::AddParticle(const Vector3<double>& position,
     kirchhoff_stresses_.emplace_back(kirchhoff_stress);
     B_matrices_.emplace_back(B_matrix);
     constitutive_models_.emplace_back(std::move(constitutive_model));
+    plasticity_models_.emplace_back(std::move(plasticity_model));
     num_particles_++;
+}
+
+void Particles::ApplyPlasticity() {
+    for (int p = 0; p < num_particles_; ++p) {
+        plasticity_models_[p]->UpdateDeformationGradients(
+                                        constitutive_models_[p]->get_mu(),
+                                        constitutive_models_[p]->get_lambda(),
+                                        &elastic_deformation_gradients_[p],
+                                        &plastic_deformation_gradients_[p]);
+    }
 }
 
 void Particles::UpdateKirchhoffStresses() {

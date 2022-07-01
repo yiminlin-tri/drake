@@ -66,6 +66,20 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "VonMisesPlasticityModel",
+    srcs = [
+        "VonMisesPlasticityModel.cc",
+    ],
+    hdrs = [
+        "VonMisesPlasticityModel.h",
+    ],
+    deps = [
+        "//common:essential",
+        "//multibody/fem:matrix_utilities",
+    ],
+)
+
+drake_cc_library(
     name = "Particles",
     srcs = [
         "Particles.cc",
@@ -77,6 +91,7 @@ drake_cc_library(
         ":ConstitutiveModel",
         ":MathUtils",
         ":TotalMassAndMomentum",
+        ":VonMisesPlasticityModel",
         "//common:essential",
     ],
 )
@@ -233,6 +248,7 @@ drake_cc_library(
         ":MPMParameters",
         ":MPMTransfer",
         ":Particles",
+        ":VonMisesPlasticityModel",
         ":particles_to_bgeo",
         ":poisson_disk_sampling",
         "//common:essential",
@@ -272,6 +288,7 @@ drake_cc_googletest(
     deps = [
         ":Particles",
         ":TotalMassAndMomentum",
+        ":VonMisesPlasticityModel",
         "//common/test_utilities:eigen_matrix_compare",
         "//math:geometric_transform",
     ],
@@ -336,6 +353,7 @@ drake_cc_googletest(
         ":MPMTransfer",
         ":Particles",
         ":TotalMassAndMomentum",
+        ":VonMisesPlasticityModel",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
     ],

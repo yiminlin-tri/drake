@@ -18,6 +18,10 @@ class ConstitutiveModel {
     // Constructor uses Young's modulus E and Poisson's ratio nu
     ConstitutiveModel(double E, double nu);
 
+    double get_mu() const;
+
+    double get_lambda() const;
+
     // First Piola Kirchhoff stress density: P = dpsi/dF
     virtual void CalcFirstPiolaKirchhoffStress(
             const Matrix3<double>& F, EigenPtr<Matrix3<double>> P) const = 0;

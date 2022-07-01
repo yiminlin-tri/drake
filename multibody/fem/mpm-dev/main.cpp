@@ -29,9 +29,9 @@ int DoMain() {
         3e-0,                                  // End time
         5e-4,                                  // Time step size
         0.1,                                   // Grid size
-        Vector3<int>(23, 23, 23),              // Number of grid points in each
+        Vector3<int>(30, 30, 30),              // Number of grid points in each
                                                // direction
-        Vector3<int>(-1, -1, -1),              // Bottom corner of the grid
+        Vector3<int>(-5, -5, -5),              // Bottom corner of the grid
     };
 
     MPMParameters::IOParameters io_param {
@@ -87,9 +87,15 @@ int DoMain() {
     multibody::SpatialVelocity<double> velocity_sphere;
     velocity_sphere.translational() = Vector3<double>::Zero();
     velocity_sphere.rotational() = Vector3<double>{0.0, 0.0, 0.0};
+    double E = 8e4;
+    double nu = 0.49;
     std::shared_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
-            = std::make_shared<SaintVenantKirchhoffWithHenckyModel>(8e4, 0.4);
+            = std::make_shared<SaintVenantKirchhoffWithHenckyModel>(E, nu);
+    double tau_c = 0.1*E;
+    std::shared_ptr<VonMisesPlasticityModel> plasticity_model
+                        = std::make_shared<VonMisesPlasticityModel>(tau_c);
     MPMDriver::MaterialParameters m_param_sphere { constitutive_model,
+                                                   plasticity_model,
                                                    1200,
                                                    velocity_sphere,
                                                    1

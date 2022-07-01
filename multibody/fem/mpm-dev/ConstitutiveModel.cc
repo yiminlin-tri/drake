@@ -13,6 +13,10 @@ ConstitutiveModel::ConstitutiveModel(double E, double nu):
     DRAKE_ASSERT(nu > -1.0 && nu < 0.5);
 }
 
+double ConstitutiveModel::get_mu() const {  return mu_;  }
+
+double ConstitutiveModel::get_lambda() const {  return lambda_;  }
+
 CorotatedModel::CorotatedModel(): ConstitutiveModel() {}
 
 CorotatedModel::CorotatedModel(double E, double nu): ConstitutiveModel(E, nu) {}

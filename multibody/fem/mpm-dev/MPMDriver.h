@@ -17,6 +17,7 @@
 #include "drake/multibody/fem/mpm-dev/MPMParameters.h"
 #include "drake/multibody/fem/mpm-dev/MPMTransfer.h"
 #include "drake/multibody/fem/mpm-dev/Particles.h"
+#include "drake/multibody/fem/mpm-dev/VonMisesPlasticityModel.h"
 #include "drake/multibody/fem/mpm-dev/particles_to_bgeo.h"
 #include "drake/multibody/fem/mpm-dev/poisson_disk_sampling.h"
 #include "drake/multibody/math/spatial_algebra.h"
@@ -32,6 +33,8 @@ class MPMDriver {
     struct MaterialParameters {
         // Constitutive model of the object
         std::shared_ptr<ConstitutiveModel> constitutive_model;
+        // Plasticity model of the object
+        std::shared_ptr<VonMisesPlasticityModel> plasticity_model;
         // @pre density is positive
         // Density and the initial velocity of the object, we assume the object
         // has uniform density and velocity.
