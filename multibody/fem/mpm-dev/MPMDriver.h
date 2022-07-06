@@ -31,7 +31,7 @@ class MPMDriver {
     // Struct containing parameters describing the objects to be modelled in MPM
     struct MaterialParameters {
         // Constitutive model of the object
-        std::shared_ptr<ConstitutiveModel> constitutive_model;
+        std::unique_ptr<ConstitutiveModel> constitutive_model;
         // @pre density is positive
         // Density and the initial velocity of the object, we assume the object
         // has uniform density and velocity.

@@ -112,8 +112,8 @@ void Particles::set_B_matrix(int index, const Matrix3<double>& B_matrix) {
 }
 
 void Particles::set_constitutive_model(int index,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model) {
-    constitutive_models_[index] = constitutive_model;
+                        std::unique_ptr<ConstitutiveModel> constitutive_model) {
+    constitutive_models_[index] = std::move(constitutive_model);
 }
 
 void Particles::set_positions(const std::vector<Vector3<double>>& positions) {
@@ -157,7 +157,7 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
     std::vector<Matrix3<double>> deformation_gradients_sorted(num_particles_);
     std::vector<Matrix3<double>> kirchhoff_stresses_sorted(num_particles_);
     std::vector<Matrix3<double>> B_matrices_sorted(num_particles_);
-    std::vector<std::shared_ptr<ConstitutiveModel>>
+    std::vector<std::unique_ptr<ConstitutiveModel>>
                                  constitutive_models_sorted(num_particles_);
     for (int p = 0; p < num_particles_; ++p) {
         p_new = new_order[p];
@@ -187,7 +187,7 @@ void Particles::AddParticle(const Vector3<double>& position,
                             const Matrix3<double>& deformation_gradient,
                             const Matrix3<double>& kirchhoff_stress,
                             const Matrix3<double>& B_matrix,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model) {
+                        std::unique_ptr<ConstitutiveModel> constitutive_model) {
     positions_.emplace_back(position);
     velocities_.emplace_back(velocity);
     masses_.emplace_back(mass);

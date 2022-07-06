@@ -55,7 +55,7 @@ class Particles {
                               const Matrix3<double>& kirchhoff_stress);
     void set_B_matrix(int index, const Matrix3<double>& B_matrix);
     void set_constitutive_model(int index,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model);
+                        std::unique_ptr<ConstitutiveModel> constitutive_model);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
     void set_velocities(const std::vector<Vector3<double>>& velocities);
@@ -87,7 +87,7 @@ class Particles {
                      const Matrix3<double>& deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
                      const Matrix3<double>& B_matrix,
-                     std::shared_ptr<ConstitutiveModel> constitutive_model);
+                     std::unique_ptr<ConstitutiveModel> constitutive_model);
 
     // Assume the deformation gradient is updated, update Kirchhoff stress tau
     // with the constitutive relation
@@ -112,7 +112,7 @@ class Particles {
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> B_matrices_{};
-    std::vector<std::shared_ptr<ConstitutiveModel>> constitutive_models_{};
+    std::vector<std::unique_ptr<ConstitutiveModel>> constitutive_models_{};
 };  // class Particles
 
 }  // namespace mpm

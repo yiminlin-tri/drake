@@ -5,6 +5,8 @@
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/math/roll_pitch_yaw.h"
 #include "drake/math/rotation_matrix.h"
+#include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/SaintVenantKirchhoffWithHenckyModel.h"
 
 namespace drake {
 namespace multibody {
