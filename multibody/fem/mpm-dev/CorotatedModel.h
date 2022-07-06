@@ -1,8 +1,6 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
-#include <utility>
 
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/matrix_utilities.h"

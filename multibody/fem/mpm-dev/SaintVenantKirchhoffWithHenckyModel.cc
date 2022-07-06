@@ -17,9 +17,9 @@ void SaintVenantKirchhoffWithHenckyModel::CalcFirstPiolaKirchhoffStress(
                             svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const Matrix3<double>& U  = svd.matrixU();
     const Matrix3<double>& V  = svd.matrixV();
-    VectorX<double> sigma     = svd.singularValues();
+    Vector3<double> sigma     = svd.singularValues();
     // logs of singular values
-    VectorX<double> log_sigma = sigma.array().log();
+    Vector3<double> log_sigma = sigma.array().log();
     // sum of logs of singular values of F: ∑ ln(σᵢ)
     double sum_log_sigma      = log_sigma.sum();
     // Overwrite the the vector sigma [σᵢ] with the singular values of the first
@@ -40,9 +40,9 @@ void SaintVenantKirchhoffWithHenckyModel::CalcKirchhoffStress
     Eigen::JacobiSVD<Matrix3<double>>
                             svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const Matrix3<double>& U = svd.matrixU();
-    VectorX<double> sigma    = svd.singularValues();
+    Vector3<double> sigma    = svd.singularValues();
     // logs of singular values
-    VectorX<double> log_sigma = sigma.array().log();
+    Vector3<double> log_sigma = sigma.array().log();
     // sum of logs of singular values of F: ∑ ln(σᵢ)
     double sum_log_sigma      = log_sigma.sum();
     // Overwrite the the vector sigma [σᵢ] with the singular values of the
@@ -65,9 +65,9 @@ void SaintVenantKirchhoffWithHenckyModel::
                             svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const Matrix3<double>& U = svd.matrixU();
     const Matrix3<double>& V = svd.matrixV();
-    VectorX<double> sigma    = svd.singularValues();
+    Vector3<double> sigma    = svd.singularValues();
     // logs of singular values
-    VectorX<double> log_sigma = sigma.array().log();
+    Vector3<double> log_sigma = sigma.array().log();
     // sum of logs of singular values of F: ∑ ln(σᵢ)
     double sum_log_sigma      = log_sigma.sum();
     // Overwrite the the vector sigma [σᵢ] with the singular values of the first
