@@ -13,7 +13,9 @@
 #include "drake/common/filesystem.h"
 #include "drake/common/temp_directory.h"
 #include "drake/math/roll_pitch_yaw.h"
+#include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
 #include "drake/multibody/fem/mpm-dev/MPMDriver.h"
+#include "drake/multibody/fem/mpm-dev/SaintVenantKirchhoffWithHenckyModel.h"
 #include "drake/multibody/math/spatial_velocity.h"
 
 namespace drake {
@@ -87,19 +89,21 @@ int DoMain() {
     multibody::SpatialVelocity<double> velocity_sphere;
     velocity_sphere.translational() = Vector3<double>::Zero();
     velocity_sphere.rotational() = Vector3<double>{0.0, 0.0, 0.0};
+
     double E = 8e4;
     double nu = 0.49;
-    std::shared_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
-            = std::make_shared<SaintVenantKirchhoffWithHenckyModel>(E, nu);
+    std::unique_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
+            = std::make_unique<SaintVenantKirchhoffWithHenckyModel>(E, nu);
     double tau_c = 0.1*E;
-    std::shared_ptr<VonMisesPlasticityModel> plasticity_model
-                        = std::make_shared<VonMisesPlasticityModel>(tau_c);
-    MPMDriver::MaterialParameters m_param_sphere { constitutive_model,
-                                                   plasticity_model,
-                                                   1200,
-                                                   velocity_sphere,
-                                                   1
-                                                 };
+    std::unique_ptr<VonMisesPlasticityModel> plasticity_model
+                        = std::make_unique<VonMisesPlasticityModel>(tau_c);
+    MPMDriver::MaterialParameters m_param_sphere{
+                                                std::move(constitutive_model),
+                                                std::move(plasticity_model),
+                                                1200,
+                                                velocity_sphere,
+                                                1
+                                                };
 
     driver->InitializeKinematicCollisionObjects(std::move(objects));
     driver->InitializeParticles(level_set_sphere, pose_sphere,

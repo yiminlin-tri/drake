@@ -17,7 +17,8 @@ Particles::Particles(int num_particles): num_particles_(num_particles),
                                                             num_particles),
                                          kirchhoff_stresses_(num_particles),
                                          B_matrices_(num_particles),
-                                         constitutive_models_(num_particles) {
+                                         constitutive_models_(num_particles),
+                                         plasticity_models_(num_particles) {
     DRAKE_ASSERT(num_particles >= 0);
 }
 
@@ -133,8 +134,8 @@ void Particles::set_B_matrix(int index, const Matrix3<double>& B_matrix) {
 }
 
 void Particles::set_constitutive_model(int index,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model) {
-    constitutive_models_[index] = constitutive_model;
+                        std::unique_ptr<ConstitutiveModel> constitutive_model) {
+    constitutive_models_[index] = std::move(constitutive_model);
 }
 
 void Particles::set_positions(const std::vector<Vector3<double>>& positions) {
@@ -186,8 +187,10 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
                         plastic_deformation_gradients_sorted(num_particles_);
     std::vector<Matrix3<double>> kirchhoff_stresses_sorted(num_particles_);
     std::vector<Matrix3<double>> B_matrices_sorted(num_particles_);
-    std::vector<std::shared_ptr<ConstitutiveModel>>
+    std::vector<std::unique_ptr<ConstitutiveModel>>
                                  constitutive_models_sorted(num_particles_);
+    std::vector<std::unique_ptr<VonMisesPlasticityModel>>
+                                 plasticity_models_sorted(num_particles_);
     for (int p = 0; p < num_particles_; ++p) {
         p_new = new_order[p];
         positions_sorted[p]                     = positions_[p_new];
@@ -202,6 +205,8 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
         B_matrices_sorted[p]                    = B_matrices_[p_new];
         constitutive_models_sorted[p]           =
                                         std::move(constitutive_models_[p_new]);
+        plasticity_models_sorted[p]             =
+                                        std::move(plasticity_models_[p_new]);
     }
     positions_.swap(positions_sorted);
     velocities_.swap(velocities_sorted);
@@ -212,6 +217,7 @@ void Particles::Reorder(const std::vector<size_t>& new_order) {
     kirchhoff_stresses_.swap(kirchhoff_stresses_sorted);
     B_matrices_.swap(B_matrices_sorted);
     constitutive_models_.swap(constitutive_models_sorted);
+    plasticity_models_.swap(plasticity_models_sorted);
 }
 
 void Particles::AddParticle(const Vector3<double>& position,
@@ -221,8 +227,8 @@ void Particles::AddParticle(const Vector3<double>& position,
                             const Matrix3<double>& plastic_deformation_gradient,
                             const Matrix3<double>& kirchhoff_stress,
                             const Matrix3<double>& B_matrix,
-                    std::shared_ptr<ConstitutiveModel> constitutive_model,
-                    std::shared_ptr<VonMisesPlasticityModel> plasticity_model) {
+                    std::unique_ptr<ConstitutiveModel> constitutive_model,
+                    std::unique_ptr<VonMisesPlasticityModel> plasticity_model) {
     positions_.emplace_back(position);
     velocities_.emplace_back(velocity);
     masses_.emplace_back(mass);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include <memory>
 
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/matrix_utilities.h"
@@ -16,6 +16,10 @@ class VonMisesPlasticityModel {
  public:
     // tau_c: maximum allowed tensile strength
     explicit VonMisesPlasticityModel(double tau_c);
+
+    std::unique_ptr<VonMisesPlasticityModel> Clone() const {
+        return std::make_unique<VonMisesPlasticityModel>(*this);
+    }
 
     void UpdateDeformationGradients(double mu, double lambda,
                                 Matrix3<double>* elastic_deformation_gradient,

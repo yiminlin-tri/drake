@@ -123,11 +123,15 @@ void MPMDriver::InitializeParticles(const AnalyticLevelSet& level_set,
                                                 = Matrix3<double>::Identity();
         Matrix3<double> kirchhoff_stress_p = Matrix3<double>::Identity();
         Matrix3<double> B_p                = Matrix3<double>::Zero();
+        std::unique_ptr<ConstitutiveModel> constitutive_model_p
+                                        = m_param.constitutive_model->Clone();
+        std::unique_ptr<VonMisesPlasticityModel> plasticity_model_p
+                                        = m_param.plasticity_model->Clone();
         particles_.AddParticle(xp, vp, init_m, reference_volume_p,
                                elastic_deformation_grad_p,
                                plastic_deformation_grad_p, kirchhoff_stress_p,
-                               B_p, m_param.constitutive_model,
-                                    m_param.plasticity_model);
+                               B_p, std::move(constitutive_model_p),
+                                    std::move(plasticity_model_p));
     }
 }
 

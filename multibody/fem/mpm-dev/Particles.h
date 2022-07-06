@@ -62,7 +62,7 @@ class Particles {
                               const Matrix3<double>& kirchhoff_stress);
     void set_B_matrix(int index, const Matrix3<double>& B_matrix);
     void set_constitutive_model(int index,
-                        std::shared_ptr<ConstitutiveModel> constitutive_model);
+                        std::unique_ptr<ConstitutiveModel> constitutive_model);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
     void set_velocities(const std::vector<Vector3<double>>& velocities);
@@ -97,8 +97,8 @@ class Particles {
                      const Matrix3<double>& plastic_deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
                      const Matrix3<double>& B_matrix,
-                     std::shared_ptr<ConstitutiveModel> constitutive_model,
-                     std::shared_ptr<VonMisesPlasticityModel> plasticity_model);
+                     std::unique_ptr<ConstitutiveModel> constitutive_model,
+                     std::unique_ptr<VonMisesPlasticityModel> plasticity_model);
 
     // Assume the elastic deformation gradient is updated in the G2P transfer,
     // update the elastic and plastic deformation gradients by projecting the
@@ -129,8 +129,8 @@ class Particles {
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> B_matrices_{};
-    std::vector<std::shared_ptr<ConstitutiveModel>> constitutive_models_{};
-    std::vector<std::shared_ptr<VonMisesPlasticityModel>> plasticity_models_{};
+    std::vector<std::unique_ptr<ConstitutiveModel>> constitutive_models_{};
+    std::vector<std::unique_ptr<VonMisesPlasticityModel>> plasticity_models_{};
 };  // class Particles
 
 }  // namespace mpm
