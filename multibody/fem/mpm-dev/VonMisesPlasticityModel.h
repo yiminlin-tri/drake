@@ -22,6 +22,9 @@ class VonMisesPlasticityModel {
         return std::make_unique<VonMisesPlasticityModel>(*this);
     }
 
+    // Update the elastic and plastic deformation gradient according to the
+    // Von Mises plasticity model. mu is the Lame coefficient of the input
+    // Hencky constitutive model
     void UpdateDeformationGradients(double mu,
                                 Matrix3<double>* elastic_deformation_gradient,
                                 Matrix3<double>* plastic_deformation_gradient);
