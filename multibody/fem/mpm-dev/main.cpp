@@ -28,7 +28,7 @@ int DoMain() {
     };
 
     MPMParameters::SolverParameters s_param {
-        3e-0,                                  // End time
+        2e-0,                                  // End time
         5e-4,                                  // Time step size
         0.1,                                   // Grid size
         Vector3<int>(30, 30, 30),              // Number of grid points in each
@@ -73,7 +73,7 @@ int DoMain() {
                             std::make_unique<CylinderLevelSet>(cylinder_height,
                                                                cylinder_radius);
     math::RollPitchYaw cylinder_rpw = {M_PI/2.0, 0.0, 0.0};
-    Vector3<double> cylinder_translation = {2.5, 1.0, 0.6};
+    Vector3<double> cylinder_translation = {2.5, 1.0, 0.5};
     math::RigidTransform<double> cylinder_pose =
             math::RigidTransform<double>(cylinder_rpw, cylinder_translation);
     objects.AddCollisionObject(std::move(cylinder_level_set),
@@ -92,6 +92,8 @@ int DoMain() {
 
     double E = 8e4;
     double nu = 0.49;
+    // TODO(yiminlin.tri): Had to pass in Hencky Model so that plasticity
+    //                     model works.
     std::unique_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
             = std::make_unique<SaintVenantKirchhoffWithHenckyModel>(E, nu);
     double tau_c = 0.1*E;

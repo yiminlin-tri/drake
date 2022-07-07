@@ -246,7 +246,6 @@ void Particles::ApplyPlasticity() {
     for (int p = 0; p < num_particles_; ++p) {
         plasticity_models_[p]->UpdateDeformationGradients(
                                         constitutive_models_[p]->get_mu(),
-                                        constitutive_models_[p]->get_lambda(),
                                         &elastic_deformation_gradients_[p],
                                         &plastic_deformation_gradients_[p]);
     }

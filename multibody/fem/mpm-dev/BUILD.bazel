@@ -353,6 +353,16 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
+    name = "VonMisesPlasticityModel_test",
+    deps = [
+        ":SaintVenantKirchhoffWithHenckyModel",
+        ":VonMisesPlasticityModel",
+        "//common:essential",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
     name = "CollisionObject_test",
     deps = [
         ":CollisionObject",

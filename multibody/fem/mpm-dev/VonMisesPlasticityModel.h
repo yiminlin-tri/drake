@@ -21,7 +21,7 @@ class VonMisesPlasticityModel {
         return std::make_unique<VonMisesPlasticityModel>(*this);
     }
 
-    void UpdateDeformationGradients(double mu, double lambda,
+    void UpdateDeformationGradients(double mu,
                                 Matrix3<double>* elastic_deformation_gradient,
                                 Matrix3<double>* plastic_deformation_gradient);
 
