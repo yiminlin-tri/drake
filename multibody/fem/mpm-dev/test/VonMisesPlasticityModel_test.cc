@@ -21,10 +21,6 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
             6, 1, 2,
             1, 4, 1,
             2, 1, 5).finished();
-    Matrix3<double> FP = (Matrix3<double>() <<
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1).finished();
 
     double E      = 100.0;
     double nu     = 0.2;
@@ -51,9 +47,7 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
                                 = VonMisesPlasticityModel(tau_c0);
     // Deformation gradient before plasticity
     Matrix3<double> FEprev = FE;
-    Matrix3<double> FPprev = FP;
-    Matrix3<double> Fprev  = FE*FP;
-    plasticity_model0.UpdateDeformationGradients(mu, &FE, &FP);
+    plasticity_model0.UpdateDeformationGradients(mu, &FE);
 
     // Calculate the new Kirchhoff Stress
     hencky_model->CalcKirchhoffStress(FE, &tau0);
@@ -64,9 +58,6 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
     // Nothing shall change in this case
     EXPECT_TRUE(in_yield_surface0);
     EXPECT_TRUE(CompareMatrices(FEprev, FE, TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(FPprev, FP, TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(Fprev , FE*FP, TOLERANCE));
-    EXPECT_NEAR(FP.determinant(), 1.0, TOLERANCE);
 
     // We set a tau_c small enough so that the current elastic deformation
     // gradient is not in the yield surface
@@ -84,9 +75,7 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
 
     // Deformation gradient before plasticity
     FEprev = FE;
-    FPprev = FP;
-    Fprev  = FE*FP;
-    plasticity_model1.UpdateDeformationGradients(mu, &FE, &FP);
+    plasticity_model1.UpdateDeformationGradients(mu, &FE);
 
     // Calculate the new Kirchhoff Stress, it should be in the yield surface
     hencky_model->CalcKirchhoffStress(FE, &tau1);
@@ -96,9 +85,6 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelCalculationTest) {
 
     EXPECT_TRUE(in_yield_surface1);
     EXPECT_FALSE(CompareMatrices(FEprev, FE, TOLERANCE));
-    EXPECT_FALSE(CompareMatrices(FPprev, FP, TOLERANCE));
-    EXPECT_TRUE(CompareMatrices(Fprev , FE*FP, TOLERANCE));
-    EXPECT_NEAR(FP.determinant(), 1.0, TOLERANCE);
 }
 
 }  // namespace

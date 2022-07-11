@@ -28,7 +28,6 @@ class Particles {
     const double& get_mass(int index) const;
     const double& get_reference_volume(int index) const;
     const Matrix3<double>& get_elastic_deformation_gradient(int index) const;
-    const Matrix3<double>& get_plastic_deformation_gradient(int index) const;
     const Matrix3<double>& get_kirchhoff_stress(int index) const;
     const Matrix3<double>& get_B_matrix(int index) const;
 
@@ -37,8 +36,6 @@ class Particles {
     const std::vector<double>& get_masses() const;
     const std::vector<double>& get_reference_volumes() const;
     const std::vector<Matrix3<double>>& get_elastic_deformation_gradients()
-                                                                        const;
-    const std::vector<Matrix3<double>>& get_plastic_deformation_gradients()
                                                                         const;
     const std::vector<Matrix3<double>>& get_kirchhoff_stresses() const;
     // Get the matrix B_p, who composes the affine matrix C_p in APIC:
@@ -56,8 +53,6 @@ class Particles {
     void set_reference_volume(int index, double reference_volume);
     void set_elastic_deformation_gradient(int index,
                            const Matrix3<double>& elastic_deformation_gradient);
-    void set_plastic_deformation_gradient(int index,
-                           const Matrix3<double>& plastic_deformation_gradient);
     void set_kirchhoff_stress(int index,
                               const Matrix3<double>& kirchhoff_stress);
     void set_B_matrix(int index, const Matrix3<double>& B_matrix);
@@ -70,8 +65,6 @@ class Particles {
     void set_reference_volumes(const std::vector<double>& reference_volumes);
     void set_elastic_deformation_gradients(const std::vector<Matrix3<double>>&
                                            elastic_deformation_gradients);
-    void set_plastic_deformation_gradients(const std::vector<Matrix3<double>>&
-                                           plastic_deformation_gradients);
     void set_kirchhoff_stresses(const std::vector<Matrix3<double>>&
                                 kirchhoff_stresses);
     // Set the matrix B_p, who composes the affine matrix C_p in APIC:
@@ -94,7 +87,6 @@ class Particles {
                      const Vector3<double>& velocity,
                      double mass, double reference_volume,
                      const Matrix3<double>& elastic_deformation_gradient,
-                     const Matrix3<double>& plastic_deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
                      const Matrix3<double>& B_matrix,
                      std::unique_ptr<ConstitutiveModel> constitutive_model,
@@ -125,7 +117,6 @@ class Particles {
     std::vector<double> masses_{};
     std::vector<double> reference_volumes_{};
     std::vector<Matrix3<double>> elastic_deformation_gradients_{};
-    std::vector<Matrix3<double>> plastic_deformation_gradients_{};
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> B_matrices_{};

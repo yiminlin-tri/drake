@@ -29,7 +29,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     std::vector<double> masses;
     std::vector<double> reference_volumes;
     std::vector<Matrix3<double>> elastic_deformation_gradients;
-    std::vector<Matrix3<double>> plastic_deformation_gradients;
     std::vector<Matrix3<double>> kirchhoff_stresses;
     std::vector<Matrix3<double>> B_matrices;
 
@@ -38,7 +37,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     double mass1 = 5.0;
     double vol1  = 10.0;
     Matrix3<double> FE1 = pos1.asDiagonal();
-    Matrix3<double> FP1 = -1.0*pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel1
@@ -52,7 +50,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     double mass2 = 7.0;
     double vol2  = 3.0;
     Matrix3<double> FE2 = pos2.asDiagonal();
-    Matrix3<double> FP2 = -1.0*pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 2.0*vel2.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel2
@@ -64,12 +61,12 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     Particles particles = Particles();
     EXPECT_EQ(particles.get_num_particles(), 0);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(cmodel1),
-                                                 std::move(pmodel1));
+                          FE1, stress1, B1, std::move(cmodel1),
+                                            std::move(pmodel1));
     EXPECT_EQ(particles.get_num_particles(), 1);
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, FP2, stress2, B2, std::move(cmodel2),
-                                                 std::move(pmodel2));
+                          FE2, stress2, B2, std::move(cmodel2),
+                                            std::move(pmodel2));
     EXPECT_EQ(particles.get_num_particles(), 2);
 
     // Test get individual element
@@ -81,8 +78,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(0), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
                 FE1, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(0),
-                FP1, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
@@ -96,8 +91,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(1), vol2);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
                 FE2, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(1),
-                FP2, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
@@ -110,8 +103,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     reference_volumes             = particles.get_reference_volumes();
     elastic_deformation_gradients =
                                 particles.get_elastic_deformation_gradients();
-    plastic_deformation_gradients =
-                                particles.get_plastic_deformation_gradients();
     kirchhoff_stresses            = particles.get_kirchhoff_stresses();
     B_matrices                    = particles.get_B_matrices();
     EXPECT_TRUE(CompareMatrices(positions[0], pos1,
@@ -121,8 +112,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(masses[0], mass1);
     EXPECT_EQ(reference_volumes[0], vol1);
     EXPECT_TRUE(CompareMatrices(elastic_deformation_gradients[0], FE1,
-                std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(plastic_deformation_gradients[0], FP1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(kirchhoff_stresses[0], stress1,
                 std::numeric_limits<double>::epsilon()));
@@ -137,8 +126,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(reference_volumes[1], vol2);
     EXPECT_TRUE(CompareMatrices(elastic_deformation_gradients[1], FE2,
                 std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(plastic_deformation_gradients[1], FP2,
-                std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(kirchhoff_stresses[1], stress2,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(B_matrices[1], B2,
@@ -152,7 +139,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     particles.set_mass(0, mass1);
     particles.set_reference_volume(0, vol1);
     particles.set_elastic_deformation_gradient(0, FE1);
-    particles.set_plastic_deformation_gradient(0, FP1);
     particles.set_kirchhoff_stress(0, stress1);
     particles.set_B_matrix(0, B1);
     particles.set_position(1, pos2);
@@ -160,7 +146,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     particles.set_mass(1, mass2);
     particles.set_reference_volume(1, vol2);
     particles.set_elastic_deformation_gradient(1, FE2);
-    particles.set_plastic_deformation_gradient(1, FP2);
     particles.set_kirchhoff_stress(1, stress2);
     particles.set_B_matrix(1, B2);
 
@@ -172,8 +157,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(0), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
                 FE1, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(0),
-                FP1, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
@@ -187,8 +170,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(1), vol2);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
                 FE2, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(1),
-                FP2, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
@@ -200,8 +181,8 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     std::unique_ptr<VonMisesPlasticityModel> pmodel_dummy1
                     = std::make_unique<VonMisesPlasticityModel>(dummy_tau_c);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(cmodel_dummy1),
-                                                 std::move(pmodel_dummy1));
+                          FE1, stress1, B1, std::move(cmodel_dummy1),
+                                            std::move(pmodel_dummy1));
     EXPECT_EQ(particles.get_num_particles(), 3);
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -211,8 +192,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(2), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(2),
                 FE1, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(2),
-                FP1, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B1,
@@ -226,7 +205,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     particles.set_masses(masses);
     particles.set_reference_volumes(reference_volumes);
     particles.set_elastic_deformation_gradients(elastic_deformation_gradients);
-    particles.set_plastic_deformation_gradients(plastic_deformation_gradients);
     particles.set_kirchhoff_stresses(kirchhoff_stresses);
     particles.set_B_matrices(B_matrices);
 
@@ -238,8 +216,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(0), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
                 FE1, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(0),
-                FP1, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
@@ -253,8 +229,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(1), vol2);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
                 FE2, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(1),
-                FP2, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
@@ -266,8 +240,8 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     std::unique_ptr<VonMisesPlasticityModel> pmodel_dummy2
                     = std::make_unique<VonMisesPlasticityModel>(tau_dummy2);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(cmodel_dummy2),
-                                                 std::move(pmodel_dummy2));
+                          FE1, stress1, B1, std::move(cmodel_dummy2),
+                                            std::move(pmodel_dummy2));
     EXPECT_EQ(particles.get_num_particles(), 3);
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -277,8 +251,6 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_EQ(particles.get_reference_volume(2), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(2),
                 FE1, std::numeric_limits<double>::epsilon()));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(2),
-                FP1, std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress1,
                 std::numeric_limits<double>::epsilon()));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B1,
@@ -291,7 +263,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     std::vector<double> masses;
     std::vector<double> reference_volumes;
     std::vector<Matrix3<double>> elastic_deformation_gradients;
-    std::vector<Matrix3<double>> plastic_deformation_gradients;
     std::vector<Matrix3<double>> kirchhoff_stresses;
 
     Vector3<double> pos1 = {1.0, 2.0, 3.0};
@@ -299,7 +270,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     double mass1 = 5.0;
     double vol1  = 10.0;
     Matrix3<double> FE1 = pos1.asDiagonal();
-    Matrix3<double> FP1 = -1.0*pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel1
@@ -313,7 +283,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     double mass2 = 7.0;
     double vol2  = 3.0;
     Matrix3<double> FE2 = pos2.asDiagonal();
-    Matrix3<double> FP2 = -1.0*pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 2.0*vel2.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel2
@@ -327,7 +296,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     double mass3 = 2.0;
     double vol3  = 12.0;
     Matrix3<double> FE3 = pos3.asDiagonal();
-    Matrix3<double> FP3 = -1.0*pos3.asDiagonal();
     Matrix3<double> stress3 = vel3.asDiagonal();
     Matrix3<double> B3 = 2.0*vel3.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel3
@@ -338,14 +306,14 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
 
     Particles particles = Particles();
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(cmodel1),
-                                                 std::move(pmodel1));
+                          FE1, stress1, B1, std::move(cmodel1),
+                                            std::move(pmodel1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, FP2, stress2, B2, std::move(cmodel2),
-                                                 std::move(pmodel2));
+                          FE2, stress2, B2, std::move(cmodel2),
+                                            std::move(pmodel2));
     particles.AddParticle(pos3, vel3, mass3, vol3,
-                          FE3, FP3, stress3, B3, std::move(cmodel3),
-                                                 std::move(pmodel3));
+                          FE3, stress3, B3, std::move(cmodel3),
+                                            std::move(pmodel3));
 
     // Check the original ordering
     EXPECT_TRUE(CompareMatrices(particles.get_position(0), pos1, kEps));
@@ -354,8 +322,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(0), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
                 FE1, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(0),
-                FP1, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress1,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B1,
@@ -369,8 +335,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(1), vol2);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
                 FE2, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(1),
-                FP2, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress2,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
@@ -384,8 +348,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(2), vol3);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(2),
                 FE3, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(2),
-                FP3, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress3,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B3,
@@ -401,8 +363,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(0), vol3);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
                 FE3, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(0),
-                FP3, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0), stress3,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(0), B3,
@@ -416,8 +376,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(1), vol1);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
                 FE1, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(1),
-                FP1, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1), stress1,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B1,
@@ -431,8 +389,6 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     EXPECT_EQ(particles.get_reference_volume(2), vol2);
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(2),
                 FE2, kEps));
-    EXPECT_TRUE(CompareMatrices(particles.get_plastic_deformation_gradient(2),
-                FP2, kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(2), stress2,
                 kEps));
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(2), B2,
@@ -445,7 +401,6 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
     std::vector<double> masses;
     std::vector<double> reference_volumes;
     std::vector<Matrix3<double>> elastic_deformation_gradients;
-    std::vector<Matrix3<double>> plastic_deformation_gradients;
     std::vector<Matrix3<double>> kirchhoff_stresses;
     std::unique_ptr<CorotatedModel> coro_model1
                                 = std::make_unique<CorotatedModel>(5.0, 0.25);
@@ -476,7 +431,6 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
     double mass1 = 5.0;
     double vol1  = 10.0;
     Matrix3<double> FE1 = F;
-    Matrix3<double> FP1 = -F;
     Matrix3<double> stress1 = Matrix3<double>::Zero();
     Matrix3<double> B1 = Matrix3<double>::Zero();
 
@@ -485,17 +439,16 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
     double mass2 = 7.0;
     double vol2  = 3.0;
     Matrix3<double> FE2 = R;
-    Matrix3<double> FP2 = -R;
     Matrix3<double> stress2 = Matrix3<double>::Ones();
     Matrix3<double> B2 = Matrix3<double>::Ones();
 
     Particles particles = Particles();
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(coro_model1),
-                                                 std::move(pmodel1));
+                          FE1, stress1, B1, std::move(coro_model1),
+                                            std::move(pmodel1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, FP2, stress2, B2, std::move(coro_model2),
-                                                 std::move(pmodel2));
+                          FE2, stress2, B2, std::move(coro_model2),
+                                            std::move(pmodel2));
 
     // Advect particles
     double dt = 0.3;
@@ -520,7 +473,6 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     double mass0 = 1.0;
     double vol0  = 1.0;
     Matrix3<double> FE0 = pos0.asDiagonal();
-    Matrix3<double> FP0 = -1.0*pos0.asDiagonal();
     Matrix3<double> stress0 = vel0.asDiagonal();
     Matrix3<double> B0 = vel0.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel0
@@ -534,7 +486,6 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     double mass1 = 2.0;
     double vol1  = 2.0;
     Matrix3<double> FE1 = pos1.asDiagonal();
-    Matrix3<double> FP1 = -1.0*pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel1
@@ -548,7 +499,6 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     double mass2 = 3.0;
     double vol2  = 3.0;
     Matrix3<double> FE2 = pos2.asDiagonal();
-    Matrix3<double> FP2 = -1.0*pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 3.0*vel2.asDiagonal();
     std::unique_ptr<CorotatedModel> cmodel2
@@ -559,14 +509,14 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
 
     Particles particles = Particles();
     particles.AddParticle(pos0, vel0, mass0, vol0,
-                          FE0, FP0, stress0, B0, std::move(cmodel0),
-                                                 std::move(pmodel0));
+                          FE0, stress0, B0, std::move(cmodel0),
+                                            std::move(pmodel0));
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, FP1, stress1, B1, std::move(cmodel1),
-                                                 std::move(pmodel1));
+                          FE1, stress1, B1, std::move(cmodel1),
+                                            std::move(pmodel1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, FP2, stress2, B2, std::move(cmodel2),
-                                                 std::move(pmodel2));
+                          FE2, stress2, B2, std::move(cmodel2),
+                                            std::move(pmodel2));
 
     TotalMassAndMomentum sum_state = particles.GetTotalMassAndMomentum();
 

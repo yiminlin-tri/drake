@@ -61,8 +61,7 @@ class VonMisesPlasticityModel {
     // Von Mises plasticity model. mu is the Lame coefficient of the input
     // Hencky constitutive model
     void UpdateDeformationGradients(double mu,
-                                Matrix3<double>* elastic_deformation_gradient,
-                                Matrix3<double>* plastic_deformation_gradient);
+                                Matrix3<double>* elastic_deformation_gradient);
 
  private:
     double tau_c_;

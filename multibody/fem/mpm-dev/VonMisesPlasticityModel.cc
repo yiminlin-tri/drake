@@ -9,8 +9,7 @@ VonMisesPlasticityModel::VonMisesPlasticityModel(double tau_c): tau_c_(tau_c) {
 }
 
 void VonMisesPlasticityModel::UpdateDeformationGradients(double mu,
-                                                         Matrix3<double>* FE,
-                                                         Matrix3<double>* FP) {
+                                                         Matrix3<double>* FE) {
     Eigen::JacobiSVD<Matrix3<double>>
                             svd(*FE, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const Matrix3<double>& U = svd.matrixU();
@@ -47,14 +46,9 @@ void VonMisesPlasticityModel::UpdateDeformationGradients(double mu,
         Vector3<double> nu = sqrt_32*tau_dev_hat/tau_dev_hat_norm;
         double delta_gamma = f_tau/(3.0*mu);
         Vector3<double> proj_F_hat = (eps_hat - delta_gamma*nu).array().exp();
-        // Total deformation gradient in the previous time step
-        Matrix3<double> Fn  = (*FE)*(*FP);
         // New elastic deformation gradient projected to the yield surface
         // proj(Fᴱ)
         *FE = U*proj_F_hat.asDiagonal()*V.transpose();
-        // By F = proj(Fᴱ)proj(Fᴾ) = FᴱFᴾ, calculated the new plastic
-        // deformation gradient
-        *FP = (*FE).householderQr().solve(Fn);
     }
 }
 

@@ -628,7 +628,6 @@ class MPMTransferTest : public ::testing::Test {
         double mass1 = 5.0;
         double vol1  = 10.0;
         Matrix3<double> FE1 = pos1.asDiagonal();
-        Matrix3<double> FP1 = -1.0*pos1.asDiagonal();
         Matrix3<double> stress1 = vel1.asDiagonal();
         Matrix3<double> B1 = Matrix3<double>::Zero();
         std::unique_ptr<CorotatedModel> cmodel1 =
@@ -642,7 +641,6 @@ class MPMTransferTest : public ::testing::Test {
         double mass2 = 7.0;
         double vol2  = 3.0;
         Matrix3<double> FE2 = pos2.asDiagonal();
-        Matrix3<double> FP2 = -1.0*pos2.asDiagonal();
         Matrix3<double> stress2 = vel2.asDiagonal();
         Matrix3<double> B2 = Matrix3<double>::Zero();
         std::unique_ptr<CorotatedModel> cmodel2 =
@@ -655,7 +653,6 @@ class MPMTransferTest : public ::testing::Test {
         double mass3 = 2.0;
         double vol3  = 12.0;
         Matrix3<double> FE3 = pos3.asDiagonal();
-        Matrix3<double> FP3 = -1.0*pos3.asDiagonal();
         Matrix3<double> stress3 = vel3.asDiagonal();
         Matrix3<double> B3 = Matrix3<double>::Zero();
         std::unique_ptr<CorotatedModel> cmodel3 =
@@ -664,14 +661,14 @@ class MPMTransferTest : public ::testing::Test {
                         std::make_unique<VonMisesPlasticityModel>(tau_c_dummy);
 
         particles_->AddParticle(pos1, vel1, mass1, vol1,
-                                FE1, FP1, stress1, B1, std::move(cmodel1),
-                                                       std::move(pmodel1));
+                                FE1, stress1, B1, std::move(cmodel1),
+                                                  std::move(pmodel1));
         particles_->AddParticle(pos2, vel2, mass2, vol2,
-                                FE2, FP2, stress2, B2, std::move(cmodel2),
-                                                       std::move(pmodel2));
+                                FE2, stress2, B2, std::move(cmodel2),
+                                                  std::move(pmodel2));
         particles_->AddParticle(pos3, vel3, mass3, vol3,
-                                FE3, FP3, stress3, B3, std::move(cmodel3),
-                                                       std::move(pmodel3));
+                                FE3, stress3, B3, std::move(cmodel3),
+                                                  std::move(pmodel3));
 
         num_particles = particles_->get_num_particles();
         TotalMassAndMomentum sum_particles_state
