@@ -1,14 +1,17 @@
-#include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/CorotatedElasticModel.h"
+
+#include "drake/common/unused.h"
 
 namespace drake {
 namespace multibody {
 namespace mpm {
 
-CorotatedModel::CorotatedModel(): ConstitutiveModel() {}
+CorotatedElasticModel::CorotatedElasticModel(): ElastoPlasticModel() {}
 
-CorotatedModel::CorotatedModel(double E, double nu): ConstitutiveModel(E, nu) {}
+CorotatedElasticModel::CorotatedElasticModel(double E, double nu):
+                                                ElastoPlasticModel(E, nu) {}
 
-void CorotatedModel::CalcFirstPiolaKirchhoffStress(
+void CorotatedElasticModel::CalcFirstPiolaKirchhoffStress(
         const Matrix3<double>& F, Matrix3<double>* P) const {
     Matrix3<double> R, S, JFinvT;
     double J = F.determinant();
@@ -17,7 +20,7 @@ void CorotatedModel::CalcFirstPiolaKirchhoffStress(
     *P = 2.0*mu_*(F-R) + lambda_*(J-1.0)*JFinvT;
 }
 
-void CorotatedModel::CalcKirchhoffStress(const Matrix3<double>& F,
+void CorotatedElasticModel::CalcKirchhoffStress(const Matrix3<double>& F,
                                          Matrix3<double>* tau) const {
     Matrix3<double> R, S;
     double J = F.determinant();
@@ -26,7 +29,7 @@ void CorotatedModel::CalcKirchhoffStress(const Matrix3<double>& F,
          + lambda_*(J-1.0)*J*Matrix3<double>::Identity();
 }
 
-void CorotatedModel::CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
+void CorotatedElasticModel::CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
         const Matrix3<double>& F, Matrix3<double>* P,
         Matrix3<double>* tau) const {
     Matrix3<double> R, S, JFinvT;
@@ -37,8 +40,16 @@ void CorotatedModel::CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
     *tau = (*P)*F.transpose();
 }
 
+void CorotatedElasticModel::UpdateDeformationGradient(
+                    Matrix3<double>* elastic_deformation_gradient) const {
+    unused(elastic_deformation_gradient);
+}
+
+void CorotatedElasticModel::CalcKirchhoffStressAndUpdateDeformationGradient(
+                        Matrix3<double>* tau, Matrix3<double>* FE) const {
+    CalcKirchhoffStress(*FE, tau);
+}
+
 }  // namespace mpm
 }  // namespace multibody
 }  // namespace drake
-
-

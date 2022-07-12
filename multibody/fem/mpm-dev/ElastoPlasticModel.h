@@ -9,20 +9,23 @@ namespace drake {
 namespace multibody {
 namespace mpm {
 
-// A base class providing the interface of Constitutive model
-class ConstitutiveModel {
+// A base class providing the interface of constituive and plastic model
+class ElastoPlasticModel {
  public:
     // Default material, dough: E = 9e4 Pa, nu = 0.49
-    ConstitutiveModel();
+    ElastoPlasticModel();
 
     // Constructor uses Young's modulus E and Poisson's ratio nu
-    ConstitutiveModel(double E, double nu);
+    ElastoPlasticModel(double E, double nu);
 
-    virtual std::unique_ptr<ConstitutiveModel> Clone() const = 0;
+    virtual std::unique_ptr<ElastoPlasticModel> Clone() const = 0;
 
+    // Return the first Lamé coefficient
+    double get_lambda() const;
+
+    // Return the second Lamé coefficient
     double get_mu() const;
 
-    double get_lambda() const;
     // First Piola Kirchhoff stress density: P = dpsi/dF
     virtual void CalcFirstPiolaKirchhoffStress(
             const Matrix3<double>& F, Matrix3<double>* P) const = 0;
@@ -34,12 +37,21 @@ class ConstitutiveModel {
                         const Matrix3<double>& F, Matrix3<double>* P,
                         Matrix3<double>* tau) const = 0;
 
-    virtual ~ConstitutiveModel() = default;
+    // Update the elastic deformation gradient according to the plasticity model
+    // by projecting the trial elastic stress to the yield surface
+    virtual void UpdateDeformationGradient(
+                    Matrix3<double>* elastic_deformation_gradient) const = 0;
+
+    virtual void CalcKirchhoffStressAndUpdateDeformationGradient(
+                    Matrix3<double>* tau,
+                    Matrix3<double>* elastic_deformation_gradient) const = 0;
+
+    virtual ~ElastoPlasticModel() = default;
 
  protected:
     double mu_;                         // Parameters in defining
     double lambda_;                     // the energy density function
-};  // class ConstitutiveModel
+};  // class ElastoPlasticModel
 
 }  // namespace mpm
 }  // namespace multibody

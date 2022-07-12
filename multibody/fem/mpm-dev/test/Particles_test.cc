@@ -8,10 +8,10 @@
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/math/roll_pitch_yaw.h"
 #include "drake/math/rotation_matrix.h"
-#include "drake/multibody/fem/mpm-dev/ConstitutiveModel.h"
-#include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/CorotatedElasticModel.h"
+#include "drake/multibody/fem/mpm-dev/ElastoPlasticModel.h"
+#include "drake/multibody/fem/mpm-dev/StvkHenckyWithVonMisesModel.h"
 #include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
-#include "drake/multibody/fem/mpm-dev/VonMisesPlasticityModel.h"
 
 namespace drake {
 namespace multibody {
@@ -39,11 +39,9 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     Matrix3<double> FE1 = pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel1
-                                = std::make_unique<CorotatedModel>(10.0, 0.1);
     double tau_c1 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel1
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c1);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model1
+            = std::make_unique<StvkHenckyWithVonMisesModel>(10.0, 0.1, tau_c1);
 
     Vector3<double> pos2 = {3.0, -1.0, 6.0};
     Vector3<double> vel2 = {-9.0, 8.0, -2.0};
@@ -52,21 +50,17 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     Matrix3<double> FE2 = pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 2.0*vel2.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel2
-                                = std::make_unique<CorotatedModel>(20.0, 0.2);
     double tau_c2 = 1.0;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel2
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c2);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model2
+            = std::make_unique<StvkHenckyWithVonMisesModel>(20.0, 0.2, tau_c2);
 
     Particles particles = Particles();
     EXPECT_EQ(particles.get_num_particles(), 0);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(cmodel1),
-                                            std::move(pmodel1));
+                          FE1, stress1, B1, std::move(hencky_model1));
     EXPECT_EQ(particles.get_num_particles(), 1);
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, stress2, B2, std::move(cmodel2),
-                                            std::move(pmodel2));
+                          FE2, stress2, B2, std::move(hencky_model2));
     EXPECT_EQ(particles.get_num_particles(), 2);
 
     // Test get individual element
@@ -175,14 +169,11 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 std::numeric_limits<double>::epsilon()));
 
-    std::unique_ptr<CorotatedModel> cmodel_dummy1
-                                = std::make_unique<CorotatedModel>(10.0, 0.1);
     double dummy_tau_c = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel_dummy1
-                    = std::make_unique<VonMisesPlasticityModel>(dummy_tau_c);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model_dummy1
+        = std::make_unique<StvkHenckyWithVonMisesModel>(10.0, 0.1, dummy_tau_c);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(cmodel_dummy1),
-                                            std::move(pmodel_dummy1));
+                          FE1, stress1, B1, std::move(hencky_model_dummy1));
     EXPECT_EQ(particles.get_num_particles(), 3);
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -234,14 +225,11 @@ GTEST_TEST(ParticlesClassTest, TestAddSetGet) {
     EXPECT_TRUE(CompareMatrices(particles.get_B_matrix(1), B2,
                 std::numeric_limits<double>::epsilon()));
 
-    std::unique_ptr<CorotatedModel> cmodel_dummy2
-                                = std::make_unique<CorotatedModel>(10.0, 0.1);
     double tau_dummy2 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel_dummy2
-                    = std::make_unique<VonMisesPlasticityModel>(tau_dummy2);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model_dummy2
+        = std::make_unique<StvkHenckyWithVonMisesModel>(10.0, 0.1, tau_dummy2);
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(cmodel_dummy2),
-                                            std::move(pmodel_dummy2));
+                          FE1, stress1, B1, std::move(hencky_model_dummy2));
     EXPECT_EQ(particles.get_num_particles(), 3);
     EXPECT_TRUE(CompareMatrices(particles.get_position(2), pos1,
                 std::numeric_limits<double>::epsilon()));
@@ -272,11 +260,9 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     Matrix3<double> FE1 = pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel1
-                                = std::make_unique<CorotatedModel>(10.0, 0.1);
     double tau_c1 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel1
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c1);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model1
+        = std::make_unique<StvkHenckyWithVonMisesModel>(10.0, 0.1, tau_c1);
 
     Vector3<double> pos2 = {3.0, -1.0, 6.0};
     Vector3<double> vel2 = {-9.0, 8.0, -2.0};
@@ -285,11 +271,9 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     Matrix3<double> FE2 = pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 2.0*vel2.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel2
-                                = std::make_unique<CorotatedModel>(20.0, 0.2);
     double tau_c2 = 1.0;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel2
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c2);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model2
+        = std::make_unique<StvkHenckyWithVonMisesModel>(20.0, 0.2, tau_c2);
 
     Vector3<double> pos3 = {3.2, -1.0, 1.0};
     Vector3<double> vel3 = {2.0, -6.2, 8.0};
@@ -298,22 +282,17 @@ GTEST_TEST(ParticlesClassTest, TestReorder) {
     Matrix3<double> FE3 = pos3.asDiagonal();
     Matrix3<double> stress3 = vel3.asDiagonal();
     Matrix3<double> B3 = 2.0*vel3.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel3
-                                = std::make_unique<CorotatedModel>(30.0, 0.3);
     double tau_c3 = 1.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel3
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c3);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> hencky_model3
+        = std::make_unique<StvkHenckyWithVonMisesModel>(30.0, 0.3, tau_c3);
 
     Particles particles = Particles();
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(cmodel1),
-                                            std::move(pmodel1));
+                          FE1, stress1, B1, std::move(hencky_model1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, stress2, B2, std::move(cmodel2),
-                                            std::move(pmodel2));
+                          FE2, stress2, B2, std::move(hencky_model2));
     particles.AddParticle(pos3, vel3, mass3, vol3,
-                          FE3, stress3, B3, std::move(cmodel3),
-                                            std::move(pmodel3));
+                          FE3, stress3, B3, std::move(hencky_model3));
 
     // Check the original ordering
     EXPECT_TRUE(CompareMatrices(particles.get_position(0), pos1, kEps));
@@ -402,16 +381,12 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
     std::vector<double> reference_volumes;
     std::vector<Matrix3<double>> elastic_deformation_gradients;
     std::vector<Matrix3<double>> kirchhoff_stresses;
-    std::unique_ptr<CorotatedModel> coro_model1
-                                = std::make_unique<CorotatedModel>(5.0, 0.25);
-    std::unique_ptr<CorotatedModel> coro_model2
-                                = std::make_unique<CorotatedModel>(5.0, 0.25);
-    double tau_c1 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel1
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c1);
-    double tau_c2 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel2
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c2);
+    double dummy_E    = 5.0;
+    double dummy_nu   = 0.25;
+    std::unique_ptr<CorotatedElasticModel> coro_model1 =
+                    std::make_unique<CorotatedElasticModel>(dummy_E, dummy_nu);
+    std::unique_ptr<CorotatedElasticModel> coro_model2 =
+                    std::make_unique<CorotatedElasticModel>(dummy_E, dummy_nu);
 
     const Matrix3<double> R =
         math::RotationMatrix<double>
@@ -444,11 +419,9 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
 
     Particles particles = Particles();
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(coro_model1),
-                                            std::move(pmodel1));
+                          FE1, stress1, B1, std::move(coro_model1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, stress2, B2, std::move(coro_model2),
-                                            std::move(pmodel2));
+                          FE2, stress2, B2, std::move(coro_model2));
 
     // Advect particles
     double dt = 0.3;
@@ -459,11 +432,15 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
                                 Vector3<double>(0.3, 1.4, 5.4), kEps));
 
     // Update Kirchhoff stress
-    particles.UpdateKirchhoffStresses();
+    particles.UpdateKirchhoffStressesAndApplyPlasticity();
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0),
                                 tau_exact, TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),
+                                FE1, TOLERANCE));
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(1),
                                 Matrix3<double>::Zero(), TOLERANCE));
+    EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(1),
+                                FE2, TOLERANCE));
 }
 
 GTEST_TEST(GridClassTest, TestGridSumState) {
@@ -475,11 +452,8 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     Matrix3<double> FE0 = pos0.asDiagonal();
     Matrix3<double> stress0 = vel0.asDiagonal();
     Matrix3<double> B0 = vel0.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel0
-                            = std::make_unique<CorotatedModel>(10.0, 0.1);
-    double tau_c0 = 0.5;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel0
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c0);
+    std::unique_ptr<CorotatedElasticModel> cmodel0 =
+                            std::make_unique<CorotatedElasticModel>(10.0, 0.1);
 
     Vector3<double> pos1 = {4.0, 5.0, 6.0};
     Vector3<double> vel1 = {-2.0, -2.0, -2.0};
@@ -488,11 +462,8 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     Matrix3<double> FE1 = pos1.asDiagonal();
     Matrix3<double> stress1 = vel1.asDiagonal();
     Matrix3<double> B1 = 2.0*vel1.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel1
-                            = std::make_unique<CorotatedModel>(10.0, 0.1);
-    double tau_c1 = 1.0;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel1
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c1);
+    std::unique_ptr<CorotatedElasticModel> cmodel1 =
+                            std::make_unique<CorotatedElasticModel>(10.0, 0.1);
 
     Vector3<double> pos2 = {7.0, 8.0, 9.0};
     Vector3<double> vel2 = {-3.0, -3.0, -3.0};
@@ -501,22 +472,16 @@ GTEST_TEST(GridClassTest, TestGridSumState) {
     Matrix3<double> FE2 = pos2.asDiagonal();
     Matrix3<double> stress2 = vel2.asDiagonal();
     Matrix3<double> B2 = 3.0*vel2.asDiagonal();
-    std::unique_ptr<CorotatedModel> cmodel2
-                            = std::make_unique<CorotatedModel>(20.0, 0.2);
-    double tau_c2 = 1.0;
-    std::unique_ptr<VonMisesPlasticityModel> pmodel2
-                            = std::make_unique<VonMisesPlasticityModel>(tau_c2);
+    std::unique_ptr<CorotatedElasticModel> cmodel2 =
+                            std::make_unique<CorotatedElasticModel>(20.0, 0.2);
 
     Particles particles = Particles();
     particles.AddParticle(pos0, vel0, mass0, vol0,
-                          FE0, stress0, B0, std::move(cmodel0),
-                                            std::move(pmodel0));
+                          FE0, stress0, B0, std::move(cmodel0));
     particles.AddParticle(pos1, vel1, mass1, vol1,
-                          FE1, stress1, B1, std::move(cmodel1),
-                                            std::move(pmodel1));
+                          FE1, stress1, B1, std::move(cmodel1));
     particles.AddParticle(pos2, vel2, mass2, vol2,
-                          FE2, stress2, B2, std::move(cmodel2),
-                                            std::move(pmodel2));
+                          FE2, stress2, B2, std::move(cmodel2));
 
     TotalMassAndMomentum sum_state = particles.GetTotalMassAndMomentum();
 

@@ -5,10 +5,9 @@
 #include <vector>
 
 #include "drake/common/eigen_types.h"
-#include "drake/multibody/fem/mpm-dev/ConstitutiveModel.h"
+#include "drake/multibody/fem/mpm-dev/ElastoPlasticModel.h"
 #include "drake/multibody/fem/mpm-dev/MathUtils.h"
 #include "drake/multibody/fem/mpm-dev/TotalMassAndMomentum.h"
-#include "drake/multibody/fem/mpm-dev/VonMisesPlasticityModel.h"
 
 namespace drake {
 namespace multibody {
@@ -56,8 +55,8 @@ class Particles {
     void set_kirchhoff_stress(int index,
                               const Matrix3<double>& kirchhoff_stress);
     void set_B_matrix(int index, const Matrix3<double>& B_matrix);
-    void set_constitutive_model(int index,
-                        std::unique_ptr<ConstitutiveModel> constitutive_model);
+    void set_elastoplastic_model(int index,
+                     std::unique_ptr<ElastoPlasticModel> elastoplastic_model);
 
     void set_positions(const std::vector<Vector3<double>>& positions);
     void set_velocities(const std::vector<Vector3<double>>& velocities);
@@ -89,17 +88,13 @@ class Particles {
                      const Matrix3<double>& elastic_deformation_gradient,
                      const Matrix3<double>& kirchhoff_stress,
                      const Matrix3<double>& B_matrix,
-                     std::unique_ptr<ConstitutiveModel> constitutive_model,
-                     std::unique_ptr<VonMisesPlasticityModel> plasticity_model);
+                     std::unique_ptr<ElastoPlasticModel> elastoplastic_model);
 
     // Assume the elastic deformation gradient is updated in the G2P transfer,
-    // update the elastic and plastic deformation gradients by projecting the
-    // elastic deformation gradient to the yield surface
-    void ApplyPlasticity();
-
-    // Assume the elastic and plastic deformation gradient are updated, update
-    // Kirchhoff stress tau with the constitutive relation
-    void UpdateKirchhoffStresses();
+    // update Kirchhoff stress tau with the constitutive relation, and update
+    // the elastic deformation gradients by projecting the elastic deformation
+    // gradient to the yield surface
+    void UpdateKirchhoffStressesAndApplyPlasticity();
 
     // Particle advection using the updated velocities, assuming they are
     // already updated in the member variables.
@@ -120,8 +115,7 @@ class Particles {
     std::vector<Matrix3<double>> kirchhoff_stresses_{};
     // The affine matrix B_p in APIC
     std::vector<Matrix3<double>> B_matrices_{};
-    std::vector<std::unique_ptr<ConstitutiveModel>> constitutive_models_{};
-    std::vector<std::unique_ptr<VonMisesPlasticityModel>> plasticity_models_{};
+    std::vector<std::unique_ptr<ElastoPlasticModel>> elastoplastic_models_{};
 };  // class Particles
 
 }  // namespace mpm

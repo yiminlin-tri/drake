@@ -13,9 +13,9 @@
 #include "drake/common/filesystem.h"
 #include "drake/common/temp_directory.h"
 #include "drake/math/roll_pitch_yaw.h"
-#include "drake/multibody/fem/mpm-dev/CorotatedModel.h"
+#include "drake/multibody/fem/mpm-dev/CorotatedElasticModel.h"
 #include "drake/multibody/fem/mpm-dev/MPMDriver.h"
-#include "drake/multibody/fem/mpm-dev/SaintVenantKirchhoffWithHenckyModel.h"
+#include "drake/multibody/fem/mpm-dev/StvkHenckyWithVonMisesModel.h"
 #include "drake/multibody/math/spatial_velocity.h"
 
 namespace drake {
@@ -92,16 +92,11 @@ int DoMain() {
 
     double E = 8e4;
     double nu = 0.49;
-    // TODO(yiminlin.tri): Had to pass in Hencky Model so that plasticity
-    //                     model works.
-    std::unique_ptr<SaintVenantKirchhoffWithHenckyModel> constitutive_model
-            = std::make_unique<SaintVenantKirchhoffWithHenckyModel>(E, nu);
     double tau_c = 0.1*E;
-    std::unique_ptr<VonMisesPlasticityModel> plasticity_model
-                        = std::make_unique<VonMisesPlasticityModel>(tau_c);
+    std::unique_ptr<StvkHenckyWithVonMisesModel> elastoplastic_model
+            = std::make_unique<StvkHenckyWithVonMisesModel>(E, nu, tau_c);
     MPMDriver::MaterialParameters m_param_sphere{
-                                                std::move(constitutive_model),
-                                                std::move(plasticity_model),
+                                                std::move(elastoplastic_model),
                                                 1200,
                                                 velocity_sphere,
                                                 1

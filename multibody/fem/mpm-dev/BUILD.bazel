@@ -18,9 +18,9 @@ drake_cc_binary(
         "main.cpp",
     ],
     deps = [
-        ":CorotatedModel",
+        ":CorotatedElasticModel",
         ":MPMDriver",
-        ":SaintVenantKirchhoffWithHenckyModel",
+        ":StvkHenckyWithVonMisesModel",
         "//common:essential",
         "//math:geometric_transform",
         "@partio",
@@ -54,12 +54,12 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "ConstitutiveModel",
+    name = "ElastoPlasticModel",
     srcs = [
-        "ConstitutiveModel.cc",
+        "ElastoPlasticModel.cc",
     ],
     hdrs = [
-        "ConstitutiveModel.h",
+        "ElastoPlasticModel.h",
     ],
     deps = [
         "//common:essential",
@@ -68,45 +68,31 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "CorotatedModel",
+    name = "CorotatedElasticModel",
     srcs = [
-        "CorotatedModel.cc",
+        "CorotatedElasticModel.cc",
     ],
     hdrs = [
-        "CorotatedModel.h",
+        "CorotatedElasticModel.h",
     ],
     deps = [
-        ":ConstitutiveModel",
+        ":ElastoPlasticModel",
         "//common:essential",
+        "//common:unused",
         "//multibody/fem:matrix_utilities",
     ],
 )
 
 drake_cc_library(
-    name = "VonMisesPlasticityModel",
+    name = "StvkHenckyWithVonMisesModel",
     srcs = [
-        "VonMisesPlasticityModel.cc",
+        "StvkHenckyWithVonMisesModel.cc",
     ],
     hdrs = [
-        "VonMisesPlasticityModel.h",
+        "StvkHenckyWithVonMisesModel.h",
     ],
     deps = [
-        ":ConstitutiveModel",
-        "//common:essential",
-        "//multibody/fem:matrix_utilities",
-    ],
-)
-
-drake_cc_library(
-    name = "SaintVenantKirchhoffWithHenckyModel",
-    srcs = [
-        "SaintVenantKirchhoffWithHenckyModel.cc",
-    ],
-    hdrs = [
-        "SaintVenantKirchhoffWithHenckyModel.h",
-    ],
-    deps = [
-        ":ConstitutiveModel",
+        ":ElastoPlasticModel",
         "//common:essential",
         "//multibody/fem:matrix_utilities",
     ],
@@ -121,10 +107,9 @@ drake_cc_library(
         "Particles.h",
     ],
     deps = [
-        ":ConstitutiveModel",
+        ":ElastoPlasticModel",
         ":MathUtils",
         ":TotalMassAndMomentum",
-        ":VonMisesPlasticityModel",
         "//common:essential",
     ],
 )
@@ -275,13 +260,12 @@ drake_cc_library(
     ],
     deps = [
         ":AnalyticLevelSet",
-        ":ConstitutiveModel",
+        ":ElastoPlasticModel",
         ":GravitationalForce",
         ":Grid",
         ":MPMParameters",
         ":MPMTransfer",
         ":Particles",
-        ":VonMisesPlasticityModel",
         ":particles_to_bgeo",
         ":poisson_disk_sampling",
         "//common:essential",
@@ -319,10 +303,10 @@ drake_cc_googletest(
 drake_cc_googletest(
     name = "Particles_test",
     deps = [
-        ":CorotatedModel",
+        ":CorotatedElasticModel",
         ":Particles",
+        ":StvkHenckyWithVonMisesModel",
         ":TotalMassAndMomentum",
-        ":VonMisesPlasticityModel",
         "//common/test_utilities:eigen_matrix_compare",
         "//math:geometric_transform",
     ],
@@ -341,24 +325,14 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
-    name = "ConstitutiveModel_test",
+    name = "ElastoPlasticModel_test",
     deps = [
-        ":ConstitutiveModel",
-        ":CorotatedModel",
-        ":SaintVenantKirchhoffWithHenckyModel",
+        ":CorotatedElasticModel",
+        ":ElastoPlasticModel",
+        ":StvkHenckyWithVonMisesModel",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
         "//math:geometric_transform",
-    ],
-)
-
-drake_cc_googletest(
-    name = "VonMisesPlasticityModel_test",
-    deps = [
-        ":SaintVenantKirchhoffWithHenckyModel",
-        ":VonMisesPlasticityModel",
-        "//common:essential",
-        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
@@ -395,12 +369,11 @@ drake_cc_googletest(
     name = "MPMTransfer_test",
     deps = [
         ":BSpline",
-        ":CorotatedModel",
+        ":CorotatedElasticModel",
         ":Grid",
         ":MPMTransfer",
         ":Particles",
         ":TotalMassAndMomentum",
-        ":VonMisesPlasticityModel",
         "//common:essential",
         "//common/test_utilities:eigen_matrix_compare",
     ],

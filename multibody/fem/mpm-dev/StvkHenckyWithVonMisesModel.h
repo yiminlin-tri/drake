@@ -4,12 +4,17 @@
 
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/fem/matrix_utilities.h"
+#include "drake/multibody/fem/mpm-dev/ElastoPlasticModel.h"
 
 namespace drake {
 namespace multibody {
 namespace mpm {
 
-// A implementation of von Mises plasticity model, described in Bonet&Wood (BW)
+// A implementation of Saint-Venant Kirchhoff model, but replace the left
+// Cauchy Green strain with the Hencky strain
+// https://dl.acm.org/doi/abs/10.1145/2897824.2925906
+// The formula of Kirchhoff stress can be found in Section 6.3,
+// and von Mises plasticity model, described in Bonet&Wood (BW)
 // https://www.klancek.si/sites/default/files/datoteke/files/
 // bonet-woodnonlinearcontinuummechanics2ndedition.pdf
 // The return mapping algorithm can be found in Box 7.1.
@@ -48,24 +53,36 @@ namespace mpm {
 //                 k: f(τⁿ⁺¹) = 0 on the yield surface
 // Solving for k gives us the prjected states. The above derivation leads to the
 // same algorithm described in (BW Box 7.1), without hardening.
-class VonMisesPlasticityModel {
+class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
  public:
     // tau_c: maximum allowed tensile strength
-    explicit VonMisesPlasticityModel(double tau_c);
+    explicit StvkHenckyWithVonMisesModel(double tau_c);
+    StvkHenckyWithVonMisesModel(double E, double nu, double tau_c);
 
-    std::unique_ptr<VonMisesPlasticityModel> Clone() const {
-        return std::make_unique<VonMisesPlasticityModel>(*this);
+    virtual std::unique_ptr<ElastoPlasticModel> Clone() const {
+        return std::make_unique<StvkHenckyWithVonMisesModel>(*this);
     }
 
-    // Update the elastic and plastic deformation gradient according to the
-    // Von Mises plasticity model. mu is the Lame coefficient of the input
-    // Hencky constitutive model
-    void UpdateDeformationGradients(double mu,
-                                Matrix3<double>* elastic_deformation_gradient);
+    void CalcFirstPiolaKirchhoffStress(
+            const Matrix3<double>& F, Matrix3<double>* P) const final;
+
+    void CalcKirchhoffStress(const Matrix3<double>& F, Matrix3<double>* tau)
+                                                                    const final;
+    void CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
+                        const Matrix3<double>& F, Matrix3<double>* P,
+                        Matrix3<double>* tau) const final;
+
+    void UpdateDeformationGradient(
+                                Matrix3<double>* elastic_deformation_gradient)
+                                                                    const final;
+
+    void CalcKirchhoffStressAndUpdateDeformationGradient(
+                    Matrix3<double>* tau,
+                    Matrix3<double>* elastic_deformation_gradient) const final;
 
  private:
     double tau_c_;
-};  // class VonMisesPlasticityModel
+};  // class StvkHenckyWithVonMisesModel
 
 }  // namespace mpm
 }  // namespace multibody
