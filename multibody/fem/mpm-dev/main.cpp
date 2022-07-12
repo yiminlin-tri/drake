@@ -92,9 +92,10 @@ int DoMain() {
 
     double E = 8e4;
     double nu = 0.49;
-    double tau_c = 0.1*E;
+    double yield_stress = 0.1*E;
     std::unique_ptr<StvkHenckyWithVonMisesModel> elastoplastic_model
-            = std::make_unique<StvkHenckyWithVonMisesModel>(E, nu, tau_c);
+            = std::make_unique<StvkHenckyWithVonMisesModel>(E, nu,
+                                                            yield_stress);
     MPMDriver::MaterialParameters m_param_sphere{
                                                 std::move(elastoplastic_model),
                                                 1200,

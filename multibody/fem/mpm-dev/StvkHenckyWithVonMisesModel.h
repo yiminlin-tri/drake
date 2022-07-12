@@ -19,7 +19,7 @@ namespace mpm {
 // bonet-woodnonlinearcontinuummechanics2ndedition.pdf
 // The return mapping algorithm can be found in Box 7.1.
 // Assume the constitutive model we are using is the Saint-Venant Kirchhoff
-// constitutive model with Hencky strain. A Von Mises plasticity model composed
+// constitutive model with Hencky strain. A plasticity model composed
 // of a yield surface {τ: f(τ) <= 0}, an implicit surface describing the
 // elastic/plastic limit. And an associate flow rule, an ODE relating the
 // plastic deformation rate and stress, l_p = dγ/dt df(τ)/dτ, where l_p is the
@@ -30,17 +30,17 @@ namespace mpm {
 // The associate flow rule for Von Mises model can be written as (BW 7.45a,b)
 //      ln(Σⁿ⁺¹) - ln(Σ) = -Δγ νⁿ⁺¹
 // We first outline the general procedure of applying plasticity
-// 1. Update the elastic stress Fᴱ in the G2P update, we call it the trial
-//    stress
-// 2. Project the elastic stress to the yield surface, proj(Fᴱ)
-// 3. Update the plastic deformation gradient by the identity
-//    F = proj(Fᴱ)proj(Fᴾ) = FᴱFᴾ, or proj(Fᴾ) = proj(Fᴱ)⁻¹FᴱFᴾ
-// Given the SVD of elastic trial stress Fᴱ = U Σ Vᵀ,
-// the Hencky strain     ε = 1/2ln(Fᴱ Fᴱ^T) = U ln(Σ) Uᵀ
-// the energy density    ψ = U Σ⁻¹(μln(Σ)²+1/2*λtr(ln(Σ))²I) Vᵀ
-// the Kirchhoff stress  τ = U (2μln(Σ)+λtr(ln(Σ))I) Uᵀ
-// the deviatoric component of Kirchhoff stress is
-//                  dev(τ) = τ - 1/3*tr(τ)I = U (2μln(Σ)+2μ/3tr(ln(Σ))I) Uᵀ
+// 1. Update the elastic deformation gradient Fᴱ in the G2P update, compute the
+//    corresponding Kirchhoff stress τ, and we call it the trial stress.
+// 2. Project the trial stress to the yield surface, proj(τ)
+// 3. Recover the projected deformation gradient proj(Fᴱ) by proj(τ) through the
+//    constitutive relation
+// Given the SVD of elastic deformation gradient Fᴱ = U Σ Vᵀ,
+// the Hencky strain             ε = 1/2ln(Fᴱ Fᴱ^T) = U ln(Σ) Uᵀ
+// the energy density            ψ = U Σ⁻¹(μln(Σ)²+1/2*λtr(ln(Σ))²I) Vᵀ
+// the (trial) Kirchhoff stress  τ = U (2μln(Σ)+λtr(ln(Σ))I) Uᵀ
+// the deviatoric component of trial stress is
+//                  dev(τ) = τ - 1/3*tr(τ)I = U (2μln(Σ)+2/3*μ tr(ln(Σ))I) Uᵀ
 // The we can rewrite the associate flow rule with (BW 7.53)
 //       dev(τⁿ⁺¹) - dev(τ) = -2μ Δγ νⁿ⁺¹
 // τⁿ⁺¹ denotes the projection of the trial stress: proj(τ)
@@ -52,12 +52,16 @@ namespace mpm {
 //      dev(τⁿ⁺¹) = k dev(τ)
 //                 k: f(τⁿ⁺¹) = 0 on the yield surface
 // Solving for k gives us the prjected states. The above derivation leads to the
-// same algorithm described in (BW Box 7.1), without hardening.
+// same algorithm described in (BW Box 7.1), without hardening. We assume
+// no hardening in the plastic model, so the yield surface (function) doesn't
+// change with respect to time.
 class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
  public:
-    // tau_c: maximum allowed tensile strength
-    explicit StvkHenckyWithVonMisesModel(double tau_c);
-    StvkHenckyWithVonMisesModel(double E, double nu, double tau_c);
+    // Yield stress is the minimum stress at which the material undergoes
+    // plastic deformation
+    // @pre yield_stress >= 0
+    explicit StvkHenckyWithVonMisesModel(double yield_stress);
+    StvkHenckyWithVonMisesModel(double E, double nu, double yield_stress);
 
     virtual std::unique_ptr<ElastoPlasticModel> Clone() const {
         return std::make_unique<StvkHenckyWithVonMisesModel>(*this);
@@ -98,7 +102,7 @@ class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
                                                 double tr_eps,
                                                 Matrix3<double>* FE) const;
 
-    double tau_c_;
+    double yield_stress_;
 };  // class StvkHenckyWithVonMisesModel
 
 }  // namespace mpm

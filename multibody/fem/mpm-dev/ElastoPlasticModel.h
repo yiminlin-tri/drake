@@ -49,8 +49,8 @@ class ElastoPlasticModel {
     virtual ~ElastoPlasticModel() = default;
 
  protected:
-    double mu_;                         // Parameters in defining
-    double lambda_;                     // the energy density function
+    double mu_;
+    double lambda_;
 };  // class ElastoPlasticModel
 
 }  // namespace mpm
