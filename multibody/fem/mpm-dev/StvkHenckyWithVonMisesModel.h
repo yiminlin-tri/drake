@@ -81,6 +81,23 @@ class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
                     Matrix3<double>* elastic_deformation_gradient) const final;
 
  private:
+    // Helper function, calculate Kirchhoff stress given the left singular
+    // vectors and the singular values and the trace of the trial Hencky strain
+    void CalcKirchhoffStress(const Matrix3<double>& U,
+                             const Vector3<double>& eps_hat,
+                             double tr_eps, Matrix3<double>* tau) const;
+
+    // Given the left and right singular vectors of the deformation gradient,
+    // the singular values and the trace of the trial Hencky strain ε: σ(ε):
+    // project the elastic deformation gradient to the yield surface. Update
+    // the elastic deformation gradient to be its projection
+    void ProjectDeformationGradientToYieldSurface(
+                                                const Matrix3<double>& U,
+                                                const Matrix3<double>& V,
+                                                const Vector3<double>& eps_hat,
+                                                double tr_eps,
+                                                Matrix3<double>* FE) const;
+
     double tau_c_;
 };  // class StvkHenckyWithVonMisesModel
 
