@@ -20,37 +20,31 @@ class ElastoPlasticModel {
 
     virtual std::unique_ptr<ElastoPlasticModel> Clone() const = 0;
 
-    // Return the first Lamé coefficient
-    double get_lambda() const;
-
-    // Return the second Lamé coefficient
-    double get_mu() const;
-
-    // First Piola Kirchhoff stress density: P = dpsi/dF
-    virtual void CalcFirstPiolaKirchhoffStress(
-            const Matrix3<double>& F, Matrix3<double>* P) const = 0;
-
-    // Kirchhoff stress density: tau = P F^T = dpsi/dF F^T
-    virtual void CalcKirchhoffStress(const Matrix3<double>& F,
+    // Kirchhoff stress density: tau = P Fᴱ^T = dψ/dFᴱ Fᴱ^T, where ψ denotes the
+    // energy density
+    virtual void CalcKirchhoffStress(const Matrix3<double>& FE,
                                      Matrix3<double>* tau) const = 0;
-    virtual void CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
-                        const Matrix3<double>& F, Matrix3<double>* P,
-                        Matrix3<double>* tau) const = 0;
 
     // Update the elastic deformation gradient according to the plasticity model
-    // by projecting the trial elastic stress to the yield surface
+    // by projecting the trial elastic stress to the yield surface. The
+    // projection is according to the associative plastic flow rule. If the
+    // model is purely plastic, the elastic deformation gradient is unchanged.
     virtual void UpdateDeformationGradient(
-                    Matrix3<double>* elastic_deformation_gradient) const = 0;
+               Matrix3<double>* trial_elastic_deformation_gradient) const = 0;
 
-    virtual void CalcKirchhoffStressAndUpdateDeformationGradient(
+    // Update the elastic deformation gradient according to the plasticity model
+    // by projecting the trial elastic stress to the yield surface. Then
+    // calculate the projected Kirchhoff stress by the projected deformation
+    // gradient
+    virtual void UpdateDeformationGradientAndCalcKirchhoffStress(
                     Matrix3<double>* tau,
                     Matrix3<double>* elastic_deformation_gradient) const = 0;
 
     virtual ~ElastoPlasticModel() = default;
 
  protected:
-    double mu_;
-    double lambda_;
+    double lambda_;                       // The first Lamé coefficient
+    double mu_;                           // The second Lamé coefficient
 };  // class ElastoPlasticModel
 
 }  // namespace mpm

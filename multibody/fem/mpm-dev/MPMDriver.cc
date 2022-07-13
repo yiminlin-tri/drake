@@ -150,8 +150,8 @@ void MPMDriver::checkCFL(double dt) {
 }
 
 void MPMDriver::AdvanceOneTimeStep(double dt) {
-    // Update stresses and apply plasticity on particles
-    particles_.UpdateKirchhoffStressesAndApplyPlasticity();
+    // Apply plasticity and update Kirchhoff stress on particles
+    particles_.ApplyPlasticityAndUpdateKirchhoffStresses();
 
     // Set up the transfer routines (Preallocations, sort the particles)
     mpm_transfer_.SetUpTransfer(grid_, &particles_);

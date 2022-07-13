@@ -16,91 +16,32 @@ StvkHenckyWithVonMisesModel::StvkHenckyWithVonMisesModel(double E, double nu,
     DRAKE_ASSERT(tau_c >= 0);
 }
 
-void StvkHenckyWithVonMisesModel::CalcFirstPiolaKirchhoffStress(
-        const Matrix3<double>& F, Matrix3<double>* P) const {
-    Eigen::JacobiSVD<Matrix3<double>>
-                            svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    const Matrix3<double>& U  = svd.matrixU();
-    const Matrix3<double>& V  = svd.matrixV();
-    Vector3<double> sigma     = svd.singularValues();
-    // logs of singular values
-    Vector3<double> log_sigma = sigma.array().log();
-    // sum of logs of singular values of F: ∑ ln(σᵢ)
-    double sum_log_sigma      = log_sigma.sum();
-    // Overwrite the the vector sigma [σᵢ] with the singular values of the first
-    // Piola Kirchhoff stress:
-    // Σᵢ = 1/σᵢ ⋅ [2μ log(σᵢ) + λ ∑ᵢ log(σᵢ)]
-    for (int d = 0; d < 3; ++d) {
-        sigma(d) = (2*mu_*log_sigma(d) + lambda_*sum_log_sigma)/sigma(d);
-    }
-    // The first Piola Kirchhoff stress can be then written as
-    // P = U Σᵢ Vᵀ, where U, V are left and right singular vectors of the
-    //             deformation gradient F
-    *P = U * sigma.asDiagonal() * V.transpose();
-}
-
-void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(const Matrix3<double>& F,
+void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(const Matrix3<double>& FE,
                                          Matrix3<double>* tau) const {
-    Eigen::JacobiSVD<Matrix3<double>>
-                            svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    const Matrix3<double>& U = svd.matrixU();
-    Vector3<double> sigma    = svd.singularValues();
-    // Since the Hencky strain has form ε = 1/2ln(Fᴱ Fᴱ^T)
-    // the Hencky strain in the principal frame is ln(Σ), where Fᴱ = U Σ Vᵀ
-    Vector3<double> eps_hat = sigma.array().log();
-    // trace of the trial Hencky strain tr(ε)
-    double tr_eps           = eps_hat.sum();
-
-    CalcKirchhoffStress(U, eps_hat, tr_eps, tau);
-}
-
-void StvkHenckyWithVonMisesModel::
-                                CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
-        const Matrix3<double>& F, Matrix3<double>* P,
-        Matrix3<double>* tau) const {
-    Eigen::JacobiSVD<Matrix3<double>>
-                            svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    const Matrix3<double>& U = svd.matrixU();
-    const Matrix3<double>& V = svd.matrixV();
-    Vector3<double> sigma    = svd.singularValues();
-    // logs of singular values
-    Vector3<double> log_sigma = sigma.array().log();
-    // sum of logs of singular values of F: ∑ ln(σᵢ)
-    double sum_log_sigma      = log_sigma.sum();
-    // Overwrite the the vector sigma [σᵢ] with the singular values of the first
-    // Piola Kirchhoff stress:
-    // Σᵢ = 1/σᵢ ⋅ [2μ log(σᵢ) + λ ∑ᵢ log(σᵢ)]
-    for (int d = 0; d < 3; ++d) {
-        sigma(d) = (2*mu_*log_sigma(d) + lambda_*sum_log_sigma)/sigma(d);
-    }
-    // The first Piola Kirchhoff stress can be then written as
-    // P = U Σᵢ Vᵀ, where U, V are left and right singular vectors of the
-    //             deformation gradient F, and τ = PFᵀ
-    *P   = U * sigma.asDiagonal() * V.transpose();
-    *tau = (*P)*F.transpose();
+    CalcKirchhoffStress(CalcStrainData(FE), tau);
 }
 
 void StvkHenckyWithVonMisesModel::UpdateDeformationGradient(
-                                                    Matrix3<double>* FE) const {
-    Eigen::JacobiSVD<Matrix3<double>>
-                            svd(*FE, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    const Matrix3<double>& U = svd.matrixU();
-    const Matrix3<double>& V = svd.matrixV();
-    Vector3<double> sigma    = svd.singularValues();
-    // Since the Hencky strain has form ε = 1/2ln(Fᴱ Fᴱ^T)
-    // the Hencky strain in the principal frame is ln(Σ), where Fᴱ = U Σ Vᵀ
-    Vector3<double> eps_hat = sigma.array().log();
-    // trace of the trial Hencky strain tr(ε)
-    double tr_eps           = eps_hat.sum();
-
-    ProjectDeformationGradientToYieldSurface(U, V, eps_hat, tr_eps, FE);
+                                            Matrix3<double>* FE_trial) const {
+    StrainData trial_strain_data = CalcStrainData(*FE_trial);
+    ProjectDeformationGradientToYieldSurface(&trial_strain_data, FE_trial);
 }
 
 void StvkHenckyWithVonMisesModel::
-                                CalcKirchhoffStressAndUpdateDeformationGradient(
-                        Matrix3<double>* tau, Matrix3<double>* FE) const {
+                                UpdateDeformationGradientAndCalcKirchhoffStress(
+                        Matrix3<double>* tau, Matrix3<double>* FE_trial) const {
     Eigen::JacobiSVD<Matrix3<double>>
-                            svd(*FE, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                    svd(*FE_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    StrainData trial_strain_data = CalcStrainData(*FE_trial);
+    ProjectDeformationGradientToYieldSurface(&trial_strain_data, FE_trial);
+    CalcKirchhoffStress(trial_strain_data, tau);
+}
+
+StvkHenckyWithVonMisesModel::StrainData
+        StvkHenckyWithVonMisesModel::CalcStrainData(const Matrix3<double>& FE)
+                                                                        const {
+    Eigen::JacobiSVD<Matrix3<double>>
+                    svd(FE, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const Matrix3<double>& U = svd.matrixU();
     const Matrix3<double>& V = svd.matrixV();
     Vector3<double> sigma    = svd.singularValues();
@@ -110,38 +51,38 @@ void StvkHenckyWithVonMisesModel::
     // trace of the trial Hencky strain tr(ε)
     double tr_eps           = eps_hat.sum();
 
-    CalcKirchhoffStress(U, eps_hat, tr_eps, tau);
-    ProjectDeformationGradientToYieldSurface(U, V, eps_hat, tr_eps, FE);
+    return {U, V, eps_hat, tr_eps};
 }
 
 void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(
-                                const Matrix3<double>& U,
-                                const Vector3<double>& eps_hat,
-                                double tr_eps, Matrix3<double>* tau) const {
+            const StvkHenckyWithVonMisesModel::StrainData& trial_strain_data,
+                                                Matrix3<double>* tau) const {
     // Calculate the singular values of Kirchhoff stress
     // Σᵢ = 2μ log(σᵢ) + λ ∑ᵢ log(σᵢ)
     Vector3<double> sigma_tau;
     for (int d = 0; d < 3; ++d) {
-        sigma_tau(d)  = 2*mu_*eps_hat(d) + lambda_*tr_eps;
+        sigma_tau(d)  = 2*mu_*trial_strain_data.eps_hat(d)
+                      + lambda_*trial_strain_data.tr_eps;
     }
     // The Kirchhoff stress can be then written as
-    // τ = U Σᵢ Uᵀ, where U are left singular vectors of the deformation
-    //             gradient F
+    // τ = U Σᵢ Uᵀ, where U are left singular vectors of the elastic deformation
+    //             gradient FE
+    const Matrix3<double>& U = trial_strain_data.U;
     *tau = U * sigma_tau.asDiagonal() * U.transpose();
 }
 
 void StvkHenckyWithVonMisesModel::
-        ProjectDeformationGradientToYieldSurface(const Matrix3<double>& U,
-                                                 const Matrix3<double>& V,
-                                                 const Vector3<double>& eps_hat,
-                                                 double tr_eps,
-                                                 Matrix3<double>* FE) const {
+        ProjectDeformationGradientToYieldSurface(
+                StvkHenckyWithVonMisesModel::StrainData* trial_strain_data,
+                Matrix3<double>* FE_trial) const {
     // Vector of trace of the trial stress
-    Vector3<double> tr_eps_vec = tr_eps*Vector3<double>::Ones();
+    Vector3<double> tr_eps_vec =
+                            trial_strain_data->tr_eps*Vector3<double>::Ones();
     // The deviatoric component of Kirchhoff stress in the principal frame is:
     // dev(τ) = τ - pJI = τ - 1/3tr(τ)I
     // In the principal frame: dev(τ) = 2μlog(σᵢ) - 2μ/3 ∑ᵢ log(σᵢ)
-    Vector3<double> tau_dev_hat = 2*mu_*(eps_hat-1.0/3.0*tr_eps_vec);
+    Vector3<double> tau_dev_hat =
+                        2*mu_*(trial_strain_data->eps_hat-1.0/3.0*tr_eps_vec);
     double tau_dev_hat_norm = tau_dev_hat.norm();
 
     // If the trial stress τ is in the yield surface f(τ) <= 0, plasticity is
@@ -168,13 +109,18 @@ void StvkHenckyWithVonMisesModel::
         // Since f(τⁿ⁺¹) = ‖ τⁿ⁺¹ ‖ - τ_c = 0, i.e. τⁿ⁺¹ is on the yield surface
         // Δγ = f(τ)/(3μ)
         // By the definition of Hencky strain,
-        // F_proj = exp(ε_proj) in the principal frame
         Vector3<double> nu = sqrt_32*tau_dev_hat/tau_dev_hat_norm;
         double delta_gamma = f_tau/(3.0*mu_);
-        Vector3<double> proj_F_hat = (eps_hat - delta_gamma*nu).array().exp();
+        // Update the singular values of Hencky strain ε
+        trial_strain_data->eps_hat =
+                                trial_strain_data->eps_hat - delta_gamma*nu;
+        // F_proj = exp(ε_proj) in the principal frame
+        Vector3<double> proj_F_hat = (trial_strain_data->eps_hat).array().exp();
         // New elastic deformation gradient projected to the yield surface
         // proj(Fᴱ)
-        *FE = U*proj_F_hat.asDiagonal()*V.transpose();
+        *FE_trial = trial_strain_data->U
+                   *proj_F_hat.asDiagonal()
+                   *trial_strain_data->V.transpose();
     }
 }
 

@@ -432,7 +432,7 @@ GTEST_TEST(ParticlesClassTest, TestAdvectAndUpdateKirchhoffStress) {
                                 Vector3<double>(0.3, 1.4, 5.4), kEps));
 
     // Update Kirchhoff stress
-    particles.UpdateKirchhoffStressesAndApplyPlasticity();
+    particles.ApplyPlasticityAndUpdateKirchhoffStresses();
     EXPECT_TRUE(CompareMatrices(particles.get_kirchhoff_stress(0),
                                 tau_exact, TOLERANCE));
     EXPECT_TRUE(CompareMatrices(particles.get_elastic_deformation_gradient(0),

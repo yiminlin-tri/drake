@@ -24,17 +24,19 @@ namespace mpm {
 // elastic/plastic limit. And an associate flow rule, an ODE relating the
 // plastic deformation rate and stress, l_p = dγ/dt df(τ)/dτ, where l_p is the
 // plastic rate of deformation and dγ/dt is called the plastic multiplier.
+// We first outline the general procedure of applying plasticity
+// 1. Update the elastic deformation gradient Fᴱ in the G2P update, compute the
+//    corresponding Kirchhoff stress τ, and we call it the trial stress.
+// 2. Project the trial stress to the yield surface, get proj(τ), if the trial
+//    stress is outside the yield surface
+// 3. Recover the projected deformation gradient proj(Fᴱ) by proj(τ) by
+//    inverting the constitutive relation
+//
 // In particular, the Von Mises yield function is (BW 7.20a,b)
 //      f(τ) = √(3/2) ‖ dev(τ) ‖_F - τ_c,
 //                                τ_c is the maximum allowed tensile strength
 // The associate flow rule for Von Mises model can be written as (BW 7.45a,b)
 //      ln(Σⁿ⁺¹) - ln(Σ) = -Δγ νⁿ⁺¹
-// We first outline the general procedure of applying plasticity
-// 1. Update the elastic deformation gradient Fᴱ in the G2P update, compute the
-//    corresponding Kirchhoff stress τ, and we call it the trial stress.
-// 2. Project the trial stress to the yield surface, proj(τ)
-// 3. Recover the projected deformation gradient proj(Fᴱ) by proj(τ) through the
-//    constitutive relation
 // Given the SVD of elastic deformation gradient Fᴱ = U Σ Vᵀ,
 // the Hencky strain             ε = 1/2ln(Fᴱ Fᴱ^T) = U ln(Σ) Uᵀ
 // the energy density            ψ = U Σ⁻¹(μln(Σ)²+1/2*λtr(ln(Σ))²I) Vᵀ
@@ -54,7 +56,8 @@ namespace mpm {
 // Solving for k gives us the prjected states. The above derivation leads to the
 // same algorithm described in (BW Box 7.1), without hardening. We assume
 // no hardening in the plastic model, so the yield surface (function) doesn't
-// change with respect to time.
+// change with respect to time. This is equivalent to the formulation in
+// (BW Box 7.1) with H = 0.
 class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
  public:
     // Yield stress is the minimum stress at which the material undergoes
@@ -67,40 +70,46 @@ class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
         return std::make_unique<StvkHenckyWithVonMisesModel>(*this);
     }
 
-    void CalcFirstPiolaKirchhoffStress(
-            const Matrix3<double>& F, Matrix3<double>* P) const final;
-
-    void CalcKirchhoffStress(const Matrix3<double>& F, Matrix3<double>* tau)
+    void CalcKirchhoffStress(const Matrix3<double>& FE, Matrix3<double>* tau)
                                                                     const final;
-    void CalcFirstPiolaKirchhoffStressAndKirchhoffStress(
-                        const Matrix3<double>& F, Matrix3<double>* P,
-                        Matrix3<double>* tau) const final;
 
     void UpdateDeformationGradient(
-                                Matrix3<double>* elastic_deformation_gradient)
+                        Matrix3<double>* trial_elastic_deformation_gradient)
                                                                     const final;
 
-    void CalcKirchhoffStressAndUpdateDeformationGradient(
-                    Matrix3<double>* tau,
-                    Matrix3<double>* elastic_deformation_gradient) const final;
+    void UpdateDeformationGradientAndCalcKirchhoffStress(
+            Matrix3<double>* tau,
+            Matrix3<double>* trial_elastic_deformation_gradient) const final;
 
  private:
+    // Given the Hencky strain ε, assume he SVD of it is U Σ Vᵀ,
+    // We store U in `U`, V in `V`, eps_hat in `Σ`, and tr(Σ) in `tr_eps`
+    struct StrainData {
+        Matrix3<double> U;
+        Matrix3<double> V;
+        Vector3<double> eps_hat;
+        double tr_eps;
+    };
+
+    // Calculate the strain data using the elastic deformation gradient `FE`
+    StrainData CalcStrainData(const Matrix3<double>& FE) const;
+
     // Helper function, calculate Kirchhoff stress given the left singular
     // vectors and the singular values and the trace of the trial Hencky strain
-    void CalcKirchhoffStress(const Matrix3<double>& U,
-                             const Vector3<double>& eps_hat,
-                             double tr_eps, Matrix3<double>* tau) const;
+    void CalcKirchhoffStress(const StrainData& trial_strain_data,
+                             Matrix3<double>* tau) const;
 
-    // Given the left and right singular vectors of the deformation gradient,
-    // the singular values and the trace of the trial Hencky strain ε: σ(ε):
-    // project the elastic deformation gradient to the yield surface. Update
-    // the elastic deformation gradient to be its projection
+    // Given the left and right singular vectors of the deformation gradient (U
+    // and V), the singular values and the trace of the trial Hencky strain
+    // (eps_hat and tr_eps), (stored in trial_strain_data) if the corresponding
+    // stress is outside the yield surface, project it back to the yield surface
+    // using associative flow rule. Then, invert the constitutive relation and
+    // write the elastic deformation gradient corresponding to the projected
+    // stress to `FE`, and write the projected Hencky strain in the principal
+    // frame to `trial_strain_data->eps_hat`.
     void ProjectDeformationGradientToYieldSurface(
-                                                const Matrix3<double>& U,
-                                                const Matrix3<double>& V,
-                                                const Vector3<double>& eps_hat,
-                                                double tr_eps,
-                                                Matrix3<double>* FE) const;
+                                            StrainData* trial_strain_data,
+                                            Matrix3<double>* FE_trial) const;
 
     double yield_stress_;
 };  // class StvkHenckyWithVonMisesModel

@@ -90,11 +90,11 @@ class Particles {
                      const Matrix3<double>& B_matrix,
                      std::unique_ptr<ElastoPlasticModel> elastoplastic_model);
 
-    // Assume the elastic deformation gradient is updated in the G2P transfer,
-    // update Kirchhoff stress tau with the constitutive relation, and update
-    // the elastic deformation gradients by projecting the elastic deformation
-    // gradient to the yield surface
-    void UpdateKirchhoffStressesAndApplyPlasticity();
+    // Assume the elastic deformation gradients are in their trial state
+    // (Fₑ = Fₑᵗʳⁱᵃˡ), update the elastic deformation gradients by projecting
+    // the elastic deformation gradient to the yield surface, and update
+    // Kirchhoff stress with the constitutive relation.
+    void ApplyPlasticityAndUpdateKirchhoffStresses();
 
     // Particle advection using the updated velocities, assuming they are
     // already updated in the member variables.

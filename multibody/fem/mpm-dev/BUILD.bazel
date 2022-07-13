@@ -78,7 +78,6 @@ drake_cc_library(
     deps = [
         ":ElastoPlasticModel",
         "//common:essential",
-        "//common:unused",
         "//multibody/fem:matrix_utilities",
     ],
 )

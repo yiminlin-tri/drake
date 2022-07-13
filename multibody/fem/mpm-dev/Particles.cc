@@ -204,10 +204,10 @@ void Particles::AddParticle(const Vector3<double>& position,
     num_particles_++;
 }
 
-void Particles::UpdateKirchhoffStressesAndApplyPlasticity() {
+void Particles::ApplyPlasticityAndUpdateKirchhoffStresses() {
     for (int p = 0; p < num_particles_; ++p) {
         elastoplastic_models_[p]->
-                            CalcKirchhoffStressAndUpdateDeformationGradient(
+                            UpdateDeformationGradientAndCalcKirchhoffStress(
                                             &kirchhoff_stresses_[p],
                                             &elastic_deformation_gradients_[p]);
     }
