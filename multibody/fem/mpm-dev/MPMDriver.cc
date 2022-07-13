@@ -205,7 +205,7 @@ void MPMDriver::AdvanceOneTimeStep(double dt) {
     std::chrono::time_point<Clock> start_time;
     Duration::rep elapsed_time;
 
-    // Apply plasticity and update Kirchhoff on particles
+    // Apply plasticity and update Kirchhoff stress on particles
     start_time = Clock::now();
     particles_.ApplyPlasticityAndUpdateKirchhoffStresses();
     elapsed_time = std::chrono::duration_cast<Duration>(Clock::now()
