@@ -225,10 +225,10 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
     // Apply plasticity and calculate the new Kirchhoff Stress
     hencky_model1->UpdateDeformationGradientAndCalcKirchhoffStress(&tau1, &FE);
     tau_dev1 = tau1 - 1.0/3.0*tau1.trace()*Matrix3<double>::Identity();
-    in_yield_surface1 = (std::sqrt(3.0/2.0)*tau_dev1.norm()
-                      <= tau_c1 + TOLERANCE);
+    bool on_yield_surface1 = ((std::sqrt(3.0/2.0)*tau_dev1.norm() - tau_c1)
+                            < TOLERANCE);
 
-    EXPECT_TRUE(in_yield_surface1);
+    EXPECT_TRUE(on_yield_surface1);
     EXPECT_FALSE(CompareMatrices(FEprev, FE, TOLERANCE));
 }
 
