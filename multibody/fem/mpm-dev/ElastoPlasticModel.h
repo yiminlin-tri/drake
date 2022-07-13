@@ -20,22 +20,12 @@ class ElastoPlasticModel {
 
     virtual std::unique_ptr<ElastoPlasticModel> Clone() const = 0;
 
-    // Kirchhoff stress density: tau = P Fᴱ^T = dψ/dFᴱ Fᴱ^T, where ψ denotes the
-    // energy density
-    virtual void CalcKirchhoffStress(const Matrix3<double>& FE,
-                                     Matrix3<double>* tau) const = 0;
-
-    // Update the elastic deformation gradient according to the plasticity model
-    // by projecting the trial elastic stress to the yield surface. The
-    // projection is according to the associative plastic flow rule. If the
-    // model is purely plastic, the elastic deformation gradient is unchanged.
-    virtual void UpdateDeformationGradient(
-               Matrix3<double>* trial_elastic_deformation_gradient) const = 0;
-
     // Update the elastic deformation gradient according to the plasticity model
     // by projecting the trial elastic stress to the yield surface. Then
     // calculate the projected Kirchhoff stress by the projected deformation
-    // gradient
+    // gradient. Kirchhoff stress density is defined as tau = P Fᴱ^T
+    //                                                      = dψ/dFᴱ Fᴱ^T,
+    // where ψ denotes the energy density
     virtual void UpdateDeformationGradientAndCalcKirchhoffStress(
                     Matrix3<double>* tau,
                     Matrix3<double>* elastic_deformation_gradient) const = 0;

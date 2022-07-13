@@ -21,11 +21,6 @@ class CorotatedElasticModel : public ElastoPlasticModel {
         return std::make_unique<CorotatedElasticModel>(*this);
     }
 
-    void CalcKirchhoffStress(const Matrix3<double>& FE, Matrix3<double>* tau)
-                                                                    const final;
-
-    void UpdateDeformationGradient(Matrix3<double>*) const final {}
-
     void UpdateDeformationGradientAndCalcKirchhoffStress(
                     Matrix3<double>* tau,
                     Matrix3<double>* elastic_deformation_gradient) const final;

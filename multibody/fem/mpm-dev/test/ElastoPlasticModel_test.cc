@@ -36,39 +36,37 @@ GTEST_TEST(CorotatedModelTest, CorotatedModelAllTest) {
              18724, -84,  40,
             -84,  18764, -44,
              40, -44,  18680).finished();
-    const Matrix3<double> F = R * S;
+    Matrix3<double> F = R * S;
     Matrix3<double> F2;
     Matrix3<double> tau;
 
     // First test on E = 2.0, nu = 0.0
     CorotatedElasticModel corotated_model = CorotatedElasticModel(2.0, 0.0);
-    corotated_model.CalcKirchhoffStress(F, &tau);
+    F2 = F;
+    corotated_model.UpdateDeformationGradientAndCalcKirchhoffStress(&tau, &F);
     EXPECT_TRUE(CompareMatrices(tau, tau_exact1, TOLERANCE));
     // Sanity check: no plasticity shall be applied
-    F2 = F;
-    corotated_model.UpdateDeformationGradient(&F2);
     EXPECT_TRUE(CompareMatrices(F, F2, TOLERANCE));
 
     // Next test on E = 5.0, nu = 0.25
     corotated_model = CorotatedElasticModel(5.0, 0.25);
-    corotated_model.CalcKirchhoffStress(F, &tau);
+    F2 = F;
+    corotated_model.UpdateDeformationGradientAndCalcKirchhoffStress(&tau, &F);
     EXPECT_TRUE(CompareMatrices(tau, tau_exact2, TOLERANCE));
     // Sanity check: no plasticity shall be applied
-    F2 = F;
-    corotated_model.UpdateDeformationGradient(&F2);
     EXPECT_TRUE(CompareMatrices(F, F2, TOLERANCE));
 
     // Sanity check: If F is a rotation matrix, then stresses are zero
     corotated_model = CorotatedElasticModel(5.0, 0.25);
     F2 = math::RotationMatrix<double>
                 (math::RollPitchYaw<double>(1.0, 2.0, 3.0)).matrix();
-    corotated_model.CalcKirchhoffStress(F2, &tau);
+    corotated_model.UpdateDeformationGradientAndCalcKirchhoffStress(&tau, &F2);
     EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
 
     corotated_model = CorotatedElasticModel(23.4, 0.41);
     F2 = math::RotationMatrix<double>
                 (math::RollPitchYaw<double>(0.1, -2.4, 13.3)).matrix();
-    corotated_model.CalcKirchhoffStress(F2, &tau);
+    corotated_model.UpdateDeformationGradientAndCalcKirchhoffStress(&tau, &F2);
     EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
 }
 
@@ -88,8 +86,6 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
     // Sanity check: If F is a rotation matrix, then stresses are zero
     Matrix3<double> F0 = math::RotationMatrix<double>
                 (math::RollPitchYaw<double>(1.0, 2.0, 3.0)).matrix();
-    hencky_model0.CalcKirchhoffStress(F0, &tau);
-    EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
     dummy_FE = F0;
     hencky_model0.UpdateDeformationGradientAndCalcKirchhoffStress(&tau,
                                                                   &dummy_FE);
@@ -97,8 +93,6 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
 
     Matrix3<double> F1 = math::RotationMatrix<double>
                 (math::RollPitchYaw<double>(0.1, -2.4, 13.3)).matrix();
-    hencky_model1.CalcKirchhoffStress(F1, &tau);
-    EXPECT_TRUE(CompareMatrices(tau, Matrix3<double>::Zero(), TOLERANCE));
     dummy_FE = F1;
     hencky_model1.UpdateDeformationGradientAndCalcKirchhoffStress(&tau,
                                                                   &dummy_FE);
@@ -144,8 +138,6 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
                                                       lambda0*sum_log_sigma};
     Matrix3<double> P0   = U*sigma0.asDiagonal()*V.transpose();
     Matrix3<double> tau0 = P0*F2.transpose();
-    hencky_model0.CalcKirchhoffStress(F2, &tau);
-    EXPECT_TRUE(CompareMatrices(tau, tau0, TOLERANCE));
     dummy_FE = F2;
     hencky_model0.UpdateDeformationGradientAndCalcKirchhoffStress(&tau,
                                                                   &dummy_FE);
@@ -159,8 +151,6 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
                                                       lambda1*sum_log_sigma};
     Matrix3<double> P1   = U*sigma1.asDiagonal()*V.transpose();
     Matrix3<double> tau1 = P1*F2.transpose();
-    hencky_model1.CalcKirchhoffStress(F2, &tau);
-    EXPECT_TRUE(CompareMatrices(tau, tau1, TOLERANCE));
     dummy_FE = F2;
     hencky_model1.UpdateDeformationGradientAndCalcKirchhoffStress(&tau,
                                                                   &dummy_FE);
@@ -183,24 +173,16 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
                 = std::make_unique<StvkHenckyWithVonMisesModel>(E, nu, tau_c0);
     // Deformation gradient before plasticity
     Matrix3<double> FEprev = FE;
-    // Calculate the Kirchhoff Stress
-    Matrix3<double> tau0;
-    hencky_model0->CalcKirchhoffStress(FE, &tau0);
-    // Calculate the deviatoric component of the Kirchhoff stress
-    // dev(τ) = τ - 1/3tr(τ)I
-    Matrix3<double> tau_dev0 = tau0
-                             - 1.0/3.0*tau0.trace()*Matrix3<double>::Identity();
     // The trial stress is in the yield surface if
     // sqrt(3/2)‖ dev(τ) ‖_F ≤ τ_c
-    bool in_yield_surface0 = (std::sqrt(3.0/2.0)*tau_dev0.norm()
-                           <= tau_c0 + TOLERANCE);
+    bool in_yield_surface0 = (hencky_model0->EvalYieldFunction(FE)
+                           <= TOLERANCE);
     EXPECT_TRUE(in_yield_surface0);
 
     // Apply plasticity and calculate the new Kirchhoff Stress
+    Matrix3<double> tau0;
     hencky_model0->UpdateDeformationGradientAndCalcKirchhoffStress(&tau0, &FE);
-    tau_dev0 = tau0 - 1.0/3.0*tau0.trace()*Matrix3<double>::Identity();
-    in_yield_surface0 = (std::sqrt(3.0/2.0)*tau_dev0.norm()
-                      <= tau_c0 + TOLERANCE);
+    in_yield_surface0 = (hencky_model0->EvalYieldFunction(FE) <= TOLERANCE);
 
     // Nothing shall change in this case
     EXPECT_TRUE(in_yield_surface0);
@@ -213,20 +195,15 @@ GTEST_TEST(StvkHenckyWithVonMisesModelTest,
                 = std::make_unique<StvkHenckyWithVonMisesModel>(E, nu, tau_c1);
     // Deformation gradient before plasticity
     FEprev = FE;
-    // Calculate the Kirchhoff Stress
-    Matrix3<double> tau1;
-    hencky_model1->CalcKirchhoffStress(FE, &tau1);
-    Matrix3<double> tau_dev1 = tau1
-                             - 1.0/3.0*tau1.trace()*Matrix3<double>::Identity();
-    bool in_yield_surface1 = (std::sqrt(3.0/2.0)*tau_dev1.norm()
-                          <= tau_c1 + TOLERANCE);
+    bool in_yield_surface1 = (hencky_model1->EvalYieldFunction(FE)
+                           <= TOLERANCE);
     EXPECT_FALSE(in_yield_surface1);
 
     // Apply plasticity and calculate the new Kirchhoff Stress
+    Matrix3<double> tau1;
     hencky_model1->UpdateDeformationGradientAndCalcKirchhoffStress(&tau1, &FE);
-    tau_dev1 = tau1 - 1.0/3.0*tau1.trace()*Matrix3<double>::Identity();
-    bool on_yield_surface1 = ((std::sqrt(3.0/2.0)*tau_dev1.norm() - tau_c1)
-                            < TOLERANCE);
+    bool on_yield_surface1 = (abs(hencky_model1->EvalYieldFunction(FE))
+                           <= TOLERANCE);
 
     EXPECT_TRUE(on_yield_surface1);
     EXPECT_FALSE(CompareMatrices(FEprev, FE, TOLERANCE));

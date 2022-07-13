@@ -16,15 +16,13 @@ StvkHenckyWithVonMisesModel::StvkHenckyWithVonMisesModel(double E, double nu,
     DRAKE_ASSERT(tau_c >= 0);
 }
 
-void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(const Matrix3<double>& FE,
-                                         Matrix3<double>* tau) const {
-    CalcKirchhoffStress(CalcStrainData(FE), tau);
-}
-
-void StvkHenckyWithVonMisesModel::UpdateDeformationGradient(
-                                            Matrix3<double>* FE_trial) const {
-    StrainData trial_strain_data = CalcStrainData(*FE_trial);
-    ProjectDeformationGradientToYieldSurface(&trial_strain_data, FE_trial);
+double StvkHenckyWithVonMisesModel::EvalYieldFunction(const Matrix3<double>& FE)
+                                                                        const {
+    Eigen::JacobiSVD<Matrix3<double>>
+                    svd(FE, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    StrainData trial_strain_data = CalcStrainData(FE);
+    StressData trial_stress_data = CalcStressData(trial_strain_data);
+    return EvalYieldFunction(trial_stress_data);
 }
 
 void StvkHenckyWithVonMisesModel::
@@ -33,7 +31,9 @@ void StvkHenckyWithVonMisesModel::
     Eigen::JacobiSVD<Matrix3<double>>
                     svd(*FE_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
     StrainData trial_strain_data = CalcStrainData(*FE_trial);
-    ProjectDeformationGradientToYieldSurface(&trial_strain_data, FE_trial);
+    StressData trial_stress_data = CalcStressData(trial_strain_data);
+    ProjectDeformationGradientToYieldSurface(trial_stress_data,
+                                            &trial_strain_data, FE_trial);
     CalcKirchhoffStress(trial_strain_data, tau);
 }
 
@@ -54,6 +54,22 @@ StvkHenckyWithVonMisesModel::StrainData
     return {U, V, eps_hat, tr_eps};
 }
 
+StvkHenckyWithVonMisesModel::StressData
+        StvkHenckyWithVonMisesModel::CalcStressData(
+                const StvkHenckyWithVonMisesModel::StrainData& strain_data)
+                                                                        const {
+    // Vector of trace of the trial stress
+    Vector3<double> tr_eps_vec = strain_data.tr_eps*Vector3<double>::Ones();
+    // The deviatoric component of Kirchhoff stress in the principal frame is:
+    // dev(τ) = τ - pJI = τ - 1/3tr(τ)I
+    // In the principal frame: dev(τ) = 2μlog(σᵢ) - 2μ/3 ∑ᵢ log(σᵢ)
+    Vector3<double> tau_dev_hat =
+                        2*mu_*(strain_data.eps_hat-1.0/3.0*tr_eps_vec);
+    double tau_dev_hat_norm = tau_dev_hat.norm();
+
+    return {tau_dev_hat, tau_dev_hat_norm};
+}
+
 void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(
             const StvkHenckyWithVonMisesModel::StrainData& trial_strain_data,
                                                 Matrix3<double>* tau) const {
@@ -71,20 +87,17 @@ void StvkHenckyWithVonMisesModel::CalcKirchhoffStress(
     *tau = U * sigma_tau.asDiagonal() * U.transpose();
 }
 
+double StvkHenckyWithVonMisesModel::EvalYieldFunction(const StressData&
+                                                      trial_stress_data) const {
+    return StvkHenckyWithVonMisesModel::sqrt_32
+          *trial_stress_data.tau_dev_hat_norm - yield_stress_;
+}
+
 void StvkHenckyWithVonMisesModel::
         ProjectDeformationGradientToYieldSurface(
-                StvkHenckyWithVonMisesModel::StrainData* trial_strain_data,
-                Matrix3<double>* FE_trial) const {
-    // Vector of trace of the trial stress
-    Vector3<double> tr_eps_vec =
-                            trial_strain_data->tr_eps*Vector3<double>::Ones();
-    // The deviatoric component of Kirchhoff stress in the principal frame is:
-    // dev(τ) = τ - pJI = τ - 1/3tr(τ)I
-    // In the principal frame: dev(τ) = 2μlog(σᵢ) - 2μ/3 ∑ᵢ log(σᵢ)
-    Vector3<double> tau_dev_hat =
-                        2*mu_*(trial_strain_data->eps_hat-1.0/3.0*tr_eps_vec);
-    double tau_dev_hat_norm = tau_dev_hat.norm();
-
+            const StvkHenckyWithVonMisesModel::StressData& trial_stress_data,
+            StvkHenckyWithVonMisesModel::StrainData* trial_strain_data,
+            Matrix3<double>* FE_trial) const {
     // If the trial stress τ is in the yield surface f(τ) <= 0, plasticity is
     // not applied.
     // Otherwise, project the trial stress τ in the plastic flow direction
@@ -92,8 +105,7 @@ void StvkHenckyWithVonMisesModel::
     // The trial stress is on the yield surface, f(τ) <= 0, if and only if the
     // singular values of the deviatoric component of trial stress satisfies:
     // f(τ) = sqrt(3/2)‖ dev(τ) ‖ - τ_c ≤ 0
-    double sqrt_32 = sqrt(3.0/2.0);
-    double f_tau = sqrt_32*tau_dev_hat_norm - yield_stress_;
+    double f_tau = EvalYieldFunction(trial_stress_data);
     bool in_yield_surface =  f_tau <= 0.0;
     if (!in_yield_surface) {
         // Trial strain's projection onto yield surface in the principal frame
@@ -109,7 +121,9 @@ void StvkHenckyWithVonMisesModel::
         // Since f(τⁿ⁺¹) = ‖ τⁿ⁺¹ ‖ - τ_c = 0, i.e. τⁿ⁺¹ is on the yield surface
         // Δγ = f(τ)/(3μ)
         // By the definition of Hencky strain,
-        Vector3<double> nu = sqrt_32*tau_dev_hat/tau_dev_hat_norm;
+        Vector3<double> nu = StvkHenckyWithVonMisesModel::sqrt_32
+                            *trial_stress_data.tau_dev_hat
+                            /trial_stress_data.tau_dev_hat_norm;
         double delta_gamma = f_tau/(3.0*mu_);
         // Update the singular values of Hencky strain ε
         trial_strain_data->eps_hat =
