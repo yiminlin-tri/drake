@@ -173,12 +173,15 @@ void MPMDriver::PrintRunTimeStatistics() const {
             << run_time_statistics_.time_P2G
             << " seconds" << std::endl;
     std::cout << "==== Total update velocity       time: "
-            << run_time_statistics_.time_update_velocity
+            << run_time_statistics_.time_update_grid_velocity
             << " seconds" << std::endl;
     std::cout << "==== Total apply forces          time: "
-            << run_time_statistics_.time_apply_forces
+            << run_time_statistics_.time_apply_external_forces
             << " seconds" << std::endl;
-    std::cout << "==== Total enfroce BC            time: "
+    std::cout << "==== Total collision objs update time: "
+            << run_time_statistics_.time_collision_objects_update
+            << " seconds" << std::endl;
+    std::cout << "==== Total enforce BC            time: "
             << run_time_statistics_.time_enforce_bc
             << " seconds" << std::endl;
     std::cout << "==== Total G2P                   time: "
@@ -232,18 +235,24 @@ void MPMDriver::AdvanceOneTimeStep(double dt) {
     grid_.UpdateVelocity(dt);
     elapsed_time = std::chrono::duration_cast<Duration>(Clock::now()
                                                       - start_time).count();
-    run_time_statistics_.time_update_velocity += elapsed_time;
+    run_time_statistics_.time_update_grid_velocity += elapsed_time;
 
-    // Apply gravitational force and enforce boundary condition
+    // Apply gravitational force
     start_time = Clock::now();
     gravitational_force_.ApplyGravitationalForces(dt, &grid_);
     elapsed_time = std::chrono::duration_cast<Duration>(Clock::now()
                                                       - start_time).count();
-    run_time_statistics_.time_apply_forces += elapsed_time;
+    run_time_statistics_.time_apply_external_forces += elapsed_time;
 
     // Update Collision Objects
     start_time = Clock::now();
     collision_objects_.AdvanceOneTimeStep(dt);
+    elapsed_time = std::chrono::duration_cast<Duration>(Clock::now()
+                                                      - start_time).count();
+    run_time_statistics_.time_collision_objects_update += elapsed_time;
+
+    // Enforce boundary conditions
+    start_time = Clock::now();
     grid_.EnforceBoundaryCondition(collision_objects_);
     elapsed_time = std::chrono::duration_cast<Duration>(Clock::now()
                                                       - start_time).count();
