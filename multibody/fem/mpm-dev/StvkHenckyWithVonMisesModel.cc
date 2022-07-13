@@ -6,14 +6,14 @@ namespace mpm {
 
 StvkHenckyWithVonMisesModel::StvkHenckyWithVonMisesModel(double tau_c):
                                     ElastoPlasticModel(), yield_stress_(tau_c) {
-    DRAKE_ASSERT(tau_c >= 0);
+    DRAKE_ASSERT(tau_c > 0);
 }
 
 StvkHenckyWithVonMisesModel::StvkHenckyWithVonMisesModel(double E, double nu,
                                                          double tau_c):
                                                     ElastoPlasticModel(E, nu),
                                                     yield_stress_(tau_c) {
-    DRAKE_ASSERT(tau_c >= 0);
+    DRAKE_ASSERT(tau_c > 0);
 }
 
 double StvkHenckyWithVonMisesModel::EvalYieldFunction(const Matrix3<double>& FE)

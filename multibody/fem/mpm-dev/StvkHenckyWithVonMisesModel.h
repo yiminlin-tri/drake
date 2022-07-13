@@ -62,7 +62,7 @@ class StvkHenckyWithVonMisesModel: public ElastoPlasticModel {
  public:
     // Yield stress is the minimum stress at which the material undergoes
     // plastic deformation
-    // @pre yield_stress >= 0
+    // @pre yield_stress > 0
     explicit StvkHenckyWithVonMisesModel(double yield_stress);
     StvkHenckyWithVonMisesModel(double E, double nu, double yield_stress);
 
