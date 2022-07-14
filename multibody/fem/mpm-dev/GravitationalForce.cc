@@ -17,9 +17,12 @@ void GravitationalForce::ApplyGravitationalForces(double dt, Grid* grid) const {
         i = batch_index_3d(0);
         j = batch_index_3d(1);
         k = batch_index_3d(2);
-        const Vector3<double>& velocity_i = grid->get_velocity(i, j, k);
-        grid->set_velocity(i, j, k,
-                           velocity_i + dt*gravitational_acceleration_);
+        // Skip grid points with zero mass
+        if (grid->get_mass(i, j, k) != 0.0) {
+            const Vector3<double>& velocity_i = grid->get_velocity(i, j, k);
+            grid->set_velocity(i, j, k,
+                            velocity_i + dt*gravitational_acceleration_);
+        }
     }
 }
 
