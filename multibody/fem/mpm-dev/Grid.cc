@@ -164,16 +164,23 @@ bool Grid::in_index_range(const Vector3<int>& index_3d) const {
 
 void Grid::UpdateVelocity(double dt) {
     for (int i = 0; i < num_gridpt_; ++i) {
-        velocities_[i] += dt*forces_[i]/masses_[i];
+        // Only update at grid points with nonzero masses
+        if (masses_[i] > 0.0) {
+            velocities_[i] += dt*forces_[i]/masses_[i];
+        }
     }
 }
 
 void Grid::EnforceBoundaryCondition(const KinematicCollisionObjects& objects) {
     // For all grid points, enforce frictional wall boundary condition
     for (const auto& [index_flat, index_3d] : indices_) {
-        objects.ApplyBoundaryConditions(get_position(index_3d(0), index_3d(1),
-                                                     index_3d(2)),
-                                        &velocities_[index_flat]);
+        // Only enforce at grid points with nonzero masses
+        if (masses_[index_flat] > 0.0) {
+            objects.ApplyBoundaryConditions(get_position(index_3d(0),
+                                                         index_3d(1),
+                                                         index_3d(2)),
+                                            &velocities_[index_flat]);
+        }
     }
 }
 
